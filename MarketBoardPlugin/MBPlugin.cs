@@ -1,4 +1,4 @@
-// <copyright file="Plugin.cs" company="Florian Maunier">
+// <copyright file="MBPlugin.cs" company="Florian Maunier">
 // Copyright (c) Florian Maunier. All rights reserved.
 // </copyright>
 
@@ -23,8 +23,11 @@ namespace MarketBoardPlugin
 
   using Newtonsoft.Json;
 
+  /// <summary>
+  /// The entry point of the plugin.
+  /// </summary>
   [SuppressMessage("ReSharper", "UnusedMember.Global", Justification = "Plugin entry point")]
-  public class Plugin : IDalamudPlugin
+  public class MBPlugin : IDalamudPlugin
   {
     private bool isDisposed;
 
@@ -66,6 +69,10 @@ namespace MarketBoardPlugin
       GC.SuppressFinalize(this);
     }
 
+    /// <summary>
+    /// Protected implementation of Dispose pattern.
+    /// </summary>
+    /// <param name="disposing">A value indicating whether we are disposing.</param>
     protected virtual void Dispose(bool disposing)
     {
       if (this.isDisposed)
@@ -93,7 +100,7 @@ namespace MarketBoardPlugin
 
       using var client = new HttpClient();
       var res = await client.GetStringAsync(uriBuilder.Uri).ConfigureAwait(false);
-      var parsedRes = JsonConvert.DeserializeObject<ItemSearchResultResponse>(res);
+      var parsedRes = JsonConvert.DeserializeObject<ItemSearchResponse>(res);
 
       return parsedRes.Results;
     }

@@ -23,6 +23,9 @@ namespace MarketBoardPlugin.GUI
 
   using Item = Dalamud.Data.TransientSheet.Item;
 
+  /// <summary>
+  /// The market board window.
+  /// </summary>
   public class MarketBoardWindow : IDisposable
   {
     private readonly List<Item> items;
@@ -46,6 +49,10 @@ namespace MarketBoardPlugin.GUI
 
     private bool watchingForHoveredItem = true;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="MarketBoardWindow"/> class.
+    /// </summary>
+    /// <param name="pluginInterface">The <see cref="DalamudPluginInterface"/>.</param>
     public MarketBoardWindow(DalamudPluginInterface pluginInterface)
     {
       if (pluginInterface == null)
@@ -67,6 +74,10 @@ namespace MarketBoardPlugin.GUI
       GC.SuppressFinalize(this);
     }
 
+    /// <summary>
+    /// Draws the window.
+    /// </summary>
+    /// <returns>A value indicating whether the window is open.</returns>
     public bool Draw()
     {
       var windowOpen = true;
@@ -186,6 +197,10 @@ namespace MarketBoardPlugin.GUI
       return windowOpen;
     }
 
+    /// <summary>
+    /// Protected implementation of Dispose pattern.
+    /// </summary>
+    /// <param name="disposing">A value indicating whether we are disposing.</param>
     protected virtual void Dispose(bool disposing)
     {
       if (this.isDisposed)

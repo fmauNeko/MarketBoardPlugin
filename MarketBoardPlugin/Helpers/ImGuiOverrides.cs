@@ -10,8 +10,19 @@ namespace MarketBoardPlugin.Helpers
 
   using ImGuiNET;
 
+  /// <summary>
+  /// ImGui.NET overrides.
+  /// </summary>
   public static unsafe class ImGuiOverrides
   {
+    /// <summary>
+    /// Create an Input Text with Hint widget.
+    /// </summary>
+    /// <param name="label">The label.</param>
+    /// <param name="hint">The hint.</param>
+    /// <param name="input">The input.</param>
+    /// <param name="maxLength">The max length.</param>
+    /// <returns>A boolean value indicating if the input has been created or not.</returns>
     public static bool InputTextWithHint(
       string label,
       string hint,
@@ -21,6 +32,17 @@ namespace MarketBoardPlugin.Helpers
       return InputTextWithHint(label, hint, ref input, maxLength, 0, null, IntPtr.Zero);
     }
 
+    /// <summary>
+    /// Create an Input Text with Hint widget.
+    /// </summary>
+    /// <param name="label">The label.</param>
+    /// <param name="hint">The hint.</param>
+    /// <param name="input">The input.</param>
+    /// <param name="maxLength">The max length.</param>
+    /// <param name="flags">The flags.</param>
+    /// <param name="callback">The callback.</param>
+    /// <param name="userData">The user data.</param>
+    /// <returns>A boolean value indicating if the input has been created or not.</returns>
     public static bool InputTextWithHint(
       string label,
       string hint,

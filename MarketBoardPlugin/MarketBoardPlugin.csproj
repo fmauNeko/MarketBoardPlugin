@@ -2,10 +2,15 @@
 
   <PropertyGroup>
     <TargetFramework>net472</TargetFramework>
+    <AssemblyName>MarketBoardPlugin</AssemblyName>
+    <Authors>Florian Maunier</Authors>
     <OutputType>Library</OutputType>
     <LangVersion>Latest</LangVersion>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-    <DocumentationFile>$(OutputPath)$(AssemblyName).xml</DocumentationFile>
+    <DocumentationFile>bin/$(Configuration)/$(TargetFramework)/$(AssemblyName).xml</DocumentationFile>
+    <DebugType>portable</DebugType>
+    <GenerateFullPaths>true</GenerateFullPaths>
+    <MSBuildGitHashCommand>git rev-parse --short HEAD</MSBuildGitHashCommand>
   </PropertyGroup>
 
   <ItemGroup>
@@ -15,6 +20,10 @@
 
   <ItemGroup>
     <PackageReference Include="Microsoft.CodeAnalysis.FxCopAnalyzers" Version="2.9.8">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="MSBuildGitHash" Version="2.0.1">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>

@@ -85,7 +85,8 @@ namespace MarketBoardPlugin
         // Remove command handlers
         this.pluginInterface.CommandManager.RemoveHandler("/mb");
         this.pluginInterface.CommandManager.RemoveHandler("/mbsearch");
-        this.marketBoardWindow?.Dispose();
+        this.pluginInterface.Dispose();
+        this.marketBoardWindow.Dispose();
       }
 
       this.isDisposed = true;

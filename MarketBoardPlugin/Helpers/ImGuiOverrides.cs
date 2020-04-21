@@ -67,16 +67,6 @@ namespace MarketBoardPlugin.Helpers
         throw new ArgumentNullException(nameof(input));
       }
 
-      if (callback == null)
-      {
-        throw new ArgumentNullException(nameof(callback));
-      }
-
-      if (label == null)
-      {
-        throw new ArgumentNullException(nameof(label));
-      }
-
       var utf8LabelByteCount = Encoding.UTF8.GetByteCount(label);
       byte* utf8LabelBytes;
       if (utf8LabelByteCount > Util.StackAllocationSizeLimit)

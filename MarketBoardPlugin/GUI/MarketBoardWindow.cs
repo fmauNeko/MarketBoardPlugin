@@ -12,6 +12,8 @@ namespace MarketBoardPlugin.GUI
   using System.Threading.Tasks;
 
   using Dalamud.Data.LuminaExtensions;
+  using Dalamud.Game.Chat;
+  using Dalamud.Game.Internal;
   using Dalamud.Plugin;
 
   using ImGuiNET;
@@ -20,6 +22,7 @@ namespace MarketBoardPlugin.GUI
   using Lumina.Excel.GeneratedSheets;
 
   using MarketBoardPlugin.Helpers;
+  using MarketBoardPlugin.Models.Universalis;
 
   using Item = Dalamud.Data.TransientSheet.Item;
 
@@ -49,6 +52,12 @@ namespace MarketBoardPlugin.GUI
 
     private bool watchingForHoveredItem = true;
 
+    private ulong playerId = 0;
+
+    private List<(string, string)> worldList = new List<(string, string)>();
+
+    private int selectedWorld = -1;
+
     /// <summary>
     /// Initializes a new instance of the <see cref="MarketBoardWindow"/> class.
     /// </summary>
@@ -64,6 +73,7 @@ namespace MarketBoardPlugin.GUI
       this.pluginInterface = pluginInterface;
       this.sortedCategoriesAndItems = this.SortCategoriesAndItems();
 
+      pluginInterface.Framework.OnUpdateEvent += this.HandleFrameworkUpdateEvent;
       pluginInterface.Framework.Gui.HoveredItemChanged += this.HandleHoveredItemChange;
     }
 
@@ -172,6 +182,14 @@ namespace MarketBoardPlugin.GUI
         ImGui.SameLine();
         ImGui.SetCursorPosY(ImGui.GetCursorPosY() - (ImGui.GetFontSize() / 2.0f) + 19);
         ImGui.Text(this.selectedItem?.Name);
+        ImGui.SameLine(ImGui.GetContentRegionAvail().X - 250);
+        ImGui.SetCursorPosY(ImGui.GetCursorPosY() + (ImGui.GetFontSize() / 2.0f) - 19);
+        ImGui.SetNextItemWidth(250);
+        ImGui.Combo(
+          "##worldCombo",
+          ref this.selectedWorld,
+          this.worldList.Select(w => w.Item2).ToArray(),
+          this.worldList.Count);
 
         if (ImGui.BeginTabBar("tabBar"))
         {
@@ -210,6 +228,8 @@ namespace MarketBoardPlugin.GUI
 
       if (disposing)
       {
+        this.pluginInterface.Framework.OnUpdateEvent -= this.HandleFrameworkUpdateEvent;
+        this.pluginInterface.Framework.Gui.HoveredItemChanged -= this.HandleHoveredItemChange;
         this.hoveredItemChangeTokenSource?.Dispose();
         this.selectedItemIcon?.Dispose();
       }
@@ -238,6 +258,44 @@ namespace MarketBoardPlugin.GUI
       var iconTexFile = this.pluginInterface.Data.GetIcon(iconId);
       this.selectedItemIcon?.Dispose();
       this.selectedItemIcon = this.pluginInterface.UiBuilder.LoadImageRaw(iconTexFile.GetRgbaImageData(), iconTexFile.Header.Width, iconTexFile.Header.Height, 4);
+    }
+
+    private void HandleFrameworkUpdateEvent(Framework framework)
+    {
+      var localPlayer = this.pluginInterface.ClientState.LocalPlayer;
+
+      if (localPlayer == null)
+      {
+        return;
+      }
+
+      if (this.playerId != this.pluginInterface.ClientState.LocalContentId)
+      {
+        this.playerId = this.pluginInterface.ClientState.LocalContentId;
+
+        var currentDc = this.pluginInterface.Data.GetExcelSheet<WorldDCGroupType>()
+          .GetRow(localPlayer.CurrentWorld.GameData.DataCenter);
+        var dcWorlds = this.pluginInterface.Data.GetExcelSheet<World>().GetRows()
+          .Where(w => w.DataCenter == currentDc.RowId)
+          .OrderBy(w => w.Name)
+          .Select(w =>
+          {
+            var displayName = w.Name;
+
+            if (localPlayer.CurrentWorld.Id == w.RowId)
+            {
+              displayName += $" {SeIconChar.Hyadelyn.ToChar()}";
+            }
+
+            return (w.Name, displayName);
+          });
+
+        this.worldList.Clear();
+        this.worldList.Add((currentDc.Name, $"Cross-World {SeIconChar.CrossWorld.ToChar()}"));
+        this.worldList.AddRange(dcWorlds);
+
+        this.selectedWorld = this.worldList.FindIndex(w => w.Item1 == localPlayer.CurrentWorld.GameData.Name);
+      }
     }
 
     private void HandleHoveredItemChange(object sender, ulong itemId)

@@ -59,6 +59,8 @@ namespace MarketBoardPlugin.GUI
 
     private int selectedWorld = -1;
 
+    private MarketDataResponse marketData;
+
     /// <summary>
     /// Initializes a new instance of the <see cref="MarketBoardWindow"/> class.
     /// </summary>
@@ -259,6 +261,8 @@ namespace MarketBoardPlugin.GUI
       var iconTexFile = this.pluginInterface.Data.GetIcon(iconId);
       this.selectedItemIcon?.Dispose();
       this.selectedItemIcon = this.pluginInterface.UiBuilder.LoadImageRaw(iconTexFile.GetRgbaImageData(), iconTexFile.Header.Width, iconTexFile.Header.Height, 4);
+
+      this.RefreshMarketData();
     }
 
     private void HandleFrameworkUpdateEvent(Framework framework)
@@ -338,6 +342,16 @@ namespace MarketBoardPlugin.GUI
         catch (TaskCanceledException)
         {
         }
+      });
+    }
+
+    private void RefreshMarketData()
+    {
+      Task.Run(async () =>
+      {
+        this.marketData = await UniversalisClient
+          .GetMarketData(this.selectedItem.RowId, this.worldList[this.selectedWorld].Item1, CancellationToken.None)
+          .ConfigureAwait(false);
       });
     }
   }

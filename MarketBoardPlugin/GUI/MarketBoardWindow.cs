@@ -38,7 +38,10 @@ namespace MarketBoardPlugin.GUI
 
     private readonly Dictionary<ItemSearchCategory, List<Item>> sortedCategoriesAndItems;
 
+    private readonly List<(string, string)> worldList = new List<(string, string)>();
+
     private CancellationTokenSource hoveredItemChangeTokenSource;
+
     private bool isDisposed;
 
     private bool itemIsBeingHovered;
@@ -54,8 +57,6 @@ namespace MarketBoardPlugin.GUI
     private bool watchingForHoveredItem = true;
 
     private ulong playerId = 0;
-
-    private List<(string, string)> worldList = new List<(string, string)>();
 
     private int selectedWorld = -1;
 
@@ -188,11 +189,25 @@ namespace MarketBoardPlugin.GUI
         ImGui.SameLine(ImGui.GetContentRegionAvail().X - 250);
         ImGui.SetCursorPosY(ImGui.GetCursorPosY() + (ImGui.GetFontSize() / 2.0f) - 19);
         ImGui.SetNextItemWidth(250);
-        ImGui.Combo(
-          "##worldCombo",
-          ref this.selectedWorld,
-          this.worldList.Select(w => w.Item2).ToArray(),
-          this.worldList.Count);
+        if (ImGui.BeginCombo("##worldCombo", this.selectedWorld > -1 ? this.worldList[this.selectedWorld].Item2 : string.Empty))
+        {
+          foreach (var world in this.worldList)
+          {
+            var isSelected = this.selectedWorld == this.worldList.IndexOf(world);
+            if (ImGui.Selectable(world.Item2, isSelected))
+            {
+              this.selectedWorld = this.worldList.IndexOf(world);
+              this.RefreshMarketData();
+            }
+
+            if (isSelected)
+            {
+              ImGui.SetItemDefaultFocus();
+            }
+          }
+
+          ImGui.EndCombo();
+        }
 
         if (ImGui.BeginTabBar("tabBar"))
         {

@@ -8,7 +8,7 @@
     <LangVersion>Latest</LangVersion>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <DocumentationFile>bin/$(Configuration)/$(TargetFramework)/$(AssemblyName).xml</DocumentationFile>
-    <DebugType>portable</DebugType>
+    <DebugType>PdbOnly</DebugType>
     <GenerateFullPaths>true</GenerateFullPaths>
     <MSBuildGitHashCommand>git rev-parse --short HEAD</MSBuildGitHashCommand>
   </PropertyGroup>

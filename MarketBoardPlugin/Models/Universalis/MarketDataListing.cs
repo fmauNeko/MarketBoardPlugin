@@ -52,7 +52,7 @@ namespace MarketBoardPlugin.Models.Universalis
     /// Gets the list of the materias.
     /// </summary>
     [JsonProperty("materia")]
-    public List<object> Materia { get; }
+    public List<object> Materia { get; } = new List<object>();
 
     /// <summary>
     /// Gets or sets a value indicating whether the item is on a mannequin.

@@ -35,13 +35,13 @@ namespace MarketBoardPlugin.Models.Universalis
     /// Gets the listings.
     /// </summary>
     [JsonProperty("listings")]
-    public List<MarketDataListing> Listings { get; }
+    public List<MarketDataListing> Listings { get; } = new List<MarketDataListing>();
 
     /// <summary>
     /// Gets the recent history.
     /// </summary>
     [JsonProperty("recentHistory")]
-    public List<MarketDataRecentHistory> RecentHistory { get; }
+    public List<MarketDataRecentHistory> RecentHistory { get; } = new List<MarketDataRecentHistory>();
 
     /// <summary>
     /// Gets or sets the average price.
@@ -83,18 +83,18 @@ namespace MarketBoardPlugin.Models.Universalis
     /// Gets the stack size histogram.
     /// </summary>
     [JsonProperty("stackSizeHistogram")]
-    public Dictionary<string, long> StackSizeHistogram { get; }
+    public Dictionary<string, long> StackSizeHistogram { get; } = new Dictionary<string, long>();
 
     /// <summary>
     /// Gets the stack size histogram of the NQ items.
     /// </summary>
     [JsonProperty("stackSizeHistogramNQ")]
-    public Dictionary<string, long> StackSizeHistogramNq { get; }
+    public Dictionary<string, long> StackSizeHistogramNq { get; } = new Dictionary<string, long>();
 
     /// <summary>
     /// Gets the stack size histogram of the HQ items.
     /// </summary>
     [JsonProperty("stackSizeHistogramHQ")]
-    public Dictionary<string, long> StackSizeHistogramHq { get; }
+    public Dictionary<string, long> StackSizeHistogramHq { get; } = new Dictionary<string, long>();
   }
 }

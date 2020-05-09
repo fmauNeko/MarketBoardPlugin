@@ -21,6 +21,7 @@ namespace MarketBoardPlugin.GUI
 
   using Lumina.Excel.GeneratedSheets;
 
+  using MarketBoardPlugin.Extensions;
   using MarketBoardPlugin.Helpers;
   using MarketBoardPlugin.Models.Universalis;
 

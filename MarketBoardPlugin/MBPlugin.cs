@@ -47,7 +47,7 @@ namespace MarketBoardPlugin
       this.marketBoardWindow = new MarketBoardWindow(this.pluginInterface);
 
       // Set up command handlers
-      pluginInterface.CommandManager.AddHandler("/mb", new CommandInfo(this.OnOpenMarketBoardCommand)
+      pluginInterface.CommandManager.AddHandler("/pmb", new CommandInfo(this.OnOpenMarketBoardCommand)
       {
         HelpMessage = "Open the market board window.",
       });
@@ -77,7 +77,7 @@ namespace MarketBoardPlugin
       {
         // Remove command handlers
         this.pluginInterface.UiBuilder.OnBuildUi -= this.BuildMarketBoardUi;
-        this.pluginInterface.CommandManager.RemoveHandler("/mb");
+        this.pluginInterface.CommandManager.RemoveHandler("/pmb");
         this.pluginInterface.Dispose();
         this.marketBoardWindow.Dispose();
       }

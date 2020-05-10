@@ -341,9 +341,67 @@ namespace MarketBoardPlugin.GUI
             ImGui.EndTabItem();
           }
 
-          if (ImGui.BeginTabItem("Price History##priceHistoryTab"))
+          if (ImGui.BeginTabItem("Charts##chartsTab"))
           {
-            ImGui.Text("This is the Broccoli tab!\nblah blah blah blah blah");
+            var tableHeight = (ImGui.GetContentRegionAvail().Y / 2) - (ImGui.GetTextLineHeightWithSpacing() * 2);
+            var marketDataRecentHistory = this.marketData?.RecentHistory
+              .GroupBy(h => DateTimeOffset.FromUnixTimeSeconds(h.Timestamp).LocalDateTime.Date)
+              .Select(g => (Date: g.Key, PriceAvg: (float)g.Average(h => h.PricePerUnit),
+                QtySum: (float)g.Sum(h => h.Quantity)))
+              .ToList();
+
+            for (var day = marketDataRecentHistory!.Min(h => h.Date);
+              day <= marketDataRecentHistory.Max(h => h.Date);
+              day = day.AddDays(1))
+            {
+              if (!marketDataRecentHistory.Exists(h => h.Date == day))
+              {
+                marketDataRecentHistory.Add((day, 0, 0));
+              }
+            }
+
+            marketDataRecentHistory = marketDataRecentHistory
+              .OrderBy(h => h.Date)
+              .ToList();
+
+            ImGui.PushFont(this.fontPtr);
+            ImGui.Text("Price variations (per unit)");
+            ImGui.PopFont();
+
+            var pricePlotValues = marketDataRecentHistory
+              .Select(h => h.PriceAvg)
+              .ToArray();
+            ImGui.SetNextItemWidth(-1);
+            ImGui.PlotLines(
+              "##pricePlot",
+              ref pricePlotValues[0],
+              pricePlotValues.Length,
+              0,
+              null,
+              float.MaxValue,
+              float.MaxValue,
+              new Vector2(0, tableHeight));
+
+            ImGui.Separator();
+
+            ImGui.PushFont(this.fontPtr);
+            ImGui.Text("Traded volumes");
+            ImGui.PopFont();
+
+            var qtyPlotValues = marketDataRecentHistory
+              .Select(h => h.QtySum)
+              .ToArray();
+            ImGui.SetNextItemWidth(-1);
+            ImGui.PlotHistogram(
+              "##qtyPlot",
+              ref qtyPlotValues[0],
+              qtyPlotValues.Length,
+              0,
+              null,
+              float.MaxValue,
+              float.MaxValue,
+              new Vector2(0, tableHeight));
+
             ImGui.EndTabItem();
           }
 

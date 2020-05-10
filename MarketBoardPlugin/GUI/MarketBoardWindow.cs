@@ -86,6 +86,11 @@ namespace MarketBoardPlugin.GUI
       pluginInterface.UiBuilder.OnBuildFonts += this.HandleBuildFonts;
 
       pluginInterface.UiBuilder.RebuildFonts();
+
+      #if DEBUG
+      this.worldList.Add(("Chaos", "Chaos"));
+      this.worldList.Add(("Moogle", "Moogle"));
+      #endif
     }
 
     /// <inheritdoc/>

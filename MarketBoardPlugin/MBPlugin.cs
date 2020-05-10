@@ -30,7 +30,7 @@ namespace MarketBoardPlugin
   {
     private bool isDisposed;
 
-    private bool isImguiMarketBoardWindowOpen = true;
+    private bool isImguiMarketBoardWindowOpen = false;
 
     private MarketBoardWindow marketBoardWindow;
 
@@ -53,6 +53,10 @@ namespace MarketBoardPlugin
       });
 
       pluginInterface.UiBuilder.OnBuildUi += this.BuildMarketBoardUi;
+
+      #if DEBUG
+      this.isImguiMarketBoardWindowOpen = true;
+      #endif
     }
 
     /// <inheritdoc/>

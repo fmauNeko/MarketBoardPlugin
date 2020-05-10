@@ -6,8 +6,10 @@ namespace MarketBoardPlugin.GUI
 {
   using System;
   using System.Collections.Generic;
+  using System.IO;
   using System.Linq;
   using System.Numerics;
+  using System.Reflection;
   using System.Threading;
   using System.Threading.Tasks;
 
@@ -62,6 +64,8 @@ namespace MarketBoardPlugin.GUI
 
     private MarketDataResponse marketData;
 
+    private ImFontPtr fontPtr;
+
     /// <summary>
     /// Initializes a new instance of the <see cref="MarketBoardWindow"/> class.
     /// </summary>
@@ -79,6 +83,9 @@ namespace MarketBoardPlugin.GUI
 
       pluginInterface.Framework.OnUpdateEvent += this.HandleFrameworkUpdateEvent;
       pluginInterface.Framework.Gui.HoveredItemChanged += this.HandleHoveredItemChange;
+      pluginInterface.UiBuilder.OnBuildFonts += this.HandleBuildFonts;
+
+      pluginInterface.UiBuilder.RebuildFonts();
     }
 
     /// <inheritdoc/>
@@ -183,11 +190,13 @@ namespace MarketBoardPlugin.GUI
       if (this.selectedItem?.RowId > 0)
       {
         ImGui.Image(this.selectedItemIcon.ImGuiHandle, new Vector2(40, 40));
+        ImGui.PushFont(this.fontPtr);
         ImGui.SameLine();
         ImGui.SetCursorPosY(ImGui.GetCursorPosY() - (ImGui.GetFontSize() / 2.0f) + 19);
         ImGui.Text(this.selectedItem?.Name);
         ImGui.SameLine(ImGui.GetContentRegionAvail().X - 250);
         ImGui.SetCursorPosY(ImGui.GetCursorPosY() + (ImGui.GetFontSize() / 2.0f) - 19);
+        ImGui.PopFont();
         ImGui.SetNextItemWidth(250);
         if (ImGui.BeginCombo("##worldCombo", this.selectedWorld > -1 ? this.worldList[this.selectedWorld].Item2 : string.Empty))
         {
@@ -248,6 +257,7 @@ namespace MarketBoardPlugin.GUI
       {
         this.pluginInterface.Framework.OnUpdateEvent -= this.HandleFrameworkUpdateEvent;
         this.pluginInterface.Framework.Gui.HoveredItemChanged -= this.HandleHoveredItemChange;
+        this.pluginInterface.UiBuilder.OnBuildFonts -= this.HandleBuildFonts;
         this.hoveredItemChangeTokenSource?.Dispose();
         this.selectedItemIcon?.Dispose();
       }
@@ -278,6 +288,12 @@ namespace MarketBoardPlugin.GUI
       this.selectedItemIcon = this.pluginInterface.UiBuilder.LoadImageRaw(iconTexFile.GetRgbaImageData(), iconTexFile.Header.Width, iconTexFile.Header.Height, 4);
 
       this.RefreshMarketData();
+    }
+
+    private void HandleBuildFonts()
+    {
+      var fontPath = Path.Combine(Path.GetDirectoryName(Assembly.GetAssembly(typeof(DalamudPluginInterface)).Location) ?? string.Empty, "UIRes", "NotoSansCJKjp-Medium.otf");
+      this.fontPtr = ImGui.GetIO().Fonts.AddFontFromFileTTF(fontPath, 24.0f);
     }
 
     private void HandleFrameworkUpdateEvent(Framework framework)

@@ -429,6 +429,9 @@ namespace MarketBoardPlugin.GUI
         }
       }
 
+      ImGui.SetCursorPosY(ImGui.GetWindowContentRegionMax().Y - ImGui.GetTextLineHeightWithSpacing());
+      ImGui.Text("Data provided by Universalis (https://universalis.app/)");
+
       ImGui.EndChild();
       ImGui.End();
 

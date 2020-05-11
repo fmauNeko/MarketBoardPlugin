@@ -237,6 +237,16 @@ namespace MarketBoardPlugin.GUI
           ImGui.EndCombo();
         }
 
+        if (this.marketData != null)
+        {
+          ImGui.SetCursorPosX(ImGui.GetContentRegionAvail().X - 250);
+          ImGui.SetCursorPosY(ImGui.GetCursorPosY() - ImGui.GetTextLineHeight());
+          ImGui.SetNextItemWidth(250);
+          ImGui.Text(
+            $"Last update: {DateTimeOffset.FromUnixTimeMilliseconds(this.marketData.LastUploadTime).LocalDateTime:G}");
+          ImGui.SetCursorPosY(ImGui.GetCursorPosY() + ImGui.GetTextLineHeight() - ImGui.GetTextLineHeightWithSpacing());
+        }
+
         if (ImGui.BeginTabBar("tabBar"))
         {
           if (ImGui.BeginTabItem("Market Data##marketDataTab"))

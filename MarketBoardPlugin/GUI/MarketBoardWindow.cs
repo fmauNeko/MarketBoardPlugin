@@ -172,7 +172,17 @@ namespace MarketBoardPlugin.GUI
 
       ImGui.EndChild();
 
-      ImGui.Checkbox("Watch for hovered item?", ref this.watchingForHoveredItem);
+      ImGui.Checkbox("Watch for hovered item", ref this.watchingForHoveredItem);
+      ImGui.SameLine();
+      ImGui.TextDisabled("(?)");
+      if (ImGui.IsItemHovered())
+      {
+        ImGui.BeginTooltip();
+        ImGui.PushTextWrapPos(ImGui.GetFontSize() * 35.0f);
+        ImGui.TextUnformatted("Automatically select the item hovered in any of the in-game inventory window after 1 second.");
+        ImGui.PopTextWrapPos();
+        ImGui.EndTooltip();
+      }
 
       if (this.itemIsBeingHovered)
       {

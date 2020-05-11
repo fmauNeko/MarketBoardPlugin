@@ -253,7 +253,7 @@ namespace MarketBoardPlugin.GUI
           {
             ImGui.PushFont(this.fontPtr);
             var tableHeight = (ImGui.GetContentRegionAvail().Y / 2) - (ImGui.GetTextLineHeightWithSpacing() * 2);
-            ImGui.Text("Current listings");
+            ImGui.Text("Current listings (Includes 5%% GST)");
             ImGui.PopFont();
 
             ImGui.BeginChild("currentListings", new Vector2(0.0f, tableHeight));

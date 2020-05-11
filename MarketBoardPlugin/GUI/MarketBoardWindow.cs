@@ -172,7 +172,17 @@ namespace MarketBoardPlugin.GUI
 
       ImGui.EndChild();
 
-      ImGui.Checkbox("Watch for hovered item?", ref this.watchingForHoveredItem);
+      ImGui.Checkbox("Watch for hovered item", ref this.watchingForHoveredItem);
+      ImGui.SameLine();
+      ImGui.TextDisabled("(?)");
+      if (ImGui.IsItemHovered())
+      {
+        ImGui.BeginTooltip();
+        ImGui.PushTextWrapPos(ImGui.GetFontSize() * 35.0f);
+        ImGui.TextUnformatted("Automatically select the item hovered in any of the in-game inventory window after 1 second.");
+        ImGui.PopTextWrapPos();
+        ImGui.EndTooltip();
+      }
 
       if (this.itemIsBeingHovered)
       {
@@ -227,13 +237,23 @@ namespace MarketBoardPlugin.GUI
           ImGui.EndCombo();
         }
 
+        if (this.marketData != null)
+        {
+          ImGui.SetCursorPosX(ImGui.GetContentRegionAvail().X - 250);
+          ImGui.SetCursorPosY(ImGui.GetCursorPosY() - ImGui.GetTextLineHeight());
+          ImGui.SetNextItemWidth(250);
+          ImGui.Text(
+            $"Last update: {DateTimeOffset.FromUnixTimeMilliseconds(this.marketData.LastUploadTime).LocalDateTime:G}");
+          ImGui.SetCursorPosY(ImGui.GetCursorPosY() + ImGui.GetTextLineHeight() - ImGui.GetTextLineHeightWithSpacing());
+        }
+
         if (ImGui.BeginTabBar("tabBar"))
         {
           if (ImGui.BeginTabItem("Market Data##marketDataTab"))
           {
             ImGui.PushFont(this.fontPtr);
             var tableHeight = (ImGui.GetContentRegionAvail().Y / 2) - (ImGui.GetTextLineHeightWithSpacing() * 2);
-            ImGui.Text("Current listings");
+            ImGui.Text("Current listings (Includes 5%% GST)");
             ImGui.PopFont();
 
             ImGui.BeginChild("currentListings", new Vector2(0.0f, tableHeight));
@@ -350,57 +370,60 @@ namespace MarketBoardPlugin.GUI
                 QtySum: (float)g.Sum(h => h.Quantity)))
               .ToList();
 
-            for (var day = marketDataRecentHistory!.Min(h => h.Date);
-              day <= marketDataRecentHistory.Max(h => h.Date);
-              day = day.AddDays(1))
+            if (marketDataRecentHistory != null)
             {
-              if (!marketDataRecentHistory.Exists(h => h.Date == day))
+              for (var day = marketDataRecentHistory.Min(h => h.Date);
+                day <= marketDataRecentHistory.Max(h => h.Date);
+                day = day.AddDays(1))
               {
-                marketDataRecentHistory.Add((day, 0, 0));
+                if (!marketDataRecentHistory.Exists(h => h.Date == day))
+                {
+                  marketDataRecentHistory.Add((day, 0, 0));
+                }
               }
+
+              marketDataRecentHistory = marketDataRecentHistory
+                .OrderBy(h => h.Date)
+                .ToList();
+
+              ImGui.PushFont(this.fontPtr);
+              ImGui.Text("Price variations (per unit)");
+              ImGui.PopFont();
+
+              var pricePlotValues = marketDataRecentHistory
+                .Select(h => h.PriceAvg)
+                .ToArray();
+              ImGui.SetNextItemWidth(-1);
+              ImGui.PlotLines(
+                "##pricePlot",
+                ref pricePlotValues[0],
+                pricePlotValues.Length,
+                0,
+                null,
+                float.MaxValue,
+                float.MaxValue,
+                new Vector2(0, tableHeight));
+
+              ImGui.Separator();
+
+              ImGui.PushFont(this.fontPtr);
+              ImGui.Text("Traded volumes");
+              ImGui.PopFont();
+
+              var qtyPlotValues = marketDataRecentHistory
+                .Select(h => h.QtySum)
+                .ToArray();
+              ImGui.SetNextItemWidth(-1);
+              ImGui.PlotHistogram(
+                "##qtyPlot",
+                ref qtyPlotValues[0],
+                qtyPlotValues.Length,
+                0,
+                null,
+                float.MaxValue,
+                float.MaxValue,
+                new Vector2(0, tableHeight));
             }
-
-            marketDataRecentHistory = marketDataRecentHistory
-              .OrderBy(h => h.Date)
-              .ToList();
-
-            ImGui.PushFont(this.fontPtr);
-            ImGui.Text("Price variations (per unit)");
-            ImGui.PopFont();
-
-            var pricePlotValues = marketDataRecentHistory
-              .Select(h => h.PriceAvg)
-              .ToArray();
-            ImGui.SetNextItemWidth(-1);
-            ImGui.PlotLines(
-              "##pricePlot",
-              ref pricePlotValues[0],
-              pricePlotValues.Length,
-              0,
-              null,
-              float.MaxValue,
-              float.MaxValue,
-              new Vector2(0, tableHeight));
-
-            ImGui.Separator();
-
-            ImGui.PushFont(this.fontPtr);
-            ImGui.Text("Traded volumes");
-            ImGui.PopFont();
-
-            var qtyPlotValues = marketDataRecentHistory
-              .Select(h => h.QtySum)
-              .ToArray();
-            ImGui.SetNextItemWidth(-1);
-            ImGui.PlotHistogram(
-              "##qtyPlot",
-              ref qtyPlotValues[0],
-              qtyPlotValues.Length,
-              0,
-              null,
-              float.MaxValue,
-              float.MaxValue,
-              new Vector2(0, tableHeight));
 
             ImGui.EndTabItem();
           }
@@ -408,6 +431,9 @@ namespace MarketBoardPlugin.GUI
           ImGui.EndTabBar();
         }
       }
+
+      ImGui.SetCursorPosY(ImGui.GetWindowContentRegionMax().Y - ImGui.GetTextLineHeightWithSpacing());
+      ImGui.Text("Data provided by Universalis (https://universalis.app/)");
 
       ImGui.EndChild();
       ImGui.End();

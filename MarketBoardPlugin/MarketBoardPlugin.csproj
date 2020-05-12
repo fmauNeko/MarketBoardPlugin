@@ -11,9 +11,9 @@
     <DebugType>PdbOnly</DebugType>
     <GenerateFullPaths>true</GenerateFullPaths>
     <MSBuildGitHashCommand>git rev-parse --short HEAD</MSBuildGitHashCommand>
-    <AssemblyVersion>0.1.0.0</AssemblyVersion>
-    <FileVersion>0.1.0.0</FileVersion>
-    <Version>0.1.0</Version>
+    <AssemblyVersion>0.1.1.0</AssemblyVersion>
+    <FileVersion>0.1.1.0</FileVersion>
+    <Version>0.1.1</Version>
     <Company>Florian Maunier</Company>
     <Description>Market board plugin for Dalamud.</Description>
     <Copyright>Copyright (c) Florian Maunier. All rights reserved.</Copyright>
@@ -30,6 +30,10 @@
   <ItemGroup>
     <None Remove="../stylecop.json" />
     <AdditionalFiles Include="../stylecop.json" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="../MarketBoardPlugin.json" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
   <ItemGroup>

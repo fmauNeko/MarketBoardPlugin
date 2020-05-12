@@ -212,7 +212,15 @@ namespace MarketBoardPlugin.GUI
 
       if (this.selectedItem?.RowId > 0)
       {
-        ImGui.Image(this.selectedItemIcon.ImGuiHandle, new Vector2(40, 40));
+        if (this.selectedItemIcon != null)
+        {
+          ImGui.Image(this.selectedItemIcon.ImGuiHandle, new Vector2(40, 40));
+        }
+        else
+        {
+          ImGui.SetCursorPos(new Vector2(40, 40));
+        }
+
         ImGui.PushFont(this.fontPtr);
         ImGui.SameLine();
         ImGui.SetCursorPosY(ImGui.GetCursorPosY() - (ImGui.GetFontSize() / 2.0f) + 19);

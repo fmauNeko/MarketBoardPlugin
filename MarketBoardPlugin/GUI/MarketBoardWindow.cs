@@ -70,6 +70,10 @@ namespace MarketBoardPlugin.GUI
 
     private ImFontPtr fontPtr;
 
+    private bool hasListingsHQColumnWidthBeenSet = false;
+
+    private bool hasHistoryHQColumnWidthBeenSet = false;
+
     /// <summary>
     /// Initializes a new instance of the <see cref="MarketBoardWindow"/> class.
     /// </summary>
@@ -258,7 +262,13 @@ namespace MarketBoardPlugin.GUI
 
             ImGui.BeginChild("currentListings", new Vector2(0.0f, tableHeight));
             ImGui.Columns(5, "currentListingsColumns");
-            ImGui.SetColumnWidth(0, 30.0f);
+
+            if (!this.hasListingsHQColumnWidthBeenSet)
+            {
+              ImGui.SetColumnWidth(0, 30.0f);
+              this.hasListingsHQColumnWidthBeenSet = true;
+            }
+
             ImGui.Separator();
             ImGui.Text("HQ");
             ImGui.NextColumn();
@@ -310,7 +320,13 @@ namespace MarketBoardPlugin.GUI
 
             ImGui.BeginChild("recentHistory", new Vector2(0.0f, tableHeight));
             ImGui.Columns(6, "recentHistoryColumns");
-            ImGui.SetColumnWidth(0, 30.0f);
+
+            if (!this.hasHistoryHQColumnWidthBeenSet)
+            {
+              ImGui.SetColumnWidth(0, 30.0f);
+              this.hasHistoryHQColumnWidthBeenSet = true;
+            }
+
             ImGui.Separator();
             ImGui.Text("HQ");
             ImGui.NextColumn();

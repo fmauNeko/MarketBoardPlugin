@@ -501,7 +501,7 @@ namespace MarketBoardPlugin.GUI
       return sortedCategories;
     }
 
-    private void ChangeSelectedItem(int itemId)
+    internal void ChangeSelectedItem(int itemId)
     {
       this.selectedItem = this.items.Single(i => i.RowId == itemId);
 

@@ -7,6 +7,7 @@ namespace MarketBoardPlugin
   using System;
   using System.Collections.Generic;
   using System.Diagnostics.CodeAnalysis;
+  using System.Dynamic;
   using System.Linq;
   using System.Net.Http;
   using System.Threading.Tasks;
@@ -53,6 +54,7 @@ namespace MarketBoardPlugin
       });
 
       pluginInterface.UiBuilder.OnBuildUi += this.BuildMarketBoardUi;
+      pluginInterface.Subscribe("ItemSearchPlugin", this.ItemSearchPluginIPC);
 
       #if DEBUG
       this.isImguiMarketBoardWindowOpen = true;
@@ -82,6 +84,7 @@ namespace MarketBoardPlugin
         // Remove command handlers
         this.pluginInterface.UiBuilder.OnBuildUi -= this.BuildMarketBoardUi;
         this.pluginInterface.CommandManager.RemoveHandler("/pmb");
+        this.pluginInterface.Unsubscribe("ItemSearchPlugin");
         this.pluginInterface.Dispose();
         this.marketBoardWindow.Dispose();
       }
@@ -99,6 +102,25 @@ namespace MarketBoardPlugin
       if (this.isImguiMarketBoardWindowOpen)
       {
         this.isImguiMarketBoardWindowOpen = this.marketBoardWindow != null && this.marketBoardWindow.Draw();
+      }
+    }
+
+    private void ItemSearchPluginIPC(dynamic message)
+    {
+      if (message.Target == "MarketBoardPlugin")
+      {
+        if (message.Action == "ping")
+        {
+          dynamic response = new ExpandoObject();
+          response.Target = "ItemSearchPlugin";
+          response.Action = "pong";
+          this.pluginInterface.SendMessage(response);
+        }
+        else if (message.Action == "OpenMarketBoard")
+        {
+          this.marketBoardWindow.ChangeSelectedItem((int)message.ItemId);
+          this.isImguiMarketBoardWindowOpen = true;
+        }
       }
     }
   }

@@ -31,8 +31,6 @@ namespace MarketBoardPlugin
   {
     private bool isDisposed;
 
-    private bool isImguiMarketBoardWindowOpen = false;
-
     private MarketBoardWindow marketBoardWindow;
 
     private DalamudPluginInterface pluginInterface;
@@ -57,7 +55,7 @@ namespace MarketBoardPlugin
       pluginInterface.Subscribe("ItemSearchPlugin", this.ItemSearchPluginIPC);
 
       #if DEBUG
-      this.isImguiMarketBoardWindowOpen = true;
+      this.marketBoardWindow.IsOpen = true;
       #endif
     }
 
@@ -94,14 +92,14 @@ namespace MarketBoardPlugin
 
     private void OnOpenMarketBoardCommand(string command, string arguments)
     {
-      this.isImguiMarketBoardWindowOpen = true;
+      this.marketBoardWindow.IsOpen = true;
     }
 
     private void BuildMarketBoardUi()
     {
-      if (this.isImguiMarketBoardWindowOpen)
+      if (this.marketBoardWindow != null && this.marketBoardWindow.IsOpen)
       {
-        this.isImguiMarketBoardWindowOpen = this.marketBoardWindow != null && this.marketBoardWindow.Draw();
+        this.marketBoardWindow.IsOpen = this.marketBoardWindow.Draw();
       }
     }
 
@@ -119,7 +117,7 @@ namespace MarketBoardPlugin
         else if (message.Action == "OpenMarketBoard")
         {
           this.marketBoardWindow.ChangeSelectedItem((int)message.ItemId);
-          this.isImguiMarketBoardWindowOpen = true;
+          this.marketBoardWindow.IsOpen = true;
         }
       }
     }

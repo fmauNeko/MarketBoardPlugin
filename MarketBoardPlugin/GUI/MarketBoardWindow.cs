@@ -74,6 +74,8 @@ namespace MarketBoardPlugin.GUI
 
     private bool hasHistoryHQColumnWidthBeenSet = false;
 
+    public bool IsOpen { get; set; }
+
     /// <summary>
     /// Initializes a new instance of the <see cref="MarketBoardWindow"/> class.
     /// </summary>
@@ -586,17 +588,20 @@ namespace MarketBoardPlugin.GUI
       this.itemIsBeingHovered = true;
       this.hoveredItemChangeTokenSource = new CancellationTokenSource();
 
-      Task.Run(async () =>
+      if (this.IsOpen)
       {
-        try
+        Task.Run(async () =>
         {
-          await Task.Delay(1000, this.hoveredItemChangeTokenSource.Token).ConfigureAwait(false);
-          this.ChangeSelectedItem(Convert.ToInt32(itemId >= 1000000 ? itemId - 1000000 : itemId));
-        }
-        catch (TaskCanceledException)
-        {
-        }
-      });
+          try
+          {
+            await Task.Delay(1000, this.hoveredItemChangeTokenSource.Token).ConfigureAwait(false);
+            this.ChangeSelectedItem(Convert.ToInt32(itemId >= 1000000 ? itemId - 1000000 : itemId));
+          }
+          catch (TaskCanceledException)
+          {
+          }
+        });
+      }
     }
 
     private void RefreshMarketData()

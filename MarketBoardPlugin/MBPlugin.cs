@@ -116,7 +116,7 @@ namespace MarketBoardPlugin
         }
         else if (message.Action == "OpenMarketBoard")
         {
-          this.marketBoardWindow.ChangeSelectedItem((int)message.ItemId);
+          this.marketBoardWindow.ChangeSelectedItem((uint)message.ItemId);
           this.marketBoardWindow.IsOpen = true;
         }
       }

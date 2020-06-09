@@ -66,6 +66,9 @@
     <Reference Include="Lumina">
       <HintPath>..\..\Dalamud\bin\Lumina.dll</HintPath>
     </Reference>
+    <Reference Include="Lumina.Generated">
+      <HintPath>..\..\Dalamud\bin\Lumina.Generated.dll</HintPath>
+    </Reference>
     <Reference Include="Microsoft.CSharp" />
     <Reference Include="System.Net.Http" />
     <Reference Include="System.Web" />

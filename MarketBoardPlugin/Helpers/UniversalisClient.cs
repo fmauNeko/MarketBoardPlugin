@@ -25,7 +25,7 @@ namespace MarketBoardPlugin.Helpers
     /// <param name="worldName">The world's name.</param>
     /// <param name="cancellationToken">A <see cref="CancellationToken"/>.</param>
     /// <returns>The market data.</returns>
-    public static async Task<MarketDataResponse> GetMarketData(int itemId, string worldName, CancellationToken cancellationToken)
+    public static async Task<MarketDataResponse> GetMarketData(uint itemId, string worldName, CancellationToken cancellationToken)
     {
       var uriBuilder = new UriBuilder($"https://universalis.app/api/{worldName}/{itemId}");
 

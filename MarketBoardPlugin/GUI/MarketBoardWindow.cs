@@ -27,8 +27,6 @@ namespace MarketBoardPlugin.GUI
   using MarketBoardPlugin.Helpers;
   using MarketBoardPlugin.Models.Universalis;
 
-  using Item = Dalamud.Data.TransientSheet.Item;
-
   /// <summary>
   /// The market board window.
   /// </summary>
@@ -100,6 +98,11 @@ namespace MarketBoardPlugin.GUI
       this.worldList.Add(("Moogle", "Moogle"));
       #endif
     }
+
+    /// <summary>
+    /// Gets or sets a value indicating whether the Market Board window is open or not.
+    /// </summary>
+    public bool IsOpen { get; set; }
 
     /// <inheritdoc/>
     public void Dispose()
@@ -465,6 +468,18 @@ namespace MarketBoardPlugin.GUI
       return windowOpen;
     }
 
+    internal void ChangeSelectedItem(uint itemId)
+    {
+      this.selectedItem = this.items.Single(i => i.RowId == itemId);
+
+      var iconId = this.selectedItem.Icon;
+      var iconTexFile = this.pluginInterface.Data.GetIcon(iconId);
+      this.selectedItemIcon?.Dispose();
+      this.selectedItemIcon = this.pluginInterface.UiBuilder.LoadImageRaw(iconTexFile.GetRgbaImageData(), iconTexFile.Header.Width, iconTexFile.Header.Height, 4);
+
+      this.RefreshMarketData();
+    }
+
     /// <summary>
     /// Protected implementation of Dispose pattern.
     /// </summary>
@@ -496,21 +511,9 @@ namespace MarketBoardPlugin.GUI
         .Where(c => c.Category > 0)
         .OrderBy(c => c.Category)
         .ThenBy(c => c.Order)
-        .ToDictionary(c => c, c => this.items.Where(i => i.ItemSearchCategory == c.RowId).OrderBy(i => i.Name).ToList());
+        .ToDictionary(c => c, c => this.items.Where(i => i.ItemSearchCategory.Row == c.RowId).OrderBy(i => i.Name).ToList());
 
       return sortedCategories;
-    }
-
-    internal void ChangeSelectedItem(int itemId)
-    {
-      this.selectedItem = this.items.Single(i => i.RowId == itemId);
-
-      var iconId = this.selectedItem.Icon;
-      var iconTexFile = this.pluginInterface.Data.GetIcon(iconId);
-      this.selectedItemIcon?.Dispose();
-      this.selectedItemIcon = this.pluginInterface.UiBuilder.LoadImageRaw(iconTexFile.GetRgbaImageData(), iconTexFile.Header.Width, iconTexFile.Header.Height, 4);
-
-      this.RefreshMarketData();
     }
 
     private void HandleBuildFonts()
@@ -532,10 +535,9 @@ namespace MarketBoardPlugin.GUI
       {
         this.playerId = this.pluginInterface.ClientState.LocalContentId;
 
-        var currentDc = this.pluginInterface.Data.GetExcelSheet<WorldDCGroupType>()
-          .GetRow(localPlayer.CurrentWorld.GameData.DataCenter);
+        var currentDc = localPlayer.CurrentWorld.GameData.DataCenter;
         var dcWorlds = this.pluginInterface.Data.GetExcelSheet<World>().GetRows()
-          .Where(w => w.DataCenter == currentDc.RowId)
+          .Where(w => w.DataCenter.Row == currentDc.Row)
           .OrderBy(w => w.Name)
           .Select(w =>
           {
@@ -550,7 +552,7 @@ namespace MarketBoardPlugin.GUI
           });
 
         this.worldList.Clear();
-        this.worldList.Add((currentDc.Name, $"Cross-World {SeIconChar.CrossWorld.ToChar()}"));
+        this.worldList.Add((currentDc.Value?.Name, $"Cross-World {SeIconChar.CrossWorld.ToChar()}"));
         this.worldList.AddRange(dcWorlds);
 
         this.selectedWorld = this.worldList.FindIndex(w => w.Item1 == localPlayer.CurrentWorld.GameData.Name);
@@ -586,17 +588,20 @@ namespace MarketBoardPlugin.GUI
       this.itemIsBeingHovered = true;
       this.hoveredItemChangeTokenSource = new CancellationTokenSource();
 
-      Task.Run(async () =>
+      if (this.IsOpen)
       {
-        try
+        Task.Run(async () =>
         {
-          await Task.Delay(1000, this.hoveredItemChangeTokenSource.Token).ConfigureAwait(false);
-          this.ChangeSelectedItem(Convert.ToInt32(itemId >= 1000000 ? itemId - 1000000 : itemId));
-        }
-        catch (TaskCanceledException)
-        {
-        }
-      });
+          try
+          {
+            await Task.Delay(1000, this.hoveredItemChangeTokenSource.Token).ConfigureAwait(false);
+            this.ChangeSelectedItem(Convert.ToUInt32(itemId >= 1000000 ? itemId - 1000000 : itemId));
+          }
+          catch (TaskCanceledException)
+          {
+          }
+        });
+      }
     }
 
     private void RefreshMarketData()

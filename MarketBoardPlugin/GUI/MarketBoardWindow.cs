@@ -66,8 +66,6 @@ namespace MarketBoardPlugin.GUI
 
     private int selectedHistory = -1;
 
-    private ImFontPtr fontPtr;
-
     private bool hasListingsHQColumnWidthBeenSet = false;
 
     private bool hasHistoryHQColumnWidthBeenSet = false;
@@ -83,15 +81,12 @@ namespace MarketBoardPlugin.GUI
         throw new ArgumentNullException(nameof(pluginInterface));
       }
 
-      this.items = pluginInterface.Data.GetExcelSheet<Item>().GetRows();
+      this.items = pluginInterface.Data.GetExcelSheet<Item>().ToList();
       this.pluginInterface = pluginInterface;
       this.sortedCategoriesAndItems = this.SortCategoriesAndItems();
 
       pluginInterface.Framework.OnUpdateEvent += this.HandleFrameworkUpdateEvent;
       pluginInterface.Framework.Gui.HoveredItemChanged += this.HandleHoveredItemChange;
-      pluginInterface.UiBuilder.OnBuildFonts += this.HandleBuildFonts;
-
-      pluginInterface.UiBuilder.RebuildFonts();
 
       #if DEBUG
       this.worldList.Add(("Chaos", "Chaos"));
@@ -224,13 +219,11 @@ namespace MarketBoardPlugin.GUI
           ImGui.SetCursorPos(new Vector2(40, 40));
         }
 
-        ImGui.PushFont(this.fontPtr);
         ImGui.SameLine();
         ImGui.SetCursorPosY(ImGui.GetCursorPosY() - (ImGui.GetFontSize() / 2.0f) + 19);
         ImGui.Text(this.selectedItem?.Name);
         ImGui.SameLine(ImGui.GetContentRegionAvail().X - 250);
         ImGui.SetCursorPosY(ImGui.GetCursorPosY() + (ImGui.GetFontSize() / 2.0f) - 19);
-        ImGui.PopFont();
         ImGui.SetNextItemWidth(250);
         if (ImGui.BeginCombo("##worldCombo", this.selectedWorld > -1 ? this.worldList[this.selectedWorld].Item2 : string.Empty))
         {
@@ -266,10 +259,8 @@ namespace MarketBoardPlugin.GUI
         {
           if (ImGui.BeginTabItem("Market Data##marketDataTab"))
           {
-            ImGui.PushFont(this.fontPtr);
             var tableHeight = (ImGui.GetContentRegionAvail().Y / 2) - (ImGui.GetTextLineHeightWithSpacing() * 2);
             ImGui.Text("Current listings (Includes 5%% GST)");
-            ImGui.PopFont();
 
             ImGui.BeginChild("currentListings", new Vector2(0.0f, tableHeight));
             ImGui.Columns(5, "currentListingsColumns");
@@ -325,9 +316,7 @@ namespace MarketBoardPlugin.GUI
 
             ImGui.Separator();
 
-            ImGui.PushFont(this.fontPtr);
             ImGui.Text("Recent history");
-            ImGui.PopFont();
 
             ImGui.BeginChild("recentHistory", new Vector2(0.0f, tableHeight));
             ImGui.Columns(6, "recentHistoryColumns");
@@ -413,9 +402,7 @@ namespace MarketBoardPlugin.GUI
                 .OrderBy(h => h.Date)
                 .ToList();
 
-              ImGui.PushFont(this.fontPtr);
               ImGui.Text("Price variations (per unit)");
-              ImGui.PopFont();
 
               var pricePlotValues = marketDataRecentHistory
                 .Select(h => h.PriceAvg)
@@ -433,9 +420,7 @@ namespace MarketBoardPlugin.GUI
 
               ImGui.Separator();
 
-              ImGui.PushFont(this.fontPtr);
               ImGui.Text("Traded volumes");
-              ImGui.PopFont();
 
               var qtyPlotValues = marketDataRecentHistory
                 .Select(h => h.QtySum)
@@ -495,7 +480,6 @@ namespace MarketBoardPlugin.GUI
       {
         this.pluginInterface.Framework.OnUpdateEvent -= this.HandleFrameworkUpdateEvent;
         this.pluginInterface.Framework.Gui.HoveredItemChanged -= this.HandleHoveredItemChange;
-        this.pluginInterface.UiBuilder.OnBuildFonts -= this.HandleBuildFonts;
         this.hoveredItemChangeTokenSource?.Dispose();
         this.selectedItemIcon?.Dispose();
       }
@@ -514,12 +498,6 @@ namespace MarketBoardPlugin.GUI
         .ToDictionary(c => c, c => this.items.Where(i => i.ItemSearchCategory.Row == c.RowId).OrderBy(i => i.Name).ToList());
 
       return sortedCategories;
-    }
-
-    private void HandleBuildFonts()
-    {
-      var fontPath = Path.Combine(Path.GetDirectoryName(Assembly.GetAssembly(typeof(DalamudPluginInterface)).Location) ?? string.Empty, "UIRes", "NotoSansCJKjp-Medium.otf");
-      this.fontPtr = ImGui.GetIO().Fonts.AddFontFromFileTTF(fontPath, 24.0f);
     }
 
     private void HandleFrameworkUpdateEvent(Framework framework)

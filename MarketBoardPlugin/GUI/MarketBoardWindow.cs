@@ -100,6 +100,15 @@ namespace MarketBoardPlugin.GUI
     }
 
     /// <summary>
+    /// Gets or sets the current search string.
+    /// </summary>
+    public string SearchString
+    {
+      get => this.searchString;
+      set => this.searchString = value;
+    }
+
+    /// <summary>
     /// Gets or sets a value indicating whether the Market Board window is open or not.
     /// </summary>
     public bool IsOpen { get; set; }

@@ -92,6 +92,11 @@ namespace MarketBoardPlugin
 
     private void OnOpenMarketBoardCommand(string command, string arguments)
     {
+      if (!string.IsNullOrEmpty(arguments))
+      {
+        this.marketBoardWindow.SearchString = arguments;
+      }
+
       this.marketBoardWindow.IsOpen = true;
     }
 

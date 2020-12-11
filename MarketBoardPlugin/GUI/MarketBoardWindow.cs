@@ -32,7 +32,7 @@ namespace MarketBoardPlugin.GUI
   /// </summary>
   public class MarketBoardWindow : IDisposable
   {
-    private readonly List<Item> items;
+    private readonly IEnumerable<Item> items;
 
     private readonly DalamudPluginInterface pluginInterface;
 
@@ -83,7 +83,7 @@ namespace MarketBoardPlugin.GUI
         throw new ArgumentNullException(nameof(pluginInterface));
       }
 
-      this.items = pluginInterface.Data.GetExcelSheet<Item>().GetRows();
+      this.items = pluginInterface.Data.GetExcelSheet<Item>();
       this.pluginInterface = pluginInterface;
       this.sortedCategoriesAndItems = this.SortCategoriesAndItems();
 
@@ -136,7 +136,7 @@ namespace MarketBoardPlugin.GUI
             kv.Key,
             kv.Value
               .Where(i =>
-                i.Name.ToUpperInvariant().Contains(this.searchString.ToUpperInvariant()))
+                i.Name.ToString().ToUpperInvariant().Contains(this.searchString.ToUpperInvariant()))
               .ToList()))
           .Where(kv => kv.Value.Count > 0)
           .ToList();
@@ -514,13 +514,13 @@ namespace MarketBoardPlugin.GUI
 
     private Dictionary<ItemSearchCategory, List<Item>> SortCategoriesAndItems()
     {
-      var itemSearchCategories = this.pluginInterface.Data.GetExcelSheet<ItemSearchCategory>().GetRows();
+      var itemSearchCategories = this.pluginInterface.Data.GetExcelSheet<ItemSearchCategory>();
 
       var sortedCategories = itemSearchCategories
         .Where(c => c.Category > 0)
         .OrderBy(c => c.Category)
         .ThenBy(c => c.Order)
-        .ToDictionary(c => c, c => this.items.Where(i => i.ItemSearchCategory.Row == c.RowId).OrderBy(i => i.Name).ToList());
+        .ToDictionary(c => c, c => this.items.Where(i => i.ItemSearchCategory.Row == c.RowId).OrderBy(i => i.Name.ToString()).ToList());
 
       return sortedCategories;
     }
@@ -545,19 +545,19 @@ namespace MarketBoardPlugin.GUI
         this.playerId = this.pluginInterface.ClientState.LocalContentId;
 
         var currentDc = localPlayer.CurrentWorld.GameData.DataCenter;
-        var dcWorlds = this.pluginInterface.Data.GetExcelSheet<World>().GetRows()
+        var dcWorlds = this.pluginInterface.Data.GetExcelSheet<World>()
           .Where(w => w.DataCenter.Row == currentDc.Row)
-          .OrderBy(w => w.Name)
+          .OrderBy(w => w.Name.ToString())
           .Select(w =>
           {
-            var displayName = w.Name;
+            string displayName = w.Name;
 
             if (localPlayer.CurrentWorld.Id == w.RowId)
             {
               displayName += $" {SeIconChar.Hyadelyn.ToChar()}";
             }
 
-            return (w.Name, displayName);
+            return (w.Name.ToString(), displayName);
           });
 
         this.worldList.Clear();
@@ -617,6 +617,7 @@ namespace MarketBoardPlugin.GUI
     {
       Task.Run(async () =>
       {
+        this.marketData = null;
         this.marketData = await UniversalisClient
           .GetMarketData(this.selectedItem.RowId, this.worldList[this.selectedWorld].Item1, CancellationToken.None)
           .ConfigureAwait(false);

@@ -56,18 +56,23 @@
   <ItemGroup>
     <Reference Include="Dalamud">
       <HintPath>..\..\Dalamud\bin\Dalamud.dll</HintPath>
+      <HintPath>$(APPDATA)\XIVLauncher\addon\Hooks\Dalamud.dll</HintPath>
     </Reference>
     <Reference Include="ImGui.NET">
       <HintPath>..\..\Dalamud\bin\ImGui.NET.dll</HintPath>
+      <HintPath>$(APPDATA)\XIVLauncher\addon\Hooks\ImGui.NET.dll</HintPath>
     </Reference>
     <Reference Include="ImGuiScene">
       <HintPath>..\..\Dalamud\bin\ImGuiScene.dll</HintPath>
+      <HintPath>$(APPDATA)\XIVLauncher\addon\Hooks\ImGuiScene.dll</HintPath>
     </Reference>
     <Reference Include="Lumina">
       <HintPath>..\..\Dalamud\bin\Lumina.dll</HintPath>
+      <HintPath>$(APPDATA)\XIVLauncher\addon\Hooks\Lumina.dll</HintPath>
     </Reference>
-    <Reference Include="Lumina.Generated">
-      <HintPath>..\..\Dalamud\bin\Lumina.Generated.dll</HintPath>
+    <Reference Include="Lumina.Excel">
+      <HintPath>..\..\Dalamud\bin\Lumina.Excel.dll</HintPath>
+      <HintPath>$(APPDATA)\XIVLauncher\addon\Hooks\Lumina.Excel.dll</HintPath>
     </Reference>
     <Reference Include="Microsoft.CSharp" />
     <Reference Include="System.Net.Http" />

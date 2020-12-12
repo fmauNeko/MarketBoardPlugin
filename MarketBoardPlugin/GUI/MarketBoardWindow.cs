@@ -406,7 +406,7 @@ namespace MarketBoardPlugin.GUI
                 QtySum: (float)g.Sum(h => h.Quantity)))
               .ToList();
 
-            if (marketDataRecentHistory != null)
+            if (marketDataRecentHistory != null && marketDataRecentHistory.Count > 0)
             {
               for (var day = marketDataRecentHistory.Min(h => h.Date);
                 day <= marketDataRecentHistory.Max(h => h.Date);

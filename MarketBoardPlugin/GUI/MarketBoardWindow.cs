@@ -171,7 +171,6 @@ namespace MarketBoardPlugin.GUI
       ImGui.BeginChild("itemTree", new Vector2(0, -2.0f * ImGui.GetFrameHeightWithSpacing()), false, ImGuiWindowFlags.HorizontalScrollbar | ImGuiWindowFlags.AlwaysHorizontalScrollbar);
 
       var itemTextSize = ImGui.CalcTextSize(string.Empty);
-      
       foreach (var category in this.enumerableCategoriesAndItems)
       {
         if (ImGui.TreeNode(category.Key.Name + "##cat" + category.Key.RowId))
@@ -180,7 +179,8 @@ namespace MarketBoardPlugin.GUI
 
           for (var i = 0; i < category.Value.Count; i++)
           {
-            if (ImGui.GetCursorPosY() < ImGui.GetScrollY() - itemTextSize.Y) {
+            if (ImGui.GetCursorPosY() < ImGui.GetScrollY() - itemTextSize.Y)
+            {
               // Don't draw items above the scroll region.
               var y = ImGui.GetCursorPosY();
               var sy = ImGui.GetScrollY() - itemTextSize.Y;

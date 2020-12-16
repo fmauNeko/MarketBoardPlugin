@@ -49,6 +49,7 @@ namespace MarketBoardPlugin.GUI
     private float progressPosition;
 
     private string searchString = string.Empty;
+    private string lastSearchString = string.Empty;
 
     private Item selectedItem;
 
@@ -113,6 +114,8 @@ namespace MarketBoardPlugin.GUI
     /// </summary>
     public bool IsOpen { get; set; }
 
+    private List<KeyValuePair<ItemSearchCategory, List<Item>>> enumerableCategoriesAndItems;
+
     /// <inheritdoc/>
     public void Dispose()
     {
@@ -127,19 +130,28 @@ namespace MarketBoardPlugin.GUI
     public bool Draw()
     {
       var windowOpen = true;
-      var enumerableCategoriesAndItems = this.sortedCategoriesAndItems.ToList();
+      this.enumerableCategoriesAndItems ??= this.sortedCategoriesAndItems.ToList();
 
-      if (!string.IsNullOrWhiteSpace(this.searchString))
+      if (this.searchString != this.lastSearchString)
       {
-        enumerableCategoriesAndItems = enumerableCategoriesAndItems
-          .Select(kv => new KeyValuePair<ItemSearchCategory, List<Item>>(
-            kv.Key,
-            kv.Value
-              .Where(i =>
-                i.Name.ToString().ToUpperInvariant().Contains(this.searchString.ToUpperInvariant()))
-              .ToList()))
-          .Where(kv => kv.Value.Count > 0)
-          .ToList();
+        if (!string.IsNullOrEmpty(this.searchString))
+        {
+          this.enumerableCategoriesAndItems = this.sortedCategoriesAndItems
+            .Select(kv => new KeyValuePair<ItemSearchCategory, List<Item>>(
+              kv.Key,
+              kv.Value
+                .Where(i =>
+                  i.Name.ToString().ToUpperInvariant().Contains(this.searchString.ToUpperInvariant()))
+                .ToList()))
+            .Where(kv => kv.Value.Count > 0)
+            .ToList();
+        }
+        else
+        {
+          this.enumerableCategoriesAndItems = this.sortedCategoriesAndItems.ToList();
+        }
+
+        this.lastSearchString = this.searchString;
       }
 
       ImGui.SetNextWindowSize(new Vector2(800, 600), ImGuiCond.FirstUseEver);

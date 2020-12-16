@@ -168,16 +168,45 @@ namespace MarketBoardPlugin.GUI
       ImGuiOverrides.InputTextWithHint("##searchString", "Search for item", ref this.searchString, 256);
       ImGui.Separator();
 
-      ImGui.BeginChild("itemTree", new Vector2(0, -2.0f * ImGui.GetFrameHeightWithSpacing()), false, ImGuiWindowFlags.HorizontalScrollbar);
+      ImGui.BeginChild("itemTree", new Vector2(0, -2.0f * ImGui.GetFrameHeightWithSpacing()), false, ImGuiWindowFlags.HorizontalScrollbar | ImGuiWindowFlags.AlwaysHorizontalScrollbar);
 
-      foreach (var category in enumerableCategoriesAndItems)
+      var itemTextSize = ImGui.CalcTextSize(string.Empty);
+      
+      foreach (var category in this.enumerableCategoriesAndItems)
       {
         if (ImGui.TreeNode(category.Key.Name + "##cat" + category.Key.RowId))
         {
           ImGui.Unindent(ImGui.GetTreeNodeToLabelSpacing());
 
-          foreach (var item in category.Value)
+          for (var i = 0; i < category.Value.Count; i++)
           {
+            if (ImGui.GetCursorPosY() < ImGui.GetScrollY() - itemTextSize.Y) {
+              // Don't draw items above the scroll region.
+              var y = ImGui.GetCursorPosY();
+              var sy = ImGui.GetScrollY() - itemTextSize.Y;
+              var spacing = itemTextSize.Y + ImGui.GetStyle().ItemSpacing.Y;
+              var c = category.Value.Count;
+              while (i < c && y < sy)
+              {
+                y += spacing;
+                i++;
+              }
+
+              ImGui.SetCursorPosY(y);
+              continue;
+            }
+
+            if (ImGui.GetCursorPosY() > ImGui.GetScrollY() + ImGui.GetWindowHeight())
+            {
+              // Don't draw item names below the scroll region
+              var remainingItems = category.Value.Count - i;
+              var remainingItemsHeight = itemTextSize.Y * remainingItems;
+              var remainingGapHeight = ImGui.GetStyle().ItemSpacing.Y * (remainingItems - 1);
+              ImGui.Dummy(new Vector2(1, remainingItemsHeight + remainingGapHeight));
+              break;
+            }
+
+            var item = category.Value[i];
             var nodeFlags = ImGuiTreeNodeFlags.Leaf | ImGuiTreeNodeFlags.NoTreePushOnOpen;
 
             if (item.RowId == this.selectedItem?.RowId)

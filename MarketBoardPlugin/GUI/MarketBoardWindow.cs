@@ -36,6 +36,8 @@ namespace MarketBoardPlugin.GUI
 
     private readonly DalamudPluginInterface pluginInterface;
 
+    private readonly MBPluginConfig config;
+
     private readonly Dictionary<ItemSearchCategory, List<Item>> sortedCategoriesAndItems;
 
     private readonly List<(string, string)> worldList = new List<(string, string)>();
@@ -77,15 +79,21 @@ namespace MarketBoardPlugin.GUI
     /// Initializes a new instance of the <see cref="MarketBoardWindow"/> class.
     /// </summary>
     /// <param name="pluginInterface">The <see cref="DalamudPluginInterface"/>.</param>
-    public MarketBoardWindow(DalamudPluginInterface pluginInterface)
+    public MarketBoardWindow(DalamudPluginInterface pluginInterface, MBPluginConfig config)
     {
       if (pluginInterface == null)
       {
         throw new ArgumentNullException(nameof(pluginInterface));
       }
 
+      if (config == null)
+      {
+        throw new ArgumentNullException(nameof(config));
+      }
+
       this.items = pluginInterface.Data.GetExcelSheet<Item>();
       this.pluginInterface = pluginInterface;
+      this.config = config;
       this.sortedCategoriesAndItems = this.SortCategoriesAndItems();
 
       pluginInterface.Framework.OnUpdateEvent += this.HandleFrameworkUpdateEvent;
@@ -290,6 +298,7 @@ namespace MarketBoardPlugin.GUI
             if (ImGui.Selectable(world.Item2, isSelected))
             {
               this.selectedWorld = this.worldList.IndexOf(world);
+              this.config.CrossWorld = this.selectedWorld == 0;
               this.RefreshMarketData();
             }
 
@@ -605,7 +614,7 @@ namespace MarketBoardPlugin.GUI
         this.worldList.Add((currentDc.Value?.Name, $"Cross-World {SeIconChar.CrossWorld.ToChar()}"));
         this.worldList.AddRange(dcWorlds);
 
-        this.selectedWorld = this.worldList.FindIndex(w => w.Item1 == localPlayer.CurrentWorld.GameData.Name);
+        this.selectedWorld = this.config.CrossWorld ? 0 : this.worldList.FindIndex(w => w.Item1 == localPlayer.CurrentWorld.GameData.Name);
       }
     }
 

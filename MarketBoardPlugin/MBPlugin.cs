@@ -5,23 +5,12 @@
 namespace MarketBoardPlugin
 {
   using System;
-  using System.Collections.Generic;
   using System.Diagnostics.CodeAnalysis;
   using System.Dynamic;
-  using System.Linq;
-  using System.Net.Http;
-  using System.Threading.Tasks;
-  using System.Web;
 
   using Dalamud.Game.Command;
   using Dalamud.Plugin;
-
-  using Lumina.Excel.GeneratedSheets;
-
   using MarketBoardPlugin.GUI;
-  using MarketBoardPlugin.Models.Universalis;
-
-  using Newtonsoft.Json;
 
   /// <summary>
   /// The entry point of the plugin.
@@ -38,12 +27,15 @@ namespace MarketBoardPlugin
     /// <inheritdoc/>
     public string Name => "Market Board plugin";
 
+    private MBPluginConfig config;
+
     /// <inheritdoc/>
     public void Initialize(DalamudPluginInterface pluginInterface)
     {
       this.pluginInterface = pluginInterface ?? throw new ArgumentNullException(nameof(pluginInterface));
+      this.config = (MBPluginConfig) pluginInterface.GetPluginConfig() ?? new MBPluginConfig();
 
-      this.marketBoardWindow = new MarketBoardWindow(this.pluginInterface);
+      this.marketBoardWindow = new MarketBoardWindow(this.pluginInterface, this.config);
 
       // Set up command handlers
       pluginInterface.CommandManager.AddHandler("/pmb", new CommandInfo(this.OnOpenMarketBoardCommand)
@@ -79,6 +71,8 @@ namespace MarketBoardPlugin
 
       if (disposing)
       {
+        // Save config
+        this.pluginInterface.SavePluginConfig(this.config);
         // Remove command handlers
         this.pluginInterface.UiBuilder.OnBuildUi -= this.BuildMarketBoardUi;
         this.pluginInterface.CommandManager.RemoveHandler("/pmb");

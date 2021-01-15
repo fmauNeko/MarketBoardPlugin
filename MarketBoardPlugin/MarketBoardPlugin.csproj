@@ -11,9 +11,9 @@
     <DebugType>PdbOnly</DebugType>
     <GenerateFullPaths>true</GenerateFullPaths>
     <MSBuildGitHashCommand>git rev-parse --short HEAD</MSBuildGitHashCommand>
-    <AssemblyVersion>0.3.0.0</AssemblyVersion>
-    <FileVersion>0.3.0.0</FileVersion>
-    <Version>0.3.0</Version>
+    <AssemblyVersion>0.3.0.4</AssemblyVersion>
+    <FileVersion>0.3.0.4</FileVersion>
+    <Version>0.3.0.4</Version>
     <Company>Florian Maunier</Company>
     <Description>Market board plugin for Dalamud.</Description>
     <Copyright>Copyright (c) Florian Maunier. All rights reserved.</Copyright>
@@ -45,34 +45,47 @@
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
-    <PackageReference Include="Newtonsoft.Json" Version="12.0.3" />
     <PackageReference Include="StyleCop.Analyzers" Version="1.1.118">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
-    <PackageReference Include="System.Runtime.CompilerServices.Unsafe" Version="4.7.1" />
   </ItemGroup>
 
   <ItemGroup>
     <Reference Include="Dalamud">
+      <Private>false</Private>
       <HintPath>..\..\Dalamud\bin\Dalamud.dll</HintPath>
       <HintPath>$(APPDATA)\XIVLauncher\addon\Hooks\Dalamud.dll</HintPath>
     </Reference>
     <Reference Include="ImGui.NET">
+      <Private>false</Private>
       <HintPath>..\..\Dalamud\bin\ImGui.NET.dll</HintPath>
       <HintPath>$(APPDATA)\XIVLauncher\addon\Hooks\ImGui.NET.dll</HintPath>
     </Reference>
     <Reference Include="ImGuiScene">
+      <Private>false</Private>
       <HintPath>..\..\Dalamud\bin\ImGuiScene.dll</HintPath>
       <HintPath>$(APPDATA)\XIVLauncher\addon\Hooks\ImGuiScene.dll</HintPath>
     </Reference>
     <Reference Include="Lumina">
+      <Private>false</Private>
       <HintPath>..\..\Dalamud\bin\Lumina.dll</HintPath>
       <HintPath>$(APPDATA)\XIVLauncher\addon\Hooks\Lumina.dll</HintPath>
     </Reference>
     <Reference Include="Lumina.Excel">
+      <Private>false</Private>
       <HintPath>..\..\Dalamud\bin\Lumina.Excel.dll</HintPath>
       <HintPath>$(APPDATA)\XIVLauncher\addon\Hooks\Lumina.Excel.dll</HintPath>
+    </Reference>
+    <Reference Include="Newtonsoft.Json">
+      <Private>false</Private>
+      <HintPath>..\..\Dalamud\bin\Newtonsoft.Json.dll</HintPath>
+      <HintPath>$(APPDATA)\XIVLauncher\addon\Hooks\Newtonsoft.Json.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Runtime.CompilerServices.Unsafe">
+      <Private>false</Private>
+      <HintPath>..\..\Dalamud\bin\System.Runtime.CompilerServices.Unsafe.dll</HintPath>
+      <HintPath>$(APPDATA)\XIVLauncher\addon\Hooks\System.Runtime.CompilerServices.Unsafe.dll</HintPath>
     </Reference>
     <Reference Include="Microsoft.CSharp" />
     <Reference Include="System.Net.Http" />

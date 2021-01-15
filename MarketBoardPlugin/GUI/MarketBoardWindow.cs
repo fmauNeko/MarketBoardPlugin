@@ -42,8 +42,6 @@ namespace MarketBoardPlugin.GUI
 
     private readonly List<(string, string)> worldList = new List<(string, string)>();
 
-    private CancellationTokenSource hoveredItemChangeTokenSource;
-
     private bool isDisposed;
 
     private bool itemIsBeingHovered;
@@ -59,7 +57,7 @@ namespace MarketBoardPlugin.GUI
 
     private bool watchingForHoveredItem = true;
 
-    private ulong playerId = 0;
+    private ulong playerId;
 
     private int selectedWorld = -1;
 
@@ -71,14 +69,17 @@ namespace MarketBoardPlugin.GUI
 
     private ImFontPtr fontPtr;
 
-    private bool hasListingsHQColumnWidthBeenSet = false;
+    private bool hasListingsHQColumnWidthBeenSet;
 
-    private bool hasHistoryHQColumnWidthBeenSet = false;
+    private bool hasHistoryHQColumnWidthBeenSet;
+
+    private List<KeyValuePair<ItemSearchCategory, List<Item>>> enumerableCategoriesAndItems;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="MarketBoardWindow"/> class.
     /// </summary>
     /// <param name="pluginInterface">The <see cref="DalamudPluginInterface"/>.</param>
+    /// <param name="config">The <see cref="MBPluginConfig"/>.</param>
     public MarketBoardWindow(DalamudPluginInterface pluginInterface, MBPluginConfig config)
     {
       if (pluginInterface == null)
@@ -86,14 +87,9 @@ namespace MarketBoardPlugin.GUI
         throw new ArgumentNullException(nameof(pluginInterface));
       }
 
-      if (config == null)
-      {
-        throw new ArgumentNullException(nameof(config));
-      }
-
       this.items = pluginInterface.Data.GetExcelSheet<Item>();
       this.pluginInterface = pluginInterface;
-      this.config = config;
+      this.config = config ?? throw new ArgumentNullException(nameof(config));
       this.sortedCategoriesAndItems = this.SortCategoriesAndItems();
 
       pluginInterface.Framework.OnUpdateEvent += this.HandleFrameworkUpdateEvent;
@@ -101,6 +97,8 @@ namespace MarketBoardPlugin.GUI
       pluginInterface.UiBuilder.OnBuildFonts += this.HandleBuildFonts;
 
       pluginInterface.UiBuilder.RebuildFonts();
+
+      this.watchingForHoveredItem = this.config.WatchForHovered;
 
       #if DEBUG
       this.worldList.Add(("Chaos", "Chaos"));
@@ -121,8 +119,6 @@ namespace MarketBoardPlugin.GUI
     /// Gets or sets a value indicating whether the Market Board window is open or not.
     /// </summary>
     public bool IsOpen { get; set; }
-
-    private List<KeyValuePair<ItemSearchCategory, List<Item>>> enumerableCategoriesAndItems;
 
     /// <inheritdoc/>
     public void Dispose()
@@ -162,15 +158,18 @@ namespace MarketBoardPlugin.GUI
         this.lastSearchString = this.searchString;
       }
 
-      ImGui.SetNextWindowSize(new Vector2(800, 600), ImGuiCond.FirstUseEver);
+      var scale = ImGui.GetIO().FontGlobalScale;
 
-      if (!ImGui.Begin("Market Board", ref windowOpen, ImGuiWindowFlags.NoScrollbar))
+      ImGui.SetNextWindowSize(new Vector2(800, 600) * scale, ImGuiCond.FirstUseEver);
+      ImGui.SetNextWindowSizeConstraints(new Vector2(700, 450) * scale, new Vector2(10000, 10000) * scale);
+
+      if (!ImGui.Begin($"Market Board", ref windowOpen, ImGuiWindowFlags.NoScrollbar))
       {
         ImGui.End();
         return windowOpen;
       }
 
-      ImGui.BeginChild("itemListColumn", new Vector2(267, 0), true);
+      ImGui.BeginChild("itemListColumn", new Vector2(267, 0) * scale, true);
 
       ImGui.SetNextItemWidth(-1);
       ImGuiOverrides.InputTextWithHint("##searchString", "Search for item", ref this.searchString, 256);
@@ -237,7 +236,11 @@ namespace MarketBoardPlugin.GUI
 
       ImGui.EndChild();
 
-      ImGui.Checkbox("Watch for hovered item", ref this.watchingForHoveredItem);
+      if (ImGui.Checkbox("Watch for hovered item", ref this.watchingForHoveredItem))
+      {
+        this.config.WatchForHovered = this.watchingForHoveredItem;
+      }
+
       ImGui.SameLine();
       ImGui.TextDisabled("(?)");
       if (ImGui.IsItemHovered())
@@ -257,7 +260,10 @@ namespace MarketBoardPlugin.GUI
         }
         else
         {
-          this.progressPosition = 1.0f;
+          this.progressPosition = 0;
+          var itemId = this.pluginInterface.Framework.Gui.HoveredItem;
+          this.ChangeSelectedItem(Convert.ToUInt32(itemId % 500000));
+          this.itemIsBeingHovered = false;
         }
       }
       else
@@ -284,12 +290,13 @@ namespace MarketBoardPlugin.GUI
 
         ImGui.PushFont(this.fontPtr);
         ImGui.SameLine();
-        ImGui.SetCursorPosY(ImGui.GetCursorPosY() - (ImGui.GetFontSize() / 2.0f) + 19);
+        ImGui.SetCursorPosY(ImGui.GetCursorPosY() - (ImGui.GetFontSize() / 2.0f) + (19 * scale));
         ImGui.Text(this.selectedItem?.Name);
-        ImGui.SameLine(ImGui.GetContentRegionAvail().X - 250);
-        ImGui.SetCursorPosY(ImGui.GetCursorPosY() + (ImGui.GetFontSize() / 2.0f) - 19);
+        ImGui.SameLine(ImGui.GetContentRegionAvail().X - (250 * scale));
+        ImGui.SetCursorPosY(ImGui.GetCursorPosY() + (ImGui.GetFontSize() / 2.0f) - (19 * scale));
         ImGui.PopFont();
-        ImGui.SetNextItemWidth(250);
+        ImGui.BeginGroup();
+        ImGui.SetNextItemWidth(250 * scale);
         if (ImGui.BeginCombo("##worldCombo", this.selectedWorld > -1 ? this.worldList[this.selectedWorld].Item2 : string.Empty))
         {
           foreach (var world in this.worldList)
@@ -313,13 +320,13 @@ namespace MarketBoardPlugin.GUI
 
         if (this.marketData != null)
         {
-          ImGui.SetCursorPosX(ImGui.GetContentRegionAvail().X - 250);
-          ImGui.SetCursorPosY(ImGui.GetCursorPosY() - ImGui.GetTextLineHeight());
-          ImGui.SetNextItemWidth(250);
+          ImGui.SetNextItemWidth(250 * scale);
           ImGui.Text(
             $"Last update: {DateTimeOffset.FromUnixTimeMilliseconds(this.marketData.LastUploadTime).LocalDateTime:G}");
           ImGui.SetCursorPosY(ImGui.GetCursorPosY() + ImGui.GetTextLineHeight() - ImGui.GetTextLineHeightWithSpacing());
         }
+
+        ImGui.EndGroup();
 
         if (ImGui.BeginTabBar("tabBar"))
         {
@@ -555,7 +562,6 @@ namespace MarketBoardPlugin.GUI
         this.pluginInterface.Framework.OnUpdateEvent -= this.HandleFrameworkUpdateEvent;
         this.pluginInterface.Framework.Gui.HoveredItemChanged -= this.HandleHoveredItemChange;
         this.pluginInterface.UiBuilder.OnBuildFonts -= this.HandleBuildFonts;
-        this.hoveredItemChangeTokenSource?.Dispose();
         this.selectedItemIcon?.Dispose();
       }
 
@@ -625,42 +631,15 @@ namespace MarketBoardPlugin.GUI
         return;
       }
 
-      if (this.hoveredItemChangeTokenSource != null)
-      {
-        if (!this.hoveredItemChangeTokenSource.IsCancellationRequested)
-        {
-          this.hoveredItemChangeTokenSource.Cancel();
-        }
-
-        this.hoveredItemChangeTokenSource.Dispose();
-      }
-
       this.progressPosition = 0.0f;
 
-      if (itemId == 0)
+      if (itemId == 0 || itemId >= 2000000)
       {
         this.itemIsBeingHovered = false;
-        this.hoveredItemChangeTokenSource = null;
         return;
       }
 
       this.itemIsBeingHovered = true;
-      this.hoveredItemChangeTokenSource = new CancellationTokenSource();
-
-      if (this.IsOpen)
-      {
-        Task.Run(async () =>
-        {
-          try
-          {
-            await Task.Delay(1000, this.hoveredItemChangeTokenSource.Token).ConfigureAwait(false);
-            this.ChangeSelectedItem(Convert.ToUInt32(itemId >= 1000000 ? itemId - 1000000 : itemId));
-          }
-          catch (TaskCanceledException)
-          {
-          }
-        });
-      }
     }
 
     private void RefreshMarketData()

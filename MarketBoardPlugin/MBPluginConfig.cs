@@ -1,9 +1,29 @@
-namespace MarketBoardPlugin {
+// <copyright file="MBPluginConfig.cs" company="Florian Maunier">
+// Copyright (c) Florian Maunier. All rights reserved.
+// </copyright>
+
+namespace MarketBoardPlugin
+{
   using Dalamud.Configuration;
 
-  public class MBPluginConfig : IPluginConfiguration {
+  /// <summary>
+  /// Configuration for MBPlugin.
+  /// </summary>
+  public class MBPluginConfig : IPluginConfiguration
+  {
+    /// <summary>
+    /// Gets or sets the version of the config file.
+    /// </summary>
     public int Version { get; set; } = 1;
 
-    public bool CrossWorld { get; set; } = false;
+    /// <summary>
+    /// Gets or sets a value indicating whether cross world was selected.
+    /// </summary>
+    public bool CrossWorld { get; set; }
+
+    /// <summary>
+    /// Gets or sets a value indicating whether 'Watch for hovered item' is enabled.
+    /// </summary>
+    public bool WatchForHovered { get; set; } = true;
   }
 }

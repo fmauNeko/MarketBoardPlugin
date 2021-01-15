@@ -24,16 +24,16 @@ namespace MarketBoardPlugin
 
     private DalamudPluginInterface pluginInterface;
 
+    private MBPluginConfig config;
+
     /// <inheritdoc/>
     public string Name => "Market Board plugin";
-
-    private MBPluginConfig config;
 
     /// <inheritdoc/>
     public void Initialize(DalamudPluginInterface pluginInterface)
     {
       this.pluginInterface = pluginInterface ?? throw new ArgumentNullException(nameof(pluginInterface));
-      this.config = (MBPluginConfig) pluginInterface.GetPluginConfig() ?? new MBPluginConfig();
+      this.config = (MBPluginConfig)pluginInterface.GetPluginConfig() ?? new MBPluginConfig();
 
       this.marketBoardWindow = new MarketBoardWindow(this.pluginInterface, this.config);
 
@@ -73,6 +73,7 @@ namespace MarketBoardPlugin
       {
         // Save config
         this.pluginInterface.SavePluginConfig(this.config);
+
         // Remove command handlers
         this.pluginInterface.UiBuilder.OnBuildUi -= this.BuildMarketBoardUi;
         this.pluginInterface.CommandManager.RemoveHandler("/pmb");

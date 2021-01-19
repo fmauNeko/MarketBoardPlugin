@@ -47,6 +47,8 @@ namespace MarketBoardPlugin.GUI
 
     private bool itemIsBeingHovered;
 
+    private bool searchHistoryOpen;
+
     private float progressPosition;
 
     private string searchString = string.Empty;
@@ -172,66 +174,98 @@ namespace MarketBoardPlugin.GUI
 
       ImGui.BeginChild("itemListColumn", new Vector2(267, 0) * scale, true);
 
-      ImGui.SetNextItemWidth(-1);
+      ImGui.SetNextItemWidth((-32 * ImGui.GetIO().FontGlobalScale) - ImGui.GetStyle().ItemSpacing.X);
       ImGuiOverrides.InputTextWithHint("##searchString", "Search for item", ref this.searchString, 256);
+      ImGui.SameLine();
+      ImGui.PushFont(UiBuilder.IconFont);
+      ImGui.PushStyleColor(ImGuiCol.Text, this.searchHistoryOpen ? 0xFF0000FF : 0xFFFFFFFF);
+      if (ImGui.Button($"{(char)FontAwesomeIcon.History}", new Vector2(32 * ImGui.GetIO().FontGlobalScale, ImGui.GetItemRectSize().Y)))
+      {
+        this.searchHistoryOpen = !this.searchHistoryOpen;
+      }
+
+      ImGui.PopStyleColor();
+      ImGui.PopFont();
       ImGui.Separator();
 
       ImGui.BeginChild("itemTree", new Vector2(0, -2.0f * ImGui.GetFrameHeightWithSpacing()), false, ImGuiWindowFlags.HorizontalScrollbar | ImGuiWindowFlags.AlwaysHorizontalScrollbar);
-
       var itemTextSize = ImGui.CalcTextSize(string.Empty);
-      foreach (var category in this.enumerableCategoriesAndItems)
+
+      if (this.searchHistoryOpen)
       {
-        if (ImGui.TreeNode(category.Key.Name + "##cat" + category.Key.RowId))
+        ImGui.Text("History");
+        ImGui.Separator();
+        var sheet = this.pluginInterface.Data.Excel.GetSheet<Item>();
+        foreach (var id in this.config.History.ToArray())
         {
-          ImGui.Unindent(ImGui.GetTreeNodeToLabelSpacing());
-
-          for (var i = 0; i < category.Value.Count; i++)
+          var item = sheet.GetRow(id);
+          if (item == null)
           {
-            if (ImGui.GetCursorPosY() < ImGui.GetScrollY() - itemTextSize.Y)
-            {
-              // Don't draw items above the scroll region.
-              var y = ImGui.GetCursorPosY();
-              var sy = ImGui.GetScrollY() - itemTextSize.Y;
-              var spacing = itemTextSize.Y + ImGui.GetStyle().ItemSpacing.Y;
-              var c = category.Value.Count;
-              while (i < c && y < sy)
-              {
-                y += spacing;
-                i++;
-              }
-
-              ImGui.SetCursorPosY(y);
-              continue;
-            }
-
-            if (ImGui.GetCursorPosY() > ImGui.GetScrollY() + ImGui.GetWindowHeight())
-            {
-              // Don't draw item names below the scroll region
-              var remainingItems = category.Value.Count - i;
-              var remainingItemsHeight = itemTextSize.Y * remainingItems;
-              var remainingGapHeight = ImGui.GetStyle().ItemSpacing.Y * (remainingItems - 1);
-              ImGui.Dummy(new Vector2(1, remainingItemsHeight + remainingGapHeight));
-              break;
-            }
-
-            var item = category.Value[i];
-            var nodeFlags = ImGuiTreeNodeFlags.Leaf | ImGuiTreeNodeFlags.NoTreePushOnOpen;
-
-            if (item.RowId == this.selectedItem?.RowId)
-            {
-              nodeFlags |= ImGuiTreeNodeFlags.Selected;
-            }
-
-            ImGui.TreeNodeEx(item.Name + "##item" + item.RowId, nodeFlags);
-
-            if (ImGui.IsItemClicked())
-            {
-              this.ChangeSelectedItem(item.RowId);
-            }
+            continue;
           }
 
-          ImGui.Indent(ImGui.GetTreeNodeToLabelSpacing());
-          ImGui.TreePop();
+          if (ImGui.Selectable($"{item.Name}", this.selectedItem == item))
+          {
+            this.ChangeSelectedItem(id, true);
+          }
+        }
+      }
+      else
+      {
+        foreach (var category in this.enumerableCategoriesAndItems)
+        {
+          if (ImGui.TreeNode(category.Key.Name + "##cat" + category.Key.RowId))
+          {
+            ImGui.Unindent(ImGui.GetTreeNodeToLabelSpacing());
+
+            for (var i = 0; i < category.Value.Count; i++)
+            {
+              if (ImGui.GetCursorPosY() < ImGui.GetScrollY() - itemTextSize.Y)
+              {
+                // Don't draw items above the scroll region.
+                var y = ImGui.GetCursorPosY();
+                var sy = ImGui.GetScrollY() - itemTextSize.Y;
+                var spacing = itemTextSize.Y + ImGui.GetStyle().ItemSpacing.Y;
+                var c = category.Value.Count;
+                while (i < c && y < sy)
+                {
+                  y += spacing;
+                  i++;
+                }
+
+                ImGui.SetCursorPosY(y);
+                continue;
+              }
+
+              if (ImGui.GetCursorPosY() > ImGui.GetScrollY() + ImGui.GetWindowHeight())
+              {
+                // Don't draw item names below the scroll region
+                var remainingItems = category.Value.Count - i;
+                var remainingItemsHeight = itemTextSize.Y * remainingItems;
+                var remainingGapHeight = ImGui.GetStyle().ItemSpacing.Y * (remainingItems - 1);
+                ImGui.Dummy(new Vector2(1, remainingItemsHeight + remainingGapHeight));
+                break;
+              }
+
+              var item = category.Value[i];
+              var nodeFlags = ImGuiTreeNodeFlags.Leaf | ImGuiTreeNodeFlags.NoTreePushOnOpen;
+
+              if (item.RowId == this.selectedItem?.RowId)
+              {
+                nodeFlags |= ImGuiTreeNodeFlags.Selected;
+              }
+
+              ImGui.TreeNodeEx(item.Name + "##item" + item.RowId, nodeFlags);
+
+              if (ImGui.IsItemClicked())
+              {
+                this.ChangeSelectedItem(item.RowId);
+              }
+            }
+
+            ImGui.Indent(ImGui.GetTreeNodeToLabelSpacing());
+            ImGui.TreePop();
+          }
         }
       }
 
@@ -535,7 +569,7 @@ namespace MarketBoardPlugin.GUI
       return windowOpen;
     }
 
-    internal void ChangeSelectedItem(uint itemId)
+    internal void ChangeSelectedItem(uint itemId, bool noHistory = false)
     {
       this.selectedItem = this.items.Single(i => i.RowId == itemId);
 
@@ -545,6 +579,17 @@ namespace MarketBoardPlugin.GUI
       this.selectedItemIcon = this.pluginInterface.UiBuilder.LoadImageRaw(iconTexFile.GetRgbaImageData(), iconTexFile.Header.Width, iconTexFile.Header.Height, 4);
 
       this.RefreshMarketData();
+      if (!noHistory)
+      {
+        this.config.History.RemoveAll(i => i == itemId);
+        this.config.History.Insert(0, itemId);
+        if (this.config.History.Count > 100)
+        {
+          this.config.History.RemoveRange(100, this.config.History.Count - 100);
+        }
+
+        this.pluginInterface.SavePluginConfig(this.config);
+      }
     }
 
     /// <summary>

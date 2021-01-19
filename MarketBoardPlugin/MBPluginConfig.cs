@@ -4,6 +4,7 @@
 
 namespace MarketBoardPlugin
 {
+  using System.Collections.Generic;
   using Dalamud.Configuration;
 
   /// <summary>
@@ -25,5 +26,10 @@ namespace MarketBoardPlugin
     /// Gets or sets a value indicating whether 'Watch for hovered item' is enabled.
     /// </summary>
     public bool WatchForHovered { get; set; } = true;
+
+    /// <summary>
+    /// Gets or sets the list of previously viewed items.
+    /// </summary>
+    public List<uint> History { get; set; } = new List<uint>();
   }
 }

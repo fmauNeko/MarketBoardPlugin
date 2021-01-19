@@ -16,6 +16,7 @@ namespace MarketBoardPlugin.GUI
   using Dalamud.Data.LuminaExtensions;
   using Dalamud.Game.Chat;
   using Dalamud.Game.Internal;
+  using Dalamud.Interface;
   using Dalamud.Plugin;
 
   using ImGuiNET;
@@ -639,7 +640,16 @@ namespace MarketBoardPlugin.GUI
         return;
       }
 
-      this.itemIsBeingHovered = true;
+      var item = this.pluginInterface.Data.Excel.GetSheet<Item>().GetRow((uint)itemId % 500000);
+
+      if (this.enumerableCategoriesAndItems.Any(i => i.Value.Contains(item)))
+      {
+        this.itemIsBeingHovered = true;
+      }
+      else
+      {
+        this.itemIsBeingHovered = false;
+      }
     }
 
     private void RefreshMarketData()

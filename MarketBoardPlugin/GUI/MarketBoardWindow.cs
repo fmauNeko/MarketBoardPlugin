@@ -635,16 +635,15 @@ namespace MarketBoardPlugin.GUI
 
     private void HandleFrameworkUpdateEvent(Framework framework)
     {
-      var localPlayer = this.pluginInterface.ClientState.LocalPlayer;
-
-      if (localPlayer == null)
-      {
-        return;
-      }
 
       if (this.playerId != this.pluginInterface.ClientState.LocalContentId)
       {
         this.playerId = this.pluginInterface.ClientState.LocalContentId;
+        var localPlayer = this.pluginInterface.ClientState.LocalPlayer;
+        if (localPlayer == null)
+        {
+          return;
+        }
 
         var currentDc = localPlayer.CurrentWorld.GameData.DataCenter;
         var dcWorlds = this.pluginInterface.Data.GetExcelSheet<World>()

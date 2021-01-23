@@ -621,10 +621,20 @@ namespace MarketBoardPlugin.GUI
       var sortedCategories = itemSearchCategories
         .Where(c => c.Category > 0)
         .OrderBy(c => c.Category)
-        .ThenBy(c => c.Order)
-        .ToDictionary(c => c, c => this.items.Where(i => i.ItemSearchCategory.Row == c.RowId).OrderBy(i => i.Name.ToString()).ToList());
+        .ThenBy(c => c.Order);
 
-      return sortedCategories;
+      var sortedCategoriesDict = new Dictionary<ItemSearchCategory, List<Item>>();
+
+      foreach (var c in sortedCategories) {
+        if (sortedCategoriesDict.ContainsKey(c))
+        {
+          continue;
+        }
+
+        sortedCategoriesDict.Add(c, this.items.Where(i => i.ItemSearchCategory.Row == c.RowId).OrderBy(i => i.Name.ToString()).ToList());
+      }
+
+      return sortedCategoriesDict;
     }
 
     private void HandleBuildFonts()

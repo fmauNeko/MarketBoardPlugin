@@ -686,7 +686,7 @@ namespace MarketBoardPlugin.GUI
 
       var item = this.pluginInterface.Data.Excel.GetSheet<Item>().GetRow((uint)itemId % 500000);
 
-      if (this.enumerableCategoriesAndItems.Any(i => i.Value.Contains(item)))
+      if (item != null && this.enumerableCategoriesAndItems != null && this.enumerableCategoriesAndItems.Any(i => i.Value != null && i.Value.Contains(item)))
       {
         this.itemIsBeingHovered = true;
       }

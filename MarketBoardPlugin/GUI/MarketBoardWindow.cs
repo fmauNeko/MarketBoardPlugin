@@ -645,10 +645,8 @@ namespace MarketBoardPlugin.GUI
 
     private void HandleFrameworkUpdateEvent(Framework framework)
     {
-
-      if (this.playerId != this.pluginInterface.ClientState.LocalContentId)
+      if (this.pluginInterface.ClientState.LocalContentId != 0 && this.playerId != this.pluginInterface.ClientState.LocalContentId)
       {
-        this.playerId = this.pluginInterface.ClientState.LocalContentId;
         var localPlayer = this.pluginInterface.ClientState.LocalPlayer;
         if (localPlayer == null)
         {
@@ -676,6 +674,15 @@ namespace MarketBoardPlugin.GUI
         this.worldList.AddRange(dcWorlds);
 
         this.selectedWorld = this.config.CrossWorld ? 0 : this.worldList.FindIndex(w => w.Item1 == localPlayer.CurrentWorld.GameData.Name);
+        if (this.worldList.Count > 1)
+        {
+          this.playerId = this.pluginInterface.ClientState.LocalContentId;
+        }
+      }
+
+      if (this.pluginInterface.ClientState.LocalContentId == 0)
+      {
+        this.playerId = 0;
       }
     }
 

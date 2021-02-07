@@ -39,7 +39,7 @@ namespace MarketBoardPlugin.GUI
 
     private readonly MBPluginConfig config;
 
-    private readonly Dictionary<ItemSearchCategory, List<Item>> sortedCategoriesAndItems;
+    private Dictionary<ItemSearchCategory, List<Item>> sortedCategoriesAndItems;
 
     private readonly List<(string, string)> worldList = new List<(string, string)>();
 
@@ -137,6 +137,13 @@ namespace MarketBoardPlugin.GUI
     public bool Draw()
     {
       var windowOpen = true;
+
+      if (this.sortedCategoriesAndItems == null)
+      {
+        this.sortedCategoriesAndItems = this.SortCategoriesAndItems();
+        return true;
+      }
+
       this.enumerableCategoriesAndItems ??= this.sortedCategoriesAndItems.ToList();
 
       if (this.searchString != this.lastSearchString)
@@ -616,25 +623,30 @@ namespace MarketBoardPlugin.GUI
 
     private Dictionary<ItemSearchCategory, List<Item>> SortCategoriesAndItems()
     {
-      var itemSearchCategories = this.pluginInterface.Data.GetExcelSheet<ItemSearchCategory>();
+      try
+      {
+        var itemSearchCategories = this.pluginInterface.Data.GetExcelSheet<ItemSearchCategory>();
 
-      var sortedCategories = itemSearchCategories
-        .Where(c => c.Category > 0)
-        .OrderBy(c => c.Category)
-        .ThenBy(c => c.Order);
+        var sortedCategories = itemSearchCategories.Where(c => c.Category > 0).OrderBy(c => c.Category).ThenBy(c => c.Order);
 
-      var sortedCategoriesDict = new Dictionary<ItemSearchCategory, List<Item>>();
+        var sortedCategoriesDict = new Dictionary<ItemSearchCategory, List<Item>>();
 
-      foreach (var c in sortedCategories) {
-        if (sortedCategoriesDict.ContainsKey(c))
-        {
-          continue;
+        foreach (var c in sortedCategories) {
+          if (sortedCategoriesDict.ContainsKey(c))
+          {
+            continue;
+          }
+
+          sortedCategoriesDict.Add(c, this.items.Where(i => i.ItemSearchCategory.Row == c.RowId).OrderBy(i => i.Name.ToString()).ToList());
         }
 
-        sortedCategoriesDict.Add(c, this.items.Where(i => i.ItemSearchCategory.Row == c.RowId).OrderBy(i => i.Name.ToString()).ToList());
+        return sortedCategoriesDict;
       }
-
-      return sortedCategoriesDict;
+      catch (Exception ex)
+      {
+        PluginLog.Error(ex, $"Error loading category list.");
+        return null;
+      }
     }
 
     private void HandleBuildFonts()

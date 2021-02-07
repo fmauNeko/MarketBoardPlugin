@@ -667,7 +667,7 @@ namespace MarketBoardPlugin.GUI
 
         var currentDc = localPlayer.CurrentWorld.GameData.DataCenter;
         var dcWorlds = this.pluginInterface.Data.GetExcelSheet<World>()
-          .Where(w => w.DataCenter.Row == currentDc.Row)
+          .Where(w => w.DataCenter.Row == currentDc.Row && w.IsPublic)
           .OrderBy(w => w.Name.ToString())
           .Select(w =>
           {

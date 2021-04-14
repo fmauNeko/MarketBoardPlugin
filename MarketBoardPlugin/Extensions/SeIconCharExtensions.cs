@@ -7,7 +7,7 @@ namespace MarketBoardPlugin.Extensions
   using System;
   using System.Globalization;
 
-  using Dalamud.Game.Chat;
+  using Dalamud.Game.Text;
 
   /// <summary>
   /// <see cref="SeIconChar"/> extensions.

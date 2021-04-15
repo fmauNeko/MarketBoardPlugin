@@ -14,8 +14,8 @@ namespace MarketBoardPlugin.GUI
   using System.Threading.Tasks;
 
   using Dalamud.Data.LuminaExtensions;
-  using Dalamud.Game.Chat;
   using Dalamud.Game.Internal;
+  using Dalamud.Game.Text;
   using Dalamud.Interface;
   using Dalamud.Plugin;
 

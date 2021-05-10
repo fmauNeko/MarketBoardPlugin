@@ -90,9 +90,12 @@ namespace MarketBoardPlugin
       if (!string.IsNullOrEmpty(arguments))
       {
         this.marketBoardWindow.SearchString = arguments;
+        this.marketBoardWindow.IsOpen = true;
       }
-
-      this.marketBoardWindow.IsOpen = true;
+      else
+      {
+        this.marketBoardWindow.IsOpen = !this.marketBoardWindow.IsOpen;
+      }
     }
 
     private void BuildMarketBoardUi()

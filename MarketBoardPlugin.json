@@ -1,6 +1,7 @@
 {
   "Author": "fmauNeko",
   "Name": "Market board",
+  "Punchline": "Browse the market board from anywhere.",
   "Description": "Browse the market board. /pmb to open.",
   "InternalName": "MarketBoardPlugin",
   "AssemblyVersion": "0.4.0.10",

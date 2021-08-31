@@ -6,10 +6,14 @@ namespace MarketBoardPlugin
 {
   using System;
   using System.Diagnostics.CodeAnalysis;
-  using System.Dynamic;
 
   using Dalamud.Game.Command;
   using Dalamud.Plugin;
+  using Dalamud.Data;
+  using Dalamud.Game;
+  using Dalamud.Game.ClientState;
+  using Dalamud.Game.Gui;
+  using Dalamud.IoC;
   using MarketBoardPlugin.GUI;
 
   /// <summary>
@@ -22,7 +26,12 @@ namespace MarketBoardPlugin
 
     private MarketBoardWindow marketBoardWindow;
 
-    private DalamudPluginInterface pluginInterface;
+    [PluginService] internal static DalamudPluginInterface PluginInterface { get; private set; } = null!;
+    [PluginService] internal static DataManager Data { get; private set; } = null!;
+    [PluginService] internal static CommandManager CommandManager { get; private set; } = null!;
+    [PluginService] internal static Framework Framework { get; private set; } = null!;
+    [PluginService] internal static ClientState ClientState { get; private set; } = null!;
+    [PluginService] internal static GameGui GameGui { get; private set; } = null!;
 
     private MBPluginConfig config;
 
@@ -30,21 +39,19 @@ namespace MarketBoardPlugin
     public string Name => "Market Board plugin";
 
     /// <inheritdoc/>
-    public void Initialize(DalamudPluginInterface pluginInterface)
+    public MBPlugin()
     {
-      this.pluginInterface = pluginInterface ?? throw new ArgumentNullException(nameof(pluginInterface));
-      this.config = (MBPluginConfig)pluginInterface.GetPluginConfig() ?? new MBPluginConfig();
+      this.config = (MBPluginConfig)PluginInterface.GetPluginConfig() ?? new MBPluginConfig();
 
-      this.marketBoardWindow = new MarketBoardWindow(this.pluginInterface, this.config);
+      this.marketBoardWindow = new MarketBoardWindow(this.config);
 
       // Set up command handlers
-      pluginInterface.CommandManager.AddHandler("/pmb", new CommandInfo(this.OnOpenMarketBoardCommand)
+      CommandManager.AddHandler("/pmb", new CommandInfo(this.OnOpenMarketBoardCommand)
       {
         HelpMessage = "Open the market board window.",
       });
 
-      pluginInterface.UiBuilder.OnBuildUi += this.BuildMarketBoardUi;
-      pluginInterface.Subscribe("ItemSearchPlugin", this.ItemSearchPluginIPC);
+      PluginInterface.UiBuilder.Draw += this.BuildMarketBoardUi;
 
       #if DEBUG
       this.marketBoardWindow.IsOpen = true;
@@ -72,13 +79,12 @@ namespace MarketBoardPlugin
       if (disposing)
       {
         // Save config
-        this.pluginInterface.SavePluginConfig(this.config);
+        PluginInterface.SavePluginConfig(this.config);
 
         // Remove command handlers
-        this.pluginInterface.UiBuilder.OnBuildUi -= this.BuildMarketBoardUi;
-        this.pluginInterface.CommandManager.RemoveHandler("/pmb");
-        this.pluginInterface.Unsubscribe("ItemSearchPlugin");
-        this.pluginInterface.Dispose();
+        PluginInterface.UiBuilder.Draw -= this.BuildMarketBoardUi;
+        CommandManager.RemoveHandler("/pmb");
+        PluginInterface.Dispose();
         this.marketBoardWindow.Dispose();
       }
 
@@ -89,8 +95,12 @@ namespace MarketBoardPlugin
     {
       if (!string.IsNullOrEmpty(arguments))
       {
-        this.marketBoardWindow.SearchString = arguments;
-        this.marketBoardWindow.IsOpen = true;
+        if (uint.TryParse(arguments, out var itemId)) {
+          this.marketBoardWindow.ChangeSelectedItem(itemId);
+        } else {
+          this.marketBoardWindow.SearchString = arguments;
+          this.marketBoardWindow.IsOpen = true;
+        }
       }
       else
       {
@@ -103,25 +113,6 @@ namespace MarketBoardPlugin
       if (this.marketBoardWindow != null && this.marketBoardWindow.IsOpen)
       {
         this.marketBoardWindow.IsOpen = this.marketBoardWindow.Draw();
-      }
-    }
-
-    private void ItemSearchPluginIPC(dynamic message)
-    {
-      if (message.Target == "MarketBoardPlugin")
-      {
-        if (message.Action == "ping")
-        {
-          dynamic response = new ExpandoObject();
-          response.Target = "ItemSearchPlugin";
-          response.Action = "pong";
-          this.pluginInterface.SendMessage(response);
-        }
-        else if (message.Action == "OpenMarketBoard")
-        {
-          this.marketBoardWindow.ChangeSelectedItem((uint)message.ItemId);
-          this.marketBoardWindow.IsOpen = true;
-        }
       }
     }
   }

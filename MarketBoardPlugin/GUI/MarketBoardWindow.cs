@@ -13,11 +13,12 @@ namespace MarketBoardPlugin.GUI
   using System.Threading;
   using System.Threading.Tasks;
 
-  using Dalamud.Data.LuminaExtensions;
-  using Dalamud.Game.Internal;
   using Dalamud.Game.Text;
   using Dalamud.Interface;
   using Dalamud.Plugin;
+  using Dalamud.Game;
+  using Dalamud.Logging;
+  using Dalamud.Utility;
 
   using ImGuiNET;
   using ImGuiScene;
@@ -34,8 +35,6 @@ namespace MarketBoardPlugin.GUI
   public class MarketBoardWindow : IDisposable
   {
     private readonly IEnumerable<Item> items;
-
-    private readonly DalamudPluginInterface pluginInterface;
 
     private readonly MBPluginConfig config;
 
@@ -83,23 +82,17 @@ namespace MarketBoardPlugin.GUI
     /// </summary>
     /// <param name="pluginInterface">The <see cref="DalamudPluginInterface"/>.</param>
     /// <param name="config">The <see cref="MBPluginConfig"/>.</param>
-    public MarketBoardWindow(DalamudPluginInterface pluginInterface, MBPluginConfig config)
+    public MarketBoardWindow(MBPluginConfig config)
     {
-      if (pluginInterface == null)
-      {
-        throw new ArgumentNullException(nameof(pluginInterface));
-      }
-
-      this.items = pluginInterface.Data.GetExcelSheet<Item>();
-      this.pluginInterface = pluginInterface;
+      this.items = MBPlugin.Data.GetExcelSheet<Item>();
       this.config = config ?? throw new ArgumentNullException(nameof(config));
       this.sortedCategoriesAndItems = this.SortCategoriesAndItems();
 
-      pluginInterface.Framework.OnUpdateEvent += this.HandleFrameworkUpdateEvent;
-      pluginInterface.Framework.Gui.HoveredItemChanged += this.HandleHoveredItemChange;
-      pluginInterface.UiBuilder.OnBuildFonts += this.HandleBuildFonts;
+      MBPlugin.Framework.Update += this.HandleFrameworkUpdateEvent;
+      MBPlugin.GameGui.HoveredItemChanged += this.HandleHoveredItemChange;
+      MBPlugin.PluginInterface.UiBuilder.BuildFonts += this.HandleBuildFonts;
 
-      pluginInterface.UiBuilder.RebuildFonts();
+      MBPlugin.PluginInterface.UiBuilder.RebuildFonts();
 
       this.watchingForHoveredItem = this.config.WatchForHovered;
 
@@ -202,7 +195,7 @@ namespace MarketBoardPlugin.GUI
       {
         ImGui.Text("History");
         ImGui.Separator();
-        var sheet = this.pluginInterface.Data.Excel.GetSheet<Item>();
+        var sheet = MBPlugin.Data.Excel.GetSheet<Item>();
         foreach (var id in this.config.History.ToArray())
         {
           var item = sheet.GetRow(id);
@@ -303,7 +296,7 @@ namespace MarketBoardPlugin.GUI
         else
         {
           this.progressPosition = 0;
-          var itemId = this.pluginInterface.Framework.Gui.HoveredItem;
+          var itemId = MBPlugin.GameGui.HoveredItem;
           this.ChangeSelectedItem(Convert.ToUInt32(itemId % 500000));
           this.itemIsBeingHovered = false;
         }
@@ -581,9 +574,9 @@ namespace MarketBoardPlugin.GUI
       this.selectedItem = this.items.Single(i => i.RowId == itemId);
 
       var iconId = this.selectedItem.Icon;
-      var iconTexFile = this.pluginInterface.Data.GetIcon(iconId);
+      var iconTexFile = MBPlugin.Data.GetIcon(iconId);
       this.selectedItemIcon?.Dispose();
-      this.selectedItemIcon = this.pluginInterface.UiBuilder.LoadImageRaw(iconTexFile.GetRgbaImageData(), iconTexFile.Header.Width, iconTexFile.Header.Height, 4);
+      this.selectedItemIcon = MBPlugin.PluginInterface.UiBuilder.LoadImageRaw(iconTexFile.GetRgbaImageData(), iconTexFile.Header.Width, iconTexFile.Header.Height, 4);
 
       this.RefreshMarketData();
       if (!noHistory)
@@ -595,7 +588,7 @@ namespace MarketBoardPlugin.GUI
           this.config.History.RemoveRange(100, this.config.History.Count - 100);
         }
 
-        this.pluginInterface.SavePluginConfig(this.config);
+        MBPlugin.PluginInterface.SavePluginConfig(this.config);
       }
     }
 
@@ -612,9 +605,9 @@ namespace MarketBoardPlugin.GUI
 
       if (disposing)
       {
-        this.pluginInterface.Framework.OnUpdateEvent -= this.HandleFrameworkUpdateEvent;
-        this.pluginInterface.Framework.Gui.HoveredItemChanged -= this.HandleHoveredItemChange;
-        this.pluginInterface.UiBuilder.OnBuildFonts -= this.HandleBuildFonts;
+        MBPlugin.Framework.Update -= this.HandleFrameworkUpdateEvent;
+        MBPlugin.GameGui.HoveredItemChanged -= this.HandleHoveredItemChange;
+        MBPlugin.PluginInterface.UiBuilder.BuildFonts -= this.HandleBuildFonts;
         this.selectedItemIcon?.Dispose();
       }
 
@@ -625,7 +618,7 @@ namespace MarketBoardPlugin.GUI
     {
       try
       {
-        var itemSearchCategories = this.pluginInterface.Data.GetExcelSheet<ItemSearchCategory>();
+        var itemSearchCategories = MBPlugin.Data.GetExcelSheet<ItemSearchCategory>();
 
         var sortedCategories = itemSearchCategories.Where(c => c.Category > 0).OrderBy(c => c.Category).ThenBy(c => c.Order);
 
@@ -657,16 +650,16 @@ namespace MarketBoardPlugin.GUI
 
     private void HandleFrameworkUpdateEvent(Framework framework)
     {
-      if (this.pluginInterface.ClientState.LocalContentId != 0 && this.playerId != this.pluginInterface.ClientState.LocalContentId)
+      if (MBPlugin.ClientState.LocalContentId != 0 && this.playerId != MBPlugin.ClientState.LocalContentId)
       {
-        var localPlayer = this.pluginInterface.ClientState.LocalPlayer;
+        var localPlayer = MBPlugin.ClientState.LocalPlayer;
         if (localPlayer == null)
         {
           return;
         }
 
         var currentDc = localPlayer.CurrentWorld.GameData.DataCenter;
-        var dcWorlds = this.pluginInterface.Data.GetExcelSheet<World>()
+        var dcWorlds = MBPlugin.Data.GetExcelSheet<World>()
           .Where(w => w.DataCenter.Row == currentDc.Row && w.IsPublic)
           .OrderBy(w => w.Name.ToString())
           .Select(w =>
@@ -688,11 +681,11 @@ namespace MarketBoardPlugin.GUI
         this.selectedWorld = this.config.CrossWorld ? 0 : this.worldList.FindIndex(w => w.Item1 == localPlayer.CurrentWorld.GameData.Name);
         if (this.worldList.Count > 1)
         {
-          this.playerId = this.pluginInterface.ClientState.LocalContentId;
+          this.playerId = MBPlugin.ClientState.LocalContentId;
         }
       }
 
-      if (this.pluginInterface.ClientState.LocalContentId == 0)
+      if (MBPlugin.ClientState.LocalContentId == 0)
       {
         this.playerId = 0;
       }
@@ -713,7 +706,7 @@ namespace MarketBoardPlugin.GUI
         return;
       }
 
-      var item = this.pluginInterface.Data.Excel.GetSheet<Item>().GetRow((uint)itemId % 500000);
+      var item = MBPlugin.Data.Excel.GetSheet<Item>().GetRow((uint)itemId % 500000);
 
       if (item != null && this.enumerableCategoriesAndItems != null && this.enumerableCategoriesAndItems.Any(i => i.Value != null && i.Value.Contains(item)))
       {

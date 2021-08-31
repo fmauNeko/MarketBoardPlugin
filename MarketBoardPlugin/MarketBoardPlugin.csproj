@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net472</TargetFramework>
+    <TargetFramework>net5.0-windows</TargetFramework>
     <AssemblyName>MarketBoardPlugin</AssemblyName>
     <Authors>Florian "fmauNeko" Maunier</Authors>
     <OutputType>Library</OutputType>

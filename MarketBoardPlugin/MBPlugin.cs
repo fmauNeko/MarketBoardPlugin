@@ -97,6 +97,7 @@ namespace MarketBoardPlugin
       {
         if (uint.TryParse(arguments, out var itemId)) {
           this.marketBoardWindow.ChangeSelectedItem(itemId);
+          this.marketBoardWindow.IsOpen = true;
         } else {
           this.marketBoardWindow.SearchString = arguments;
           this.marketBoardWindow.IsOpen = true;

@@ -724,7 +724,7 @@ namespace MarketBoardPlugin.GUI
       {
         this.marketData = null;
         this.marketData = await UniversalisClient
-          .GetMarketData(this.selectedItem.RowId, this.worldList[this.selectedWorld].Item1, CancellationToken.None)
+          .GetMarketData(this.selectedItem.RowId, this.worldList[this.selectedWorld].Item1, 50, CancellationToken.None)
           .ConfigureAwait(false);
       });
     }

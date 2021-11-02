@@ -271,6 +271,13 @@ namespace MarketBoardPlugin.GUI
 
       ImGui.EndChild();
 
+      var contextMenuIntegration = this.config.ContextMenuIntegration;
+      if (ImGui.Checkbox("Context menu integration", ref contextMenuIntegration))
+      {
+        this.config.ContextMenuIntegration = contextMenuIntegration;
+        MBPlugin.PluginInterface.SavePluginConfig(this.config);
+      }
+
       if (ImGui.Checkbox("Watch for hovered item", ref this.watchingForHoveredItem))
       {
         this.config.WatchForHovered = this.watchingForHoveredItem;

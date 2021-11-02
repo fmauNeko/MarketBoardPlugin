@@ -31,5 +31,10 @@ namespace MarketBoardPlugin
     /// Gets or sets the list of previously viewed items.
     /// </summary>
     public List<uint> History { get; set; } = new List<uint>();
+
+    /// <summary>
+    /// Gets or sets a value indicating whether the 'Search with Market Board Plugin' is added to game context menus.
+    /// </summary>
+    public bool ContextMenuIntegration { get; set; } = true;
   }
 }

@@ -14,7 +14,11 @@ namespace MarketBoardPlugin
   using Dalamud.Game.ClientState;
   using Dalamud.Game.Gui;
   using Dalamud.IoC;
+  using Lumina.Excel.GeneratedSheets;
   using MarketBoardPlugin.GUI;
+  using XivCommon;
+  using XivCommon.Functions.ContextMenu;
+  using XivCommon.Functions.ContextMenu.Inventory;
 
   /// <summary>
   /// The entry point of the plugin.
@@ -22,6 +26,9 @@ namespace MarketBoardPlugin
   [SuppressMessage("ReSharper", "UnusedMember.Global", Justification = "Plugin entry point")]
   public class MBPlugin : IDalamudPlugin
   {
+    private readonly XivCommonBase xivCommon;
+    private readonly string contextMenuSearchString;
+
     private bool isDisposed;
 
     private MarketBoardWindow marketBoardWindow;
@@ -53,14 +60,83 @@ namespace MarketBoardPlugin
 
       PluginInterface.UiBuilder.Draw += this.BuildMarketBoardUi;
 
+      this.contextMenuSearchString = Data?.Excel?.GetSheet<Addon>()?.GetRow(4379)?.Text?.RawString ?? "Search for Item";
+
+      this.xivCommon = new XivCommonBase(Hooks.ContextMenu);
+
+      this.xivCommon.Functions.ContextMenu.OpenInventoryContextMenu += this.ContextMenuOnOpenInventoryContextMenu;
+      this.xivCommon.Functions.ContextMenu.OpenContextMenu += this.ContextMenuOnOpenContextMenu;
+
       #if DEBUG
       this.marketBoardWindow.IsOpen = true;
       #endif
     }
 
+    private void ContextMenuOnOpenContextMenu(ContextMenuOpenArgs args) {
+      if (!this.config.ContextMenuIntegration)
+      {
+        return;
+      }
+
+      var i = (uint)(GameGui.HoveredItem % 500000);
+
+      var item = Data.Excel.GetSheet<Item>()?.GetRow(i);
+      if (item == null)
+      {
+        return;
+      }
+
+      if (item.IsUntradable)
+      {
+        return;
+      }
+
+      var index = args.Items.FindIndex(a => a is NativeContextMenuItem n && n.Name.TextValue == this.contextMenuSearchString);
+      if (index < 0)
+      {
+        return;
+      }
+
+      args.Items.Insert(index + 1, new NormalContextMenuItem($"Search with Market Board Plugin", (_) => {
+        this.marketBoardWindow.IsOpen = true;
+        this.marketBoardWindow.ChangeSelectedItem(i);
+      }));
+    }
+
+    private void ContextMenuOnOpenInventoryContextMenu(InventoryContextMenuOpenArgs args)
+    {
+      if (!this.config.ContextMenuIntegration)
+      {
+        return;
+      }
+
+      var item = Data.Excel.GetSheet<Item>()?.GetRow(args.ItemId);
+      if (item == null)
+      {
+        return;
+      }
+
+      if (item.IsUntradable)
+      {
+        return;
+      }
+
+      var index = args.Items.FindIndex(a => a is NativeContextMenuItem n && n.Name.TextValue == this.contextMenuSearchString);
+      if (index < 0)
+      {
+        return;
+      }
+
+      args.Items.Insert(index + 1, new InventoryContextMenuItem("Search with Market Board Plugin", selectedArgs => {
+        this.marketBoardWindow.IsOpen = true;
+        this.marketBoardWindow.ChangeSelectedItem(selectedArgs.ItemId);
+      }));
+    }
+
     /// <inheritdoc/>
     public void Dispose()
     {
+      this.xivCommon.Dispose();
       this.Dispose(true);
       GC.SuppressFinalize(this);
     }

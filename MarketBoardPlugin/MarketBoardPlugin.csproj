@@ -21,6 +21,7 @@
     <PackageProjectUrl>https://github.com/fmauNeko/MarketBoardPlugin</PackageProjectUrl>
     <RepositoryUrl>https://github.com/fmauNeko/MarketBoardPlugin.git</RepositoryUrl>
     <RepositoryType>Git</RepositoryType>
+    <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
@@ -49,6 +50,7 @@
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
+    <PackageReference Include="XivCommon" Version="3.1.0" />
   </ItemGroup>
 
   <ItemGroup>

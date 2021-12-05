@@ -7,15 +7,19 @@ namespace MarketBoardPlugin
   using System;
   using System.Diagnostics.CodeAnalysis;
 
-  using Dalamud.Game.Command;
-  using Dalamud.Plugin;
   using Dalamud.Data;
   using Dalamud.Game;
   using Dalamud.Game.ClientState;
+  using Dalamud.Game.Command;
   using Dalamud.Game.Gui;
+
   using Dalamud.IoC;
+  using Dalamud.Plugin;
+
   using Lumina.Excel.GeneratedSheets;
+
   using MarketBoardPlugin.GUI;
+
   using XivCommon;
   using XivCommon.Functions.ContextMenu;
   using XivCommon.Functions.ContextMenu.Inventory;
@@ -29,23 +33,16 @@ namespace MarketBoardPlugin
     private readonly XivCommonBase xivCommon;
     private readonly string contextMenuSearchString;
 
+    private readonly MarketBoardWindow marketBoardWindow;
+
+    private readonly MBPluginConfig config;
+
     private bool isDisposed;
 
-    private MarketBoardWindow marketBoardWindow;
-
-    [PluginService] internal static DalamudPluginInterface PluginInterface { get; private set; } = null!;
-    [PluginService] internal static DataManager Data { get; private set; } = null!;
-    [PluginService] internal static CommandManager CommandManager { get; private set; } = null!;
-    [PluginService] internal static Framework Framework { get; private set; } = null!;
-    [PluginService] internal static ClientState ClientState { get; private set; } = null!;
-    [PluginService] internal static GameGui GameGui { get; private set; } = null!;
-
-    private MBPluginConfig config;
-
-    /// <inheritdoc/>
-    public string Name => "Market Board plugin";
-
-    /// <inheritdoc/>
+    /// <summary>
+    /// Initializes a new instance of the <see cref="MBPlugin"/> class.
+    /// This is the plugin's entry point.
+    /// </summary>
     public MBPlugin()
     {
       this.config = (MBPluginConfig)PluginInterface.GetPluginConfig() ?? new MBPluginConfig();
@@ -67,12 +64,74 @@ namespace MarketBoardPlugin
       this.xivCommon.Functions.ContextMenu.OpenInventoryContextMenu += this.ContextMenuOnOpenInventoryContextMenu;
       this.xivCommon.Functions.ContextMenu.OpenContextMenu += this.ContextMenuOnOpenContextMenu;
 
-      #if DEBUG
+#if DEBUG
       this.marketBoardWindow.IsOpen = true;
-      #endif
+#endif
     }
 
-    private void ContextMenuOnOpenContextMenu(ContextMenuOpenArgs args) {
+    /// <summary>
+    /// Gets the plugin's name.
+    /// </summary>
+    public string Name => "Market Board plugin";
+
+    [PluginService]
+    internal static DalamudPluginInterface PluginInterface { get; private set; } = null!;
+
+    [PluginService]
+    internal static DataManager Data { get; private set; } = null!;
+
+    [PluginService]
+    internal static CommandManager CommandManager { get; private set; } = null!;
+
+    [PluginService]
+    internal static Framework Framework { get; private set; } = null!;
+
+    [PluginService]
+    internal static ClientState ClientState { get; private set; } = null!;
+
+    [PluginService]
+    internal static GameGui GameGui { get; private set; } = null!;
+
+    /// <inheritdoc/>
+    public void Dispose()
+    {
+      this.Dispose(true);
+      GC.SuppressFinalize(this);
+    }
+
+    /// <summary>
+    /// Protected implementation of Dispose pattern.
+    /// </summary>
+    /// <param name="disposing">A value indicating whether we are disposing.</param>
+    protected virtual void Dispose(bool disposing)
+    {
+      if (this.isDisposed)
+      {
+        return;
+      }
+
+      if (disposing)
+      {
+        // Save config
+        PluginInterface.SavePluginConfig(this.config);
+
+        // Remove command handlers
+        PluginInterface.UiBuilder.Draw -= this.BuildMarketBoardUi;
+        CommandManager.RemoveHandler("/pmb");
+        PluginInterface.Dispose();
+        this.marketBoardWindow.Dispose();
+
+        // Dispose of xivCommon
+        this.xivCommon.Functions.ContextMenu.OpenInventoryContextMenu -= this.ContextMenuOnOpenInventoryContextMenu;
+        this.xivCommon.Functions.ContextMenu.OpenContextMenu -= this.ContextMenuOnOpenContextMenu;
+        this.xivCommon.Dispose();
+      }
+
+      this.isDisposed = true;
+    }
+
+    private void ContextMenuOnOpenContextMenu(ContextMenuOpenArgs args)
+    {
       if (!this.config.ContextMenuIntegration)
       {
         return;
@@ -97,7 +156,8 @@ namespace MarketBoardPlugin
         return;
       }
 
-      args.Items.Insert(index + 1, new NormalContextMenuItem($"Search with Market Board Plugin", (_) => {
+      args.Items.Insert(index + 1, new NormalContextMenuItem($"Search with Market Board Plugin", (_) =>
+      {
         this.marketBoardWindow.IsOpen = true;
         this.marketBoardWindow.ChangeSelectedItem(i);
       }));
@@ -127,54 +187,24 @@ namespace MarketBoardPlugin
         return;
       }
 
-      args.Items.Insert(index + 1, new InventoryContextMenuItem("Search with Market Board Plugin", selectedArgs => {
+      args.Items.Insert(index + 1, new InventoryContextMenuItem("Search with Market Board Plugin", selectedArgs =>
+      {
         this.marketBoardWindow.IsOpen = true;
         this.marketBoardWindow.ChangeSelectedItem(selectedArgs.ItemId);
       }));
-    }
-
-    /// <inheritdoc/>
-    public void Dispose()
-    {
-      this.xivCommon.Dispose();
-      this.Dispose(true);
-      GC.SuppressFinalize(this);
-    }
-
-    /// <summary>
-    /// Protected implementation of Dispose pattern.
-    /// </summary>
-    /// <param name="disposing">A value indicating whether we are disposing.</param>
-    protected virtual void Dispose(bool disposing)
-    {
-      if (this.isDisposed)
-      {
-        return;
-      }
-
-      if (disposing)
-      {
-        // Save config
-        PluginInterface.SavePluginConfig(this.config);
-
-        // Remove command handlers
-        PluginInterface.UiBuilder.Draw -= this.BuildMarketBoardUi;
-        CommandManager.RemoveHandler("/pmb");
-        PluginInterface.Dispose();
-        this.marketBoardWindow.Dispose();
-      }
-
-      this.isDisposed = true;
     }
 
     private void OnOpenMarketBoardCommand(string command, string arguments)
     {
       if (!string.IsNullOrEmpty(arguments))
       {
-        if (uint.TryParse(arguments, out var itemId)) {
+        if (uint.TryParse(arguments, out var itemId))
+        {
           this.marketBoardWindow.ChangeSelectedItem(itemId);
           this.marketBoardWindow.IsOpen = true;
-        } else {
+        }
+        else
+        {
           this.marketBoardWindow.SearchString = arguments;
           this.marketBoardWindow.IsOpen = true;
         }

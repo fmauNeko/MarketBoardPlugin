@@ -13,11 +13,11 @@ namespace MarketBoardPlugin.GUI
   using System.Threading;
   using System.Threading.Tasks;
 
+  using Dalamud.Game;
   using Dalamud.Game.Text;
   using Dalamud.Interface;
-  using Dalamud.Plugin;
-  using Dalamud.Game;
   using Dalamud.Logging;
+  using Dalamud.Plugin;
   using Dalamud.Utility;
 
   using ImGuiNET;
@@ -38,9 +38,9 @@ namespace MarketBoardPlugin.GUI
 
     private readonly MBPluginConfig config;
 
-    private Dictionary<ItemSearchCategory, List<Item>> sortedCategoriesAndItems;
-
     private readonly List<(string, string)> worldList = new List<(string, string)>();
+
+    private Dictionary<ItemSearchCategory, List<Item>> sortedCategoriesAndItems;
 
     private bool isDisposed;
 
@@ -80,7 +80,6 @@ namespace MarketBoardPlugin.GUI
     /// <summary>
     /// Initializes a new instance of the <see cref="MarketBoardWindow"/> class.
     /// </summary>
-    /// <param name="pluginInterface">The <see cref="DalamudPluginInterface"/>.</param>
     /// <param name="config">The <see cref="MBPluginConfig"/>.</param>
     public MarketBoardWindow(MBPluginConfig config)
     {
@@ -96,10 +95,10 @@ namespace MarketBoardPlugin.GUI
 
       this.watchingForHoveredItem = this.config.WatchForHovered;
 
-      #if DEBUG
+#if DEBUG
       this.worldList.Add(("Chaos", "Chaos"));
       this.worldList.Add(("Moogle", "Moogle"));
-      #endif
+#endif
     }
 
     /// <summary>
@@ -148,7 +147,7 @@ namespace MarketBoardPlugin.GUI
               kv.Key,
               kv.Value
                 .Where(i =>
-                  i.Name.ToString().ToUpperInvariant().Contains(this.searchString.ToUpperInvariant()))
+                  i.Name.ToString().ToUpperInvariant().Contains(this.searchString.ToUpperInvariant(), StringComparison.InvariantCulture))
                 .ToList()))
             .Where(kv => kv.Value.Count > 0)
             .ToList();
@@ -631,7 +630,8 @@ namespace MarketBoardPlugin.GUI
 
         var sortedCategoriesDict = new Dictionary<ItemSearchCategory, List<Item>>();
 
-        foreach (var c in sortedCategories) {
+        foreach (var c in sortedCategories)
+        {
           if (sortedCategoriesDict.ContainsKey(c))
           {
             continue;
@@ -651,7 +651,7 @@ namespace MarketBoardPlugin.GUI
 
     private void HandleBuildFonts()
     {
-      var fontPath = Path.Combine(Path.GetDirectoryName(Assembly.GetAssembly(typeof(DalamudPluginInterface)).Location) ?? string.Empty, "UIRes", "NotoSansCJKjp-Medium.otf");
+      var fontPath = Path.Combine(MBPlugin.PluginInterface.DalamudAssetDirectory.FullName, "UIRes", "NotoSansCJKjp-Medium.otf");
       this.fontPtr = ImGui.GetIO().Fonts.AddFontFromFileTTF(fontPath, 24.0f);
     }
 

@@ -5,6 +5,7 @@
 namespace MarketBoardPlugin
 {
   using System.Collections.Generic;
+  using System.Diagnostics.CodeAnalysis;
   using Dalamud.Configuration;
 
   /// <summary>
@@ -28,9 +29,10 @@ namespace MarketBoardPlugin
     public bool WatchForHovered { get; set; } = true;
 
     /// <summary>
-    /// Gets or sets the list of previously viewed items.
+    /// Gets the list of previously viewed items.
     /// </summary>
-    public List<uint> History { get; set; } = new List<uint>();
+    [SuppressMessage("Design", "CA1002:Do not expose generic lists", Justification = "RemoveAll and RemoveRange required")]
+    public List<uint> History { get; } = new List<uint>();
 
     /// <summary>
     /// Gets or sets a value indicating whether the 'Search with Market Board Plugin' is added to game context menus.

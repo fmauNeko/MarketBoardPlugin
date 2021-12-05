@@ -4,7 +4,7 @@
 
 namespace MarketBoardPlugin.Models.Universalis
 {
-  using Newtonsoft.Json;
+  using System.Text.Json.Serialization;
 
   /// <summary>
   /// A model representing a market data recent history from Universalis.
@@ -14,43 +14,43 @@ namespace MarketBoardPlugin.Models.Universalis
     /// <summary>
     /// Gets or sets the name of the buyer.
     /// </summary>
-    [JsonProperty("buyerName")]
+    [JsonPropertyName("buyerName")]
     public string BuyerName { get; set; }
 
     /// <summary>
     /// Gets or sets a value indicating whether the items are HQ.
     /// </summary>
-    [JsonProperty("hq")]
+    [JsonPropertyName("hq")]
     public bool Hq { get; set; }
 
     /// <summary>
     /// Gets or sets the price per unit.
     /// </summary>
-    [JsonProperty("pricePerUnit")]
+    [JsonPropertyName("pricePerUnit")]
     public long PricePerUnit { get; set; }
 
     /// <summary>
     /// Gets or sets the quantity.
     /// </summary>
-    [JsonProperty("quantity")]
+    [JsonPropertyName("quantity")]
     public long Quantity { get; set; }
 
     /// <summary>
     /// Gets or sets the timestamp.
     /// </summary>
-    [JsonProperty("timestamp")]
+    [JsonPropertyName("timestamp")]
     public long Timestamp { get; set; }
 
     /// <summary>
     /// Gets or sets the total.
     /// </summary>
-    [JsonProperty("total")]
+    [JsonPropertyName("total")]
     public long Total { get; set; }
 
     /// <summary>
     /// Gets or sets the name of the world.
     /// </summary>
-    [JsonProperty("worldName")]
+    [JsonPropertyName("worldName")]
     public string WorldName { get; set; }
   }
 }

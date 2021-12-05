@@ -5,8 +5,8 @@
 namespace MarketBoardPlugin.Models.Universalis
 {
   using System.Collections.Generic;
-
-  using Newtonsoft.Json;
+  using System.Diagnostics.CodeAnalysis;
+  using System.Text.Json.Serialization;
 
   /// <summary>
   /// A model representing a market data response from Universalis.
@@ -16,85 +16,87 @@ namespace MarketBoardPlugin.Models.Universalis
     /// <summary>
     /// Gets or sets the name of the datacenter.
     /// </summary>
-    [JsonProperty("dcName")]
+    [JsonPropertyName("dcName")]
     public string DcName { get; set; }
 
     /// <summary>
     /// Gets or sets the ID of the item.
     /// </summary>
-    [JsonProperty("itemID")]
+    [JsonPropertyName("itemID")]
     public long ItemId { get; set; }
 
     /// <summary>
     /// Gets or sets the last upload time.
     /// </summary>
-    [JsonProperty("lastUploadTime")]
+    [JsonPropertyName("lastUploadTime")]
     public long LastUploadTime { get; set; }
 
     /// <summary>
-    /// Gets the listings.
+    /// Gets or sets the listings.
     /// </summary>
-    [JsonProperty("listings")]
-    public List<MarketDataListing> Listings { get; } = new List<MarketDataListing>();
+    [JsonPropertyName("listings")]
+    [SuppressMessage("Usage", "CA2227:Collection properties should be read only", Justification = "Setter required for JSON deserialization")]
+    public IList<MarketDataListing> Listings { get; set; } = new List<MarketDataListing>();
 
     /// <summary>
-    /// Gets the recent history.
+    /// Gets or sets the recent history.
     /// </summary>
-    [JsonProperty("recentHistory")]
-    public List<MarketDataRecentHistory> RecentHistory { get; } = new List<MarketDataRecentHistory>();
+    [JsonPropertyName("recentHistory")]
+    [SuppressMessage("Usage", "CA2227:Collection properties should be read only", Justification = "Setter required for JSON deserialization")]
+    public IList<MarketDataRecentHistory> RecentHistory { get; set; } = new List<MarketDataRecentHistory>();
 
     /// <summary>
     /// Gets or sets the average price.
     /// </summary>
-    [JsonProperty("averagePrice")]
+    [JsonPropertyName("averagePrice")]
     public double AveragePrice { get; set; }
 
     /// <summary>
     /// Gets or sets the average price of the NQ items.
     /// </summary>
-    [JsonProperty("averagePriceNQ")]
+    [JsonPropertyName("averagePriceNQ")]
     public double AveragePriceNq { get; set; }
 
     /// <summary>
     /// Gets or sets the average price of the HQ items.
     /// </summary>
-    [JsonProperty("averagePriceHQ")]
+    [JsonPropertyName("averagePriceHQ")]
     public double AveragePriceHq { get; set; }
 
     /// <summary>
     /// Gets or sets the sale velocity.
     /// </summary>
-    [JsonProperty("saleVelocity")]
+    [JsonPropertyName("saleVelocity")]
     public double SaleVelocity { get; set; }
 
     /// <summary>
     /// Gets or sets the sale velocity of the NQ items.
     /// </summary>
-    [JsonProperty("saleVelocityNQ")]
+    [JsonPropertyName("saleVelocityNQ")]
     public double SaleVelocityNq { get; set; }
 
     /// <summary>
     /// Gets or sets the sale velocity of the HQ items.
     /// </summary>
-    [JsonProperty("saleVelocityHQ")]
+    [JsonPropertyName("saleVelocityHQ")]
     public double SaleVelocityHq { get; set; }
 
     /// <summary>
     /// Gets the stack size histogram.
     /// </summary>
-    [JsonProperty("stackSizeHistogram")]
+    [JsonPropertyName("stackSizeHistogram")]
     public Dictionary<string, long> StackSizeHistogram { get; } = new Dictionary<string, long>();
 
     /// <summary>
     /// Gets the stack size histogram of the NQ items.
     /// </summary>
-    [JsonProperty("stackSizeHistogramNQ")]
+    [JsonPropertyName("stackSizeHistogramNQ")]
     public Dictionary<string, long> StackSizeHistogramNq { get; } = new Dictionary<string, long>();
 
     /// <summary>
     /// Gets the stack size histogram of the HQ items.
     /// </summary>
-    [JsonProperty("stackSizeHistogramHQ")]
+    [JsonPropertyName("stackSizeHistogramHQ")]
     public Dictionary<string, long> StackSizeHistogramHq { get; } = new Dictionary<string, long>();
   }
 }

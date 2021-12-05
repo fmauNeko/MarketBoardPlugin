@@ -6,12 +6,11 @@ namespace MarketBoardPlugin.Helpers
 {
   using System;
   using System.Net.Http;
+  using System.Text.Json;
   using System.Threading;
   using System.Threading.Tasks;
 
   using MarketBoardPlugin.Models.Universalis;
-
-  using Newtonsoft.Json;
 
   /// <summary>
   /// Universalis API Client.
@@ -34,12 +33,14 @@ namespace MarketBoardPlugin.Helpers
 
       using var client = new HttpClient();
       var res = await client
-        .GetStringAsync(uriBuilder.Uri, cancellationToken)
+        .GetStreamAsync(uriBuilder.Uri, cancellationToken)
         .ConfigureAwait(false);
 
       cancellationToken.ThrowIfCancellationRequested();
 
-      var parsedRes = JsonConvert.DeserializeObject<MarketDataResponse>(res);
+      var parsedRes = await JsonSerializer
+        .DeserializeAsync<MarketDataResponse>(res, cancellationToken: cancellationToken)
+        .ConfigureAwait(false);
 
       return parsedRes;
     }

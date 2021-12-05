@@ -77,11 +77,6 @@
       <HintPath>..\..\Dalamud\bin\Lumina.Excel.dll</HintPath>
       <HintPath>$(APPDATA)\XIVLauncher\addon\Hooks\dev\Lumina.Excel.dll</HintPath>
     </Reference>
-    <Reference Include="Newtonsoft.Json">
-      <Private>false</Private>
-      <HintPath>..\..\Dalamud\bin\Newtonsoft.Json.dll</HintPath>
-      <HintPath>$(APPDATA)\XIVLauncher\addon\Hooks\dev\Newtonsoft.Json.dll</HintPath>
-    </Reference>
   </ItemGroup>
 
 </Project>

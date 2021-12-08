@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>net5.0-windows</TargetFramework>
@@ -37,6 +37,9 @@
 
   <ItemGroup>
     <None Include="./MarketBoardPlugin.json" CopyToOutputDirectory="PreserveNewest" />
+    <None Update="Resources\NotoSans-Medium.otf">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
 
   <ItemGroup>

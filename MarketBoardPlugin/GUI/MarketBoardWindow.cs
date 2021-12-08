@@ -9,7 +9,7 @@ namespace MarketBoardPlugin.GUI
   using System.IO;
   using System.Linq;
   using System.Numerics;
-  using System.Reflection;
+  using System.Runtime.InteropServices;
   using System.Threading;
   using System.Threading.Tasks;
 
@@ -17,7 +17,6 @@ namespace MarketBoardPlugin.GUI
   using Dalamud.Game.Text;
   using Dalamud.Interface;
   using Dalamud.Logging;
-  using Dalamud.Plugin;
   using Dalamud.Utility;
 
   using ImGuiNET;
@@ -649,10 +648,29 @@ namespace MarketBoardPlugin.GUI
       }
     }
 
-    private void HandleBuildFonts()
+    private unsafe void HandleBuildFonts()
     {
       var fontPath = Path.Combine(MBPlugin.PluginInterface.DalamudAssetDirectory.FullName, "UIRes", "NotoSansCJKjp-Medium.otf");
       this.fontPtr = ImGui.GetIO().Fonts.AddFontFromFileTTF(fontPath, 24.0f);
+
+      ImFontConfigPtr fontConfig = ImGuiNative.ImFontConfig_ImFontConfig();
+      fontConfig.MergeMode = true;
+      fontConfig.NativePtr->DstFont = UiBuilder.DefaultFont.NativePtr;
+
+      var fontRangeHandle = GCHandle.Alloc(
+        new ushort[]
+        {
+            0x202F,
+            0x202F,
+            0,
+        },
+        GCHandleType.Pinned);
+
+      var otherPath = Path.Combine(MBPlugin.PluginInterface.AssemblyLocation.DirectoryName, "Resources", "NotoSans-Medium.otf");
+      ImGui.GetIO().Fonts.AddFontFromFileTTF(otherPath, 17.0f, fontConfig, fontRangeHandle.AddrOfPinnedObject());
+
+      fontConfig.Destroy();
+      fontRangeHandle.Free();
     }
 
     private void HandleFrameworkUpdateEvent(Framework framework)

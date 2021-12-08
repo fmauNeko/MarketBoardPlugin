@@ -156,7 +156,7 @@ namespace MarketBoardPlugin
         return;
       }
 
-      args.Items.Insert(index + 1, new NormalContextMenuItem($"Search with Market Board Plugin", (_) =>
+      args.Items.Add(new NormalContextMenuItem($"Search with Market Board Plugin", (_) =>
       {
         this.marketBoardWindow.IsOpen = true;
         this.marketBoardWindow.ChangeSelectedItem(i);

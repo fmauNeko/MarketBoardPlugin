@@ -50,7 +50,7 @@ namespace MarketBoardPlugin.Models.Universalis
     public string ListingId { get; set; }
 
     /// <summary>
-    /// Gets the list of the materias.
+    /// Gets or sets the list of the materias.
     /// </summary>
     [JsonPropertyName("materia")]
     [SuppressMessage("Usage", "CA2227:Collection properties should be read only", Justification = "Setter required for JSON deserialization")]

@@ -5,7 +5,8 @@
 namespace MarketBoardPlugin.Models.Universalis
 {
   using System.Collections.Generic;
-  using Newtonsoft.Json;
+  using System.Diagnostics.CodeAnalysis;
+  using System.Text.Json.Serialization;
 
   /// <summary>
   /// A model representing a market data listing from Universalis.
@@ -15,103 +16,104 @@ namespace MarketBoardPlugin.Models.Universalis
     /// <summary>
     /// Gets or sets the ID of the creator.
     /// </summary>
-    [JsonProperty("creatorID")]
+    [JsonPropertyName("creatorID")]
     public string CreatorId { get; set; }
 
     /// <summary>
     /// Gets or sets the name of the creator.
     /// </summary>
-    [JsonProperty("creatorName")]
+    [JsonPropertyName("creatorName")]
     public string CreatorName { get; set; }
 
     /// <summary>
     /// Gets or sets a value indicating whether the items are HQ.
     /// </summary>
-    [JsonProperty("hq")]
+    [JsonPropertyName("hq")]
     public bool Hq { get; set; }
 
     /// <summary>
     /// Gets or sets a value indicating whether the items are crafted.
     /// </summary>
-    [JsonProperty("isCrafted")]
+    [JsonPropertyName("isCrafted")]
     public bool IsCrafted { get; set; }
 
     /// <summary>
     /// Gets or sets the last review time.
     /// </summary>
-    [JsonProperty("lastReviewTime")]
+    [JsonPropertyName("lastReviewTime")]
     public long LastReviewTime { get; set; }
 
     /// <summary>
     /// Gets or sets the ID of the listing.
     /// </summary>
-    [JsonProperty("listingID")]
+    [JsonPropertyName("listingID")]
     public string ListingId { get; set; }
 
     /// <summary>
-    /// Gets the list of the materias.
+    /// Gets or sets the list of the materias.
     /// </summary>
-    [JsonProperty("materia")]
-    public List<object> Materia { get; } = new List<object>();
+    [JsonPropertyName("materia")]
+    [SuppressMessage("Usage", "CA2227:Collection properties should be read only", Justification = "Setter required for JSON deserialization")]
+    public IList<object> Materia { get; set; } = new List<object>();
 
     /// <summary>
     /// Gets or sets a value indicating whether the item is on a mannequin.
     /// </summary>
-    [JsonProperty("onMannequin")]
+    [JsonPropertyName("onMannequin")]
     public bool OnMannequin { get; set; }
 
     /// <summary>
     /// Gets or sets the price per unit.
     /// </summary>
-    [JsonProperty("pricePerUnit")]
+    [JsonPropertyName("pricePerUnit")]
     public long PricePerUnit { get; set; }
 
     /// <summary>
     /// Gets or sets the quantity.
     /// </summary>
-    [JsonProperty("quantity")]
+    [JsonPropertyName("quantity")]
     public long Quantity { get; set; }
 
     /// <summary>
     /// Gets or sets the city of the retainer.
     /// </summary>
-    [JsonProperty("retainerCity")]
+    [JsonPropertyName("retainerCity")]
     public long RetainerCity { get; set; }
 
     /// <summary>
     /// Gets or sets the ID of the retainer.
     /// </summary>
-    [JsonProperty("retainerID")]
+    [JsonPropertyName("retainerID")]
     public string RetainerId { get; set; }
 
     /// <summary>
     /// Gets or sets the retainer's name.
     /// </summary>
-    [JsonProperty("retainerName")]
+    [JsonPropertyName("retainerName")]
     public string RetainerName { get; set; }
 
     /// <summary>
     /// Gets or sets the ID of the seller.
     /// </summary>
-    [JsonProperty("sellerID")]
+    [JsonPropertyName("sellerID")]
     public string SellerId { get; set; }
 
     /// <summary>
     /// Gets or sets the ID of the stain.
     /// </summary>
-    [JsonProperty("stainID")]
+    [JsonPropertyName("stainID")]
     public long StainId { get; set; }
 
     /// <summary>
     /// Gets or sets the total.
     /// </summary>
-    [JsonProperty("total")]
+    [JsonPropertyName("total")]
     public long Total { get; set; }
 
     /// <summary>
     /// Gets or sets the name of the world.
     /// </summary>
-    [JsonProperty("worldName")]
+    [JsonPropertyName("worldName")]
     public string WorldName { get; set; }
   }
 }

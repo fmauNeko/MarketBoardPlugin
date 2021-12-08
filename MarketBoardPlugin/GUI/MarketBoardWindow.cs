@@ -9,14 +9,15 @@ namespace MarketBoardPlugin.GUI
   using System.IO;
   using System.Linq;
   using System.Numerics;
-  using System.Reflection;
+  using System.Runtime.InteropServices;
   using System.Threading;
   using System.Threading.Tasks;
 
-  using Dalamud.Data.LuminaExtensions;
-  using Dalamud.Game.Chat;
-  using Dalamud.Game.Internal;
-  using Dalamud.Plugin;
+  using Dalamud.Game;
+  using Dalamud.Game.Text;
+  using Dalamud.Interface;
+  using Dalamud.Logging;
+  using Dalamud.Utility;
 
   using ImGuiNET;
   using ImGuiScene;
@@ -32,23 +33,24 @@ namespace MarketBoardPlugin.GUI
   /// </summary>
   public class MarketBoardWindow : IDisposable
   {
-    private readonly List<Item> items;
+    private readonly IEnumerable<Item> items;
 
-    private readonly DalamudPluginInterface pluginInterface;
-
-    private readonly Dictionary<ItemSearchCategory, List<Item>> sortedCategoriesAndItems;
+    private readonly MBPluginConfig config;
 
     private readonly List<(string, string)> worldList = new List<(string, string)>();
 
-    private CancellationTokenSource hoveredItemChangeTokenSource;
+    private Dictionary<ItemSearchCategory, List<Item>> sortedCategoriesAndItems;
 
     private bool isDisposed;
 
     private bool itemIsBeingHovered;
 
+    private bool searchHistoryOpen;
+
     private float progressPosition;
 
     private string searchString = string.Empty;
+    private string lastSearchString = string.Empty;
 
     private Item selectedItem;
 
@@ -56,7 +58,7 @@ namespace MarketBoardPlugin.GUI
 
     private bool watchingForHoveredItem = true;
 
-    private ulong playerId = 0;
+    private ulong playerId;
 
     private int selectedWorld = -1;
 
@@ -68,35 +70,43 @@ namespace MarketBoardPlugin.GUI
 
     private ImFontPtr fontPtr;
 
-    private bool hasListingsHQColumnWidthBeenSet = false;
+    private bool hasListingsHQColumnWidthBeenSet;
 
-    private bool hasHistoryHQColumnWidthBeenSet = false;
+    private bool hasHistoryHQColumnWidthBeenSet;
+
+    private List<KeyValuePair<ItemSearchCategory, List<Item>>> enumerableCategoriesAndItems;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="MarketBoardWindow"/> class.
     /// </summary>
-    /// <param name="pluginInterface">The <see cref="DalamudPluginInterface"/>.</param>
-    public MarketBoardWindow(DalamudPluginInterface pluginInterface)
+    /// <param name="config">The <see cref="MBPluginConfig"/>.</param>
+    public MarketBoardWindow(MBPluginConfig config)
     {
-      if (pluginInterface == null)
-      {
-        throw new ArgumentNullException(nameof(pluginInterface));
-      }
-
-      this.items = pluginInterface.Data.GetExcelSheet<Item>().GetRows();
-      this.pluginInterface = pluginInterface;
+      this.items = MBPlugin.Data.GetExcelSheet<Item>();
+      this.config = config ?? throw new ArgumentNullException(nameof(config));
       this.sortedCategoriesAndItems = this.SortCategoriesAndItems();
 
-      pluginInterface.Framework.OnUpdateEvent += this.HandleFrameworkUpdateEvent;
-      pluginInterface.Framework.Gui.HoveredItemChanged += this.HandleHoveredItemChange;
-      pluginInterface.UiBuilder.OnBuildFonts += this.HandleBuildFonts;
+      MBPlugin.Framework.Update += this.HandleFrameworkUpdateEvent;
+      MBPlugin.GameGui.HoveredItemChanged += this.HandleHoveredItemChange;
+      MBPlugin.PluginInterface.UiBuilder.BuildFonts += this.HandleBuildFonts;
 
-      pluginInterface.UiBuilder.RebuildFonts();
+      MBPlugin.PluginInterface.UiBuilder.RebuildFonts();
 
-      #if DEBUG
+      this.watchingForHoveredItem = this.config.WatchForHovered;
+
+#if DEBUG
       this.worldList.Add(("Chaos", "Chaos"));
       this.worldList.Add(("Moogle", "Moogle"));
-      #endif
+#endif
+    }
+
+    /// <summary>
+    /// Gets or sets the current search string.
+    /// </summary>
+    public string SearchString
+    {
+      get => this.searchString;
+      set => this.searchString = value;
     }
 
     /// <summary>
@@ -118,68 +128,159 @@ namespace MarketBoardPlugin.GUI
     public bool Draw()
     {
       var windowOpen = true;
-      var enumerableCategoriesAndItems = this.sortedCategoriesAndItems.ToList();
 
-      if (!string.IsNullOrWhiteSpace(this.searchString))
+      if (this.sortedCategoriesAndItems == null)
       {
-        enumerableCategoriesAndItems = enumerableCategoriesAndItems
-          .Select(kv => new KeyValuePair<ItemSearchCategory, List<Item>>(
-            kv.Key,
-            kv.Value
-              .Where(i =>
-                i.Name.ToUpperInvariant().Contains(this.searchString.ToUpperInvariant()))
-              .ToList()))
-          .Where(kv => kv.Value.Count > 0)
-          .ToList();
+        this.sortedCategoriesAndItems = this.SortCategoriesAndItems();
+        return true;
       }
 
-      ImGui.SetNextWindowSize(new Vector2(800, 600), ImGuiCond.FirstUseEver);
+      this.enumerableCategoriesAndItems ??= this.sortedCategoriesAndItems.ToList();
 
-      if (!ImGui.Begin("Market Board", ref windowOpen, ImGuiWindowFlags.NoScrollbar))
+      if (this.searchString != this.lastSearchString)
+      {
+        if (!string.IsNullOrEmpty(this.searchString))
+        {
+          this.enumerableCategoriesAndItems = this.sortedCategoriesAndItems
+            .Select(kv => new KeyValuePair<ItemSearchCategory, List<Item>>(
+              kv.Key,
+              kv.Value
+                .Where(i =>
+                  i.Name.ToString().ToUpperInvariant().Contains(this.searchString.ToUpperInvariant(), StringComparison.InvariantCulture))
+                .ToList()))
+            .Where(kv => kv.Value.Count > 0)
+            .ToList();
+        }
+        else
+        {
+          this.enumerableCategoriesAndItems = this.sortedCategoriesAndItems.ToList();
+        }
+
+        this.lastSearchString = this.searchString;
+      }
+
+      var scale = ImGui.GetIO().FontGlobalScale;
+
+      ImGui.SetNextWindowSize(new Vector2(800, 600) * scale, ImGuiCond.FirstUseEver);
+      ImGui.SetNextWindowSizeConstraints(new Vector2(700, 450) * scale, new Vector2(10000, 10000) * scale);
+
+      if (!ImGui.Begin($"Market Board", ref windowOpen, ImGuiWindowFlags.NoScrollbar))
       {
         ImGui.End();
         return windowOpen;
       }
 
-      ImGui.BeginChild("itemListColumn", new Vector2(267, 0), true);
+      ImGui.BeginChild("itemListColumn", new Vector2(267, 0) * scale, true);
 
-      ImGui.SetNextItemWidth(-1);
+      ImGui.SetNextItemWidth((-32 * ImGui.GetIO().FontGlobalScale) - ImGui.GetStyle().ItemSpacing.X);
       ImGuiOverrides.InputTextWithHint("##searchString", "Search for item", ref this.searchString, 256);
+      ImGui.SameLine();
+      ImGui.PushFont(UiBuilder.IconFont);
+      ImGui.PushStyleColor(ImGuiCol.Text, this.searchHistoryOpen ? 0xFF0000FF : 0xFFFFFFFF);
+      if (ImGui.Button($"{(char)FontAwesomeIcon.History}", new Vector2(32 * ImGui.GetIO().FontGlobalScale, ImGui.GetItemRectSize().Y)))
+      {
+        this.searchHistoryOpen = !this.searchHistoryOpen;
+      }
+
+      ImGui.PopStyleColor();
+      ImGui.PopFont();
       ImGui.Separator();
 
-      ImGui.BeginChild("itemTree", new Vector2(0, -2.0f * ImGui.GetFrameHeightWithSpacing()), false, ImGuiWindowFlags.HorizontalScrollbar);
+      ImGui.BeginChild("itemTree", new Vector2(0, -2.0f * ImGui.GetFrameHeightWithSpacing()), false, ImGuiWindowFlags.HorizontalScrollbar | ImGuiWindowFlags.AlwaysHorizontalScrollbar);
+      var itemTextSize = ImGui.CalcTextSize(string.Empty);
 
-      foreach (var category in enumerableCategoriesAndItems)
+      if (this.searchHistoryOpen)
       {
-        if (ImGui.TreeNode(category.Key.Name + "##cat" + category.Key.RowId))
+        ImGui.Text("History");
+        ImGui.Separator();
+        var sheet = MBPlugin.Data.Excel.GetSheet<Item>();
+        foreach (var id in this.config.History.ToArray())
         {
-          ImGui.Unindent(ImGui.GetTreeNodeToLabelSpacing());
-
-          foreach (var item in category.Value)
+          var item = sheet.GetRow(id);
+          if (item == null)
           {
-            var nodeFlags = ImGuiTreeNodeFlags.Leaf | ImGuiTreeNodeFlags.NoTreePushOnOpen;
-
-            if (item.RowId == this.selectedItem?.RowId)
-            {
-              nodeFlags |= ImGuiTreeNodeFlags.Selected;
-            }
-
-            ImGui.TreeNodeEx(item.Name + "##item" + item.RowId, nodeFlags);
-
-            if (ImGui.IsItemClicked())
-            {
-              this.ChangeSelectedItem(item.RowId);
-            }
+            continue;
           }
 
-          ImGui.Indent(ImGui.GetTreeNodeToLabelSpacing());
-          ImGui.TreePop();
+          if (ImGui.Selectable($"{item.Name}", this.selectedItem == item))
+          {
+            this.ChangeSelectedItem(id, true);
+          }
+        }
+      }
+      else
+      {
+        foreach (var category in this.enumerableCategoriesAndItems)
+        {
+          if (ImGui.TreeNode(category.Key.Name + "##cat" + category.Key.RowId))
+          {
+            ImGui.Unindent(ImGui.GetTreeNodeToLabelSpacing());
+
+            for (var i = 0; i < category.Value.Count; i++)
+            {
+              if (ImGui.GetCursorPosY() < ImGui.GetScrollY() - itemTextSize.Y)
+              {
+                // Don't draw items above the scroll region.
+                var y = ImGui.GetCursorPosY();
+                var sy = ImGui.GetScrollY() - itemTextSize.Y;
+                var spacing = itemTextSize.Y + ImGui.GetStyle().ItemSpacing.Y;
+                var c = category.Value.Count;
+                while (i < c && y < sy)
+                {
+                  y += spacing;
+                  i++;
+                }
+
+                ImGui.SetCursorPosY(y);
+                continue;
+              }
+
+              if (ImGui.GetCursorPosY() > ImGui.GetScrollY() + ImGui.GetWindowHeight())
+              {
+                // Don't draw item names below the scroll region
+                var remainingItems = category.Value.Count - i;
+                var remainingItemsHeight = itemTextSize.Y * remainingItems;
+                var remainingGapHeight = ImGui.GetStyle().ItemSpacing.Y * (remainingItems - 1);
+                ImGui.Dummy(new Vector2(1, remainingItemsHeight + remainingGapHeight));
+                break;
+              }
+
+              var item = category.Value[i];
+              var nodeFlags = ImGuiTreeNodeFlags.Leaf | ImGuiTreeNodeFlags.NoTreePushOnOpen;
+
+              if (item.RowId == this.selectedItem?.RowId)
+              {
+                nodeFlags |= ImGuiTreeNodeFlags.Selected;
+              }
+
+              ImGui.TreeNodeEx(item.Name + "##item" + item.RowId, nodeFlags);
+
+              if (ImGui.IsItemClicked())
+              {
+                this.ChangeSelectedItem(item.RowId);
+              }
+            }
+
+            ImGui.Indent(ImGui.GetTreeNodeToLabelSpacing());
+            ImGui.TreePop();
+          }
         }
       }
 
       ImGui.EndChild();
 
-      ImGui.Checkbox("Watch for hovered item", ref this.watchingForHoveredItem);
+      var contextMenuIntegration = this.config.ContextMenuIntegration;
+      if (ImGui.Checkbox("Context menu integration", ref contextMenuIntegration))
+      {
+        this.config.ContextMenuIntegration = contextMenuIntegration;
+        MBPlugin.PluginInterface.SavePluginConfig(this.config);
+      }
+
+      if (ImGui.Checkbox("Watch for hovered item", ref this.watchingForHoveredItem))
+      {
+        this.config.WatchForHovered = this.watchingForHoveredItem;
+      }
+
       ImGui.SameLine();
       ImGui.TextDisabled("(?)");
       if (ImGui.IsItemHovered())
@@ -199,7 +300,10 @@ namespace MarketBoardPlugin.GUI
         }
         else
         {
-          this.progressPosition = 1.0f;
+          this.progressPosition = 0;
+          var itemId = MBPlugin.GameGui.HoveredItem;
+          this.ChangeSelectedItem(Convert.ToUInt32(itemId % 500000));
+          this.itemIsBeingHovered = false;
         }
       }
       else
@@ -226,12 +330,13 @@ namespace MarketBoardPlugin.GUI
 
         ImGui.PushFont(this.fontPtr);
         ImGui.SameLine();
-        ImGui.SetCursorPosY(ImGui.GetCursorPosY() - (ImGui.GetFontSize() / 2.0f) + 19);
+        ImGui.SetCursorPosY(ImGui.GetCursorPosY() - (ImGui.GetFontSize() / 2.0f) + (19 * scale));
         ImGui.Text(this.selectedItem?.Name);
-        ImGui.SameLine(ImGui.GetContentRegionAvail().X - 250);
-        ImGui.SetCursorPosY(ImGui.GetCursorPosY() + (ImGui.GetFontSize() / 2.0f) - 19);
+        ImGui.SameLine(ImGui.GetContentRegionAvail().X - (250 * scale));
+        ImGui.SetCursorPosY(ImGui.GetCursorPosY() + (ImGui.GetFontSize() / 2.0f) - (19 * scale));
         ImGui.PopFont();
-        ImGui.SetNextItemWidth(250);
+        ImGui.BeginGroup();
+        ImGui.SetNextItemWidth(250 * scale);
         if (ImGui.BeginCombo("##worldCombo", this.selectedWorld > -1 ? this.worldList[this.selectedWorld].Item2 : string.Empty))
         {
           foreach (var world in this.worldList)
@@ -240,6 +345,7 @@ namespace MarketBoardPlugin.GUI
             if (ImGui.Selectable(world.Item2, isSelected))
             {
               this.selectedWorld = this.worldList.IndexOf(world);
+              this.config.CrossWorld = this.selectedWorld == 0;
               this.RefreshMarketData();
             }
 
@@ -254,13 +360,13 @@ namespace MarketBoardPlugin.GUI
 
         if (this.marketData != null)
         {
-          ImGui.SetCursorPosX(ImGui.GetContentRegionAvail().X - 250);
-          ImGui.SetCursorPosY(ImGui.GetCursorPosY() - ImGui.GetTextLineHeight());
-          ImGui.SetNextItemWidth(250);
+          ImGui.SetNextItemWidth(250 * scale);
           ImGui.Text(
             $"Last update: {DateTimeOffset.FromUnixTimeMilliseconds(this.marketData.LastUploadTime).LocalDateTime:G}");
           ImGui.SetCursorPosY(ImGui.GetCursorPosY() + ImGui.GetTextLineHeight() - ImGui.GetTextLineHeightWithSpacing());
         }
+
+        ImGui.EndGroup();
 
         if (ImGui.BeginTabBar("tabBar"))
         {
@@ -397,7 +503,7 @@ namespace MarketBoardPlugin.GUI
                 QtySum: (float)g.Sum(h => h.Quantity)))
               .ToList();
 
-            if (marketDataRecentHistory != null)
+            if (marketDataRecentHistory != null && marketDataRecentHistory.Count > 0)
             {
               for (var day = marketDataRecentHistory.Min(h => h.Date);
                 day <= marketDataRecentHistory.Max(h => h.Date);
@@ -468,16 +574,27 @@ namespace MarketBoardPlugin.GUI
       return windowOpen;
     }
 
-    internal void ChangeSelectedItem(uint itemId)
+    internal void ChangeSelectedItem(uint itemId, bool noHistory = false)
     {
       this.selectedItem = this.items.Single(i => i.RowId == itemId);
 
       var iconId = this.selectedItem.Icon;
-      var iconTexFile = this.pluginInterface.Data.GetIcon(iconId);
+      var iconTexFile = MBPlugin.Data.GetIcon(iconId);
       this.selectedItemIcon?.Dispose();
-      this.selectedItemIcon = this.pluginInterface.UiBuilder.LoadImageRaw(iconTexFile.GetRgbaImageData(), iconTexFile.Header.Width, iconTexFile.Header.Height, 4);
+      this.selectedItemIcon = MBPlugin.PluginInterface.UiBuilder.LoadImageRaw(iconTexFile.GetRgbaImageData(), iconTexFile.Header.Width, iconTexFile.Header.Height, 4);
 
       this.RefreshMarketData();
+      if (!noHistory)
+      {
+        this.config.History.RemoveAll(i => i == itemId);
+        this.config.History.Insert(0, itemId);
+        if (this.config.History.Count > 100)
+        {
+          this.config.History.RemoveRange(100, this.config.History.Count - 100);
+        }
+
+        MBPlugin.PluginInterface.SavePluginConfig(this.config);
+      }
     }
 
     /// <summary>
@@ -493,10 +610,9 @@ namespace MarketBoardPlugin.GUI
 
       if (disposing)
       {
-        this.pluginInterface.Framework.OnUpdateEvent -= this.HandleFrameworkUpdateEvent;
-        this.pluginInterface.Framework.Gui.HoveredItemChanged -= this.HandleHoveredItemChange;
-        this.pluginInterface.UiBuilder.OnBuildFonts -= this.HandleBuildFonts;
-        this.hoveredItemChangeTokenSource?.Dispose();
+        MBPlugin.Framework.Update -= this.HandleFrameworkUpdateEvent;
+        MBPlugin.GameGui.HoveredItemChanged -= this.HandleHoveredItemChange;
+        MBPlugin.PluginInterface.UiBuilder.BuildFonts -= this.HandleBuildFonts;
         this.selectedItemIcon?.Dispose();
       }
 
@@ -505,57 +621,98 @@ namespace MarketBoardPlugin.GUI
 
     private Dictionary<ItemSearchCategory, List<Item>> SortCategoriesAndItems()
     {
-      var itemSearchCategories = this.pluginInterface.Data.GetExcelSheet<ItemSearchCategory>().GetRows();
+      try
+      {
+        var itemSearchCategories = MBPlugin.Data.GetExcelSheet<ItemSearchCategory>();
 
-      var sortedCategories = itemSearchCategories
-        .Where(c => c.Category > 0)
-        .OrderBy(c => c.Category)
-        .ThenBy(c => c.Order)
-        .ToDictionary(c => c, c => this.items.Where(i => i.ItemSearchCategory.Row == c.RowId).OrderBy(i => i.Name).ToList());
+        var sortedCategories = itemSearchCategories.Where(c => c.Category > 0).OrderBy(c => c.Category).ThenBy(c => c.Order);
 
-      return sortedCategories;
+        var sortedCategoriesDict = new Dictionary<ItemSearchCategory, List<Item>>();
+
+        foreach (var c in sortedCategories)
+        {
+          if (sortedCategoriesDict.ContainsKey(c))
+          {
+            continue;
+          }
+
+          sortedCategoriesDict.Add(c, this.items.Where(i => i.ItemSearchCategory.Row == c.RowId).OrderBy(i => i.Name.ToString()).ToList());
+        }
+
+        return sortedCategoriesDict;
+      }
+      catch (Exception ex)
+      {
+        PluginLog.Error(ex, $"Error loading category list.");
+        return null;
+      }
     }
 
-    private void HandleBuildFonts()
+    private unsafe void HandleBuildFonts()
     {
-      var fontPath = Path.Combine(Path.GetDirectoryName(Assembly.GetAssembly(typeof(DalamudPluginInterface)).Location) ?? string.Empty, "UIRes", "NotoSansCJKjp-Medium.otf");
+      var fontPath = Path.Combine(MBPlugin.PluginInterface.DalamudAssetDirectory.FullName, "UIRes", "NotoSansCJKjp-Medium.otf");
       this.fontPtr = ImGui.GetIO().Fonts.AddFontFromFileTTF(fontPath, 24.0f);
+
+      ImFontConfigPtr fontConfig = ImGuiNative.ImFontConfig_ImFontConfig();
+      fontConfig.MergeMode = true;
+      fontConfig.NativePtr->DstFont = UiBuilder.DefaultFont.NativePtr;
+
+      var fontRangeHandle = GCHandle.Alloc(
+        new ushort[]
+        {
+            0x202F,
+            0x202F,
+            0,
+        },
+        GCHandleType.Pinned);
+
+      var otherPath = Path.Combine(MBPlugin.PluginInterface.AssemblyLocation.DirectoryName, "Resources", "NotoSans-Medium.otf");
+      ImGui.GetIO().Fonts.AddFontFromFileTTF(otherPath, 17.0f, fontConfig, fontRangeHandle.AddrOfPinnedObject());
+
+      fontConfig.Destroy();
+      fontRangeHandle.Free();
     }
 
     private void HandleFrameworkUpdateEvent(Framework framework)
     {
-      var localPlayer = this.pluginInterface.ClientState.LocalPlayer;
-
-      if (localPlayer == null)
+      if (MBPlugin.ClientState.LocalContentId != 0 && this.playerId != MBPlugin.ClientState.LocalContentId)
       {
-        return;
-      }
-
-      if (this.playerId != this.pluginInterface.ClientState.LocalContentId)
-      {
-        this.playerId = this.pluginInterface.ClientState.LocalContentId;
+        var localPlayer = MBPlugin.ClientState.LocalPlayer;
+        if (localPlayer == null)
+        {
+          return;
+        }
 
         var currentDc = localPlayer.CurrentWorld.GameData.DataCenter;
-        var dcWorlds = this.pluginInterface.Data.GetExcelSheet<World>().GetRows()
-          .Where(w => w.DataCenter.Row == currentDc.Row)
-          .OrderBy(w => w.Name)
+        var dcWorlds = MBPlugin.Data.GetExcelSheet<World>()
+          .Where(w => w.DataCenter.Row == currentDc.Row && w.IsPublic)
+          .OrderBy(w => w.Name.ToString())
           .Select(w =>
           {
-            var displayName = w.Name;
+            string displayName = w.Name;
 
             if (localPlayer.CurrentWorld.Id == w.RowId)
             {
               displayName += $" {SeIconChar.Hyadelyn.ToChar()}";
             }
 
-            return (w.Name, displayName);
+            return (w.Name.ToString(), displayName);
           });
 
         this.worldList.Clear();
         this.worldList.Add((currentDc.Value?.Name, $"Cross-World {SeIconChar.CrossWorld.ToChar()}"));
         this.worldList.AddRange(dcWorlds);
 
-        this.selectedWorld = this.worldList.FindIndex(w => w.Item1 == localPlayer.CurrentWorld.GameData.Name);
+        this.selectedWorld = this.config.CrossWorld ? 0 : this.worldList.FindIndex(w => w.Item1 == localPlayer.CurrentWorld.GameData.Name);
+        if (this.worldList.Count > 1)
+        {
+          this.playerId = MBPlugin.ClientState.LocalContentId;
+        }
+      }
+
+      if (MBPlugin.ClientState.LocalContentId == 0)
+      {
+        this.playerId = 0;
       }
     }
 
@@ -566,41 +723,23 @@ namespace MarketBoardPlugin.GUI
         return;
       }
 
-      if (this.hoveredItemChangeTokenSource != null)
-      {
-        if (!this.hoveredItemChangeTokenSource.IsCancellationRequested)
-        {
-          this.hoveredItemChangeTokenSource.Cancel();
-        }
-
-        this.hoveredItemChangeTokenSource.Dispose();
-      }
-
       this.progressPosition = 0.0f;
 
-      if (itemId == 0)
+      if (itemId == 0 || itemId >= 2000000)
       {
         this.itemIsBeingHovered = false;
-        this.hoveredItemChangeTokenSource = null;
         return;
       }
 
-      this.itemIsBeingHovered = true;
-      this.hoveredItemChangeTokenSource = new CancellationTokenSource();
+      var item = MBPlugin.Data.Excel.GetSheet<Item>().GetRow((uint)itemId % 500000);
 
-      if (this.IsOpen)
+      if (item != null && this.enumerableCategoriesAndItems != null && this.enumerableCategoriesAndItems.Any(i => i.Value != null && i.Value.Contains(item)))
       {
-        Task.Run(async () =>
-        {
-          try
-          {
-            await Task.Delay(1000, this.hoveredItemChangeTokenSource.Token).ConfigureAwait(false);
-            this.ChangeSelectedItem(Convert.ToUInt32(itemId >= 1000000 ? itemId - 1000000 : itemId));
-          }
-          catch (TaskCanceledException)
-          {
-          }
-        });
+        this.itemIsBeingHovered = true;
+      }
+      else
+      {
+        this.itemIsBeingHovered = false;
       }
     }
 
@@ -608,8 +747,9 @@ namespace MarketBoardPlugin.GUI
     {
       Task.Run(async () =>
       {
+        this.marketData = null;
         this.marketData = await UniversalisClient
-          .GetMarketData(this.selectedItem.RowId, this.worldList[this.selectedWorld].Item1, CancellationToken.None)
+          .GetMarketData(this.selectedItem.RowId, this.worldList[this.selectedWorld].Item1, 50, CancellationToken.None)
           .ConfigureAwait(false);
       });
     }

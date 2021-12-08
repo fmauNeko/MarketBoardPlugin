@@ -36,10 +36,11 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Include="../MarketBoardPlugin.json" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="./MarketBoardPlugin.json" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="DalamudPackager" Version="2.1.5" />
     <PackageReference Include="MSBuildGitHash" Version="2.0.2">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>

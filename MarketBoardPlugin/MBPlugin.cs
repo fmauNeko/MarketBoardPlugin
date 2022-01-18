@@ -118,7 +118,6 @@ namespace MarketBoardPlugin
         // Remove command handlers
         PluginInterface.UiBuilder.Draw -= this.BuildMarketBoardUi;
         CommandManager.RemoveHandler("/pmb");
-        PluginInterface.Dispose();
         this.marketBoardWindow.Dispose();
 
         // Dispose of xivCommon

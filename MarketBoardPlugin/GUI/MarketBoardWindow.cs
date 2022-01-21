@@ -43,7 +43,7 @@ namespace MarketBoardPlugin.GUI
 
     private bool isDisposed;
 
-    private bool itemIsBeingHovered;
+    private ulong itemBeingHovered;
 
     private bool searchHistoryOpen;
 
@@ -292,7 +292,7 @@ namespace MarketBoardPlugin.GUI
         ImGui.EndTooltip();
       }
 
-      if (this.itemIsBeingHovered)
+      if (this.itemBeingHovered != 0)
       {
         if (this.progressPosition < 1.0f)
         {
@@ -303,7 +303,7 @@ namespace MarketBoardPlugin.GUI
           this.progressPosition = 0;
           var itemId = MBPlugin.GameGui.HoveredItem;
           this.ChangeSelectedItem(Convert.ToUInt32(itemId % 500000));
-          this.itemIsBeingHovered = false;
+          this.itemBeingHovered = 0;
         }
       }
       else
@@ -718,7 +718,7 @@ namespace MarketBoardPlugin.GUI
 
     private void HandleHoveredItemChange(object sender, ulong itemId)
     {
-      if (!this.watchingForHoveredItem)
+      if (!this.watchingForHoveredItem || this.itemBeingHovered == itemId)
       {
         return;
       }
@@ -727,7 +727,7 @@ namespace MarketBoardPlugin.GUI
 
       if (itemId == 0 || itemId >= 2000000)
       {
-        this.itemIsBeingHovered = false;
+        this.itemBeingHovered = 0;
         return;
       }
 
@@ -735,11 +735,11 @@ namespace MarketBoardPlugin.GUI
 
       if (item != null && this.enumerableCategoriesAndItems != null && this.enumerableCategoriesAndItems.Any(i => i.Value != null && i.Value.Contains(item)))
       {
-        this.itemIsBeingHovered = true;
+        this.itemBeingHovered = itemId;
       }
       else
       {
-        this.itemIsBeingHovered = false;
+        this.itemBeingHovered = 0;
       }
     }
 

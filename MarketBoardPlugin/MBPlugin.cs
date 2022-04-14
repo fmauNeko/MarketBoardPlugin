@@ -12,7 +12,7 @@ namespace MarketBoardPlugin
   using Dalamud.Game.ClientState;
   using Dalamud.Game.Command;
   using Dalamud.Game.Gui;
-
+  using Dalamud.Game.Gui.ContextMenus;
   using Dalamud.IoC;
   using Dalamud.Plugin;
 
@@ -20,17 +20,12 @@ namespace MarketBoardPlugin
 
   using MarketBoardPlugin.GUI;
 
-  using XivCommon;
-  using XivCommon.Functions.ContextMenu;
-  using XivCommon.Functions.ContextMenu.Inventory;
-
   /// <summary>
   /// The entry point of the plugin.
   /// </summary>
   [SuppressMessage("ReSharper", "UnusedMember.Global", Justification = "Plugin entry point")]
   public class MBPlugin : IDalamudPlugin
   {
-    private readonly XivCommonBase xivCommon;
     private readonly string contextMenuSearchString;
 
     private readonly MarketBoardWindow marketBoardWindow;
@@ -59,10 +54,7 @@ namespace MarketBoardPlugin
 
       this.contextMenuSearchString = Data?.Excel?.GetSheet<Addon>()?.GetRow(4379)?.Text?.RawString ?? "Search for Item";
 
-      this.xivCommon = new XivCommonBase(Hooks.ContextMenu);
-
-      this.xivCommon.Functions.ContextMenu.OpenInventoryContextMenu += this.ContextMenuOnOpenInventoryContextMenu;
-      this.xivCommon.Functions.ContextMenu.OpenContextMenu += this.ContextMenuOnOpenContextMenu;
+      ContextMenu.ContextMenuOpened += this.ContextMenuOnContextMenuOpened;
 
 #if DEBUG
       this.marketBoardWindow.IsOpen = true;
@@ -92,6 +84,9 @@ namespace MarketBoardPlugin
     [PluginService]
     internal static GameGui GameGui { get; private set; } = null!;
 
+    [PluginService]
+    internal static ContextMenu ContextMenu { get; private set; } = null!;
+
     /// <inheritdoc/>
     public void Dispose()
     {
@@ -120,16 +115,14 @@ namespace MarketBoardPlugin
         CommandManager.RemoveHandler("/pmb");
         this.marketBoardWindow.Dispose();
 
-        // Dispose of xivCommon
-        this.xivCommon.Functions.ContextMenu.OpenInventoryContextMenu -= this.ContextMenuOnOpenInventoryContextMenu;
-        this.xivCommon.Functions.ContextMenu.OpenContextMenu -= this.ContextMenuOnOpenContextMenu;
-        this.xivCommon.Dispose();
+        // Remove context menu handler
+        ContextMenu.ContextMenuOpened -= this.ContextMenuOnContextMenuOpened;
       }
 
       this.isDisposed = true;
     }
 
-    private void ContextMenuOnOpenContextMenu(ContextMenuOpenArgs args)
+    private void ContextMenuOnContextMenuOpened(ContextMenuOpenedArgs args)
     {
       if (!this.config.ContextMenuIntegration)
       {
@@ -149,48 +142,11 @@ namespace MarketBoardPlugin
         return;
       }
 
-      var index = args.Items.FindIndex(a => a is NativeContextMenuItem n && n.Name.TextValue == this.contextMenuSearchString);
-      if (index < 0)
-      {
-        return;
-      }
-
-      args.Items.Add(new NormalContextMenuItem($"Search with Market Board Plugin", (_) =>
+      args.AddCustomItem("Search with Market Board Plugin", (_) =>
       {
         this.marketBoardWindow.IsOpen = true;
         this.marketBoardWindow.ChangeSelectedItem(i);
-      }));
-    }
-
-    private void ContextMenuOnOpenInventoryContextMenu(InventoryContextMenuOpenArgs args)
-    {
-      if (!this.config.ContextMenuIntegration)
-      {
-        return;
-      }
-
-      var item = Data.Excel.GetSheet<Item>()?.GetRow(args.ItemId);
-      if (item == null)
-      {
-        return;
-      }
-
-      if (item.IsUntradable)
-      {
-        return;
-      }
-
-      var index = args.Items.FindIndex(a => a is NativeContextMenuItem n && n.Name.TextValue == this.contextMenuSearchString);
-      if (index < 0)
-      {
-        return;
-      }
-
-      args.Items.Insert(index + 1, new InventoryContextMenuItem("Search with Market Board Plugin", selectedArgs =>
-      {
-        this.marketBoardWindow.IsOpen = true;
-        this.marketBoardWindow.ChangeSelectedItem(selectedArgs.ItemId);
-      }));
+      });
     }
 
     private void OnOpenMarketBoardCommand(string command, string arguments)

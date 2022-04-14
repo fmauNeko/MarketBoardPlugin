@@ -54,7 +54,8 @@ namespace MarketBoardPlugin
 
       this.contextMenuSearchString = Data?.Excel?.GetSheet<Addon>()?.GetRow(4379)?.Text?.RawString ?? "Search for Item";
 
-      ContextMenu.ContextMenuOpened += this.ContextMenuOnContextMenuOpened;
+      // TODO: Uncomment when context menus are fixed
+      // ContextMenu.ContextMenuOpened += this.ContextMenuOnContextMenuOpened;
 
 #if DEBUG
       this.marketBoardWindow.IsOpen = true;
@@ -116,7 +117,8 @@ namespace MarketBoardPlugin
         this.marketBoardWindow.Dispose();
 
         // Remove context menu handler
-        ContextMenu.ContextMenuOpened -= this.ContextMenuOnContextMenuOpened;
+        // TODO: Uncomment when restoring context menu functionality
+        // ContextMenu.ContextMenuOpened -= this.ContextMenuOnContextMenuOpened;
       }
 
       this.isDisposed = true;

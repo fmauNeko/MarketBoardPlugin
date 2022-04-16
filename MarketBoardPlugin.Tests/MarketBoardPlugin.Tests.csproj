@@ -11,6 +11,8 @@
     <GenerateFullPaths>true</GenerateFullPaths>
     <IsPackable>false</IsPackable>
     <CollectCoverage>true</CollectCoverage>
+    <Platform>x64</Platform>
+    <Platforms>x64</Platforms>
   </PropertyGroup>
 
   <ItemGroup>

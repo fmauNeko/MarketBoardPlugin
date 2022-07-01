@@ -47,10 +47,19 @@ namespace MarketBoardPlugin.GUI
 
     private bool searchHistoryOpen;
 
+    private bool advancedSearchMenuOpen;
+
     private float progressPosition;
 
     private string searchString = string.Empty;
     private string lastSearchString = string.Empty;
+
+    private int ilvlmin = 0;
+    private int ilvlmax = 0;
+
+    private int itemCategory = 0;
+    private int lastItemCategory = 0;
+    private string[] categoryLabels = new[] { "All", "Weapons", "Equipments", "Others", "Furniture" };
 
     private Item selectedItem;
 
@@ -137,30 +146,15 @@ namespace MarketBoardPlugin.GUI
 
       this.enumerableCategoriesAndItems ??= this.sortedCategoriesAndItems.ToList();
 
-      if (this.searchString != this.lastSearchString)
+      // Update Categories And Items if needed
+      if (this.searchString != this.lastSearchString || this.itemCategory != this.lastItemCategory)
       {
-        if (!string.IsNullOrEmpty(this.searchString))
-        {
-          this.enumerableCategoriesAndItems = this.sortedCategoriesAndItems
-            .Select(kv => new KeyValuePair<ItemSearchCategory, List<Item>>(
-              kv.Key,
-              kv.Value
-                .Where(i =>
-                  i.Name.ToString().ToUpperInvariant().Contains(this.searchString.ToUpperInvariant(), StringComparison.InvariantCulture))
-                .ToList()))
-            .Where(kv => kv.Value.Count > 0)
-            .ToList();
-        }
-        else
-        {
-          this.enumerableCategoriesAndItems = this.sortedCategoriesAndItems.ToList();
-        }
-
-        this.lastSearchString = this.searchString;
+        this.UpdateCategoriesAndItems();
       }
 
       var scale = ImGui.GetIO().FontGlobalScale;
 
+      // Window Setup
       ImGui.SetNextWindowSize(new Vector2(800, 600) * scale, ImGuiCond.FirstUseEver);
       ImGui.SetNextWindowSizeConstraints(new Vector2(700, 450) * scale, new Vector2(10000, 10000) * scale);
 
@@ -170,10 +164,12 @@ namespace MarketBoardPlugin.GUI
         return windowOpen;
       }
 
+      // Item List Column Setup
       ImGui.BeginChild("itemListColumn", new Vector2(267, 0) * scale, true);
 
       ImGui.SetNextItemWidth((-32 * ImGui.GetIO().FontGlobalScale) - ImGui.GetStyle().ItemSpacing.X);
       ImGuiOverrides.InputTextWithHint("##searchString", "Search for item", ref this.searchString, 256);
+
       ImGui.SameLine();
       ImGui.PushFont(UiBuilder.IconFont);
       ImGui.PushStyleColor(ImGuiCol.Text, this.searchHistoryOpen ? 0xFF0000FF : 0xFFFFFFFF);
@@ -184,10 +180,42 @@ namespace MarketBoardPlugin.GUI
 
       ImGui.PopStyleColor();
       ImGui.PopFont();
-      ImGui.Separator();
 
+      ImGui.Text("Advanced Search");
+      ImGui.SameLine();
+      ImGui.PushFont(UiBuilder.IconFont);
+      ImGui.PushStyleColor(ImGuiCol.Text, this.advancedSearchMenuOpen ? 0xFF0000FF : 0xFFFFFFFF);
+      if (ImGui.Button($"{(char)FontAwesomeIcon.Cookie}", new Vector2(32 * ImGui.GetIO().FontGlobalScale, ImGui.GetItemRectSize().Y)))
+      {
+        this.advancedSearchMenuOpen = !this.advancedSearchMenuOpen;
+      }
+
+      ImGui.PopStyleColor();
+      ImGui.PopFont();
+
+
+      if (this.advancedSearchMenuOpen)
+      {
+        ImGui.Text("Category: ");
+        ImGui.SameLine();
+        //ImGui.InputInt("##itemCategory", ref this.itemCategory);
+        ImGui.ListBox("###ListBox", ref this.itemCategory, this.categoryLabels, this.categoryLabels.Length);
+        if (this.itemCategory is 1 or 2)
+        {
+          ImGui.Text("Min ilvl : ");
+          ImGui.SameLine();
+          ImGui.InputInt("##ilvlmin", ref this.ilvlmin);
+          ImGui.Text("Max ilvl : ");
+          ImGui.SameLine();
+          ImGui.InputInt("##ilvlmax", ref this.ilvlmax);
+        }
+      }
+
+
+      ImGui.Separator();
       ImGui.BeginChild("itemTree", new Vector2(0, -2.0f * ImGui.GetFrameHeightWithSpacing()), false, ImGuiWindowFlags.HorizontalScrollbar | ImGuiWindowFlags.AlwaysHorizontalScrollbar);
       var itemTextSize = ImGui.CalcTextSize(string.Empty);
+
 
       if (this.searchHistoryOpen)
       {
@@ -617,6 +645,33 @@ namespace MarketBoardPlugin.GUI
       }
 
       this.isDisposed = true;
+    }
+
+    /// <summary>
+    /// Update Categories and Items Dictionary based on current searchString.
+    /// </summary>
+    private void UpdateCategoriesAndItems()
+    {
+      if (!string.IsNullOrEmpty(this.searchString))
+      {
+        this.enumerableCategoriesAndItems = this.sortedCategoriesAndItems.Where(c => (this.itemCategory == 0 || (this.itemCategory > 0 && c.Key.Category == this.itemCategory)))
+          .Select(kv => new KeyValuePair<ItemSearchCategory, List<Item>>(
+            kv.Key,
+            kv.Value
+              .Where(i =>
+                i.Name.ToString().ToUpperInvariant().Contains(this.searchString.ToUpperInvariant(), StringComparison.InvariantCulture))
+              .ToList()))
+          .Where(kv => kv.Value.Count > 0)
+          .ToList();
+      }
+      else
+      {
+        this.enumerableCategoriesAndItems = this.sortedCategoriesAndItems.Where(c => (this.itemCategory == 0 || (this.itemCategory > 0 && c.Key.Category == this.itemCategory)))
+          .ToList();
+      }
+
+      this.lastSearchString = this.searchString;
+      this.lastItemCategory = this.itemCategory;
     }
 
     private Dictionary<ItemSearchCategory, List<Item>> SortCategoriesAndItems()

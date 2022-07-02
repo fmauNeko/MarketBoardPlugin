@@ -54,8 +54,10 @@ namespace MarketBoardPlugin.GUI
     private string searchString = string.Empty;
     private string lastSearchString = string.Empty;
 
-    private int ilvlmin = 0;
-    private int ilvlmax = 605;
+    private int lvlmin = 0;
+    private int lastlvlmin = 0;
+    private int lvlmax = 90;
+    private int lastlvlmax = 90;
 
     private int itemCategory = 0;
     private int lastItemCategory = 0;
@@ -147,7 +149,9 @@ namespace MarketBoardPlugin.GUI
       this.enumerableCategoriesAndItems ??= this.sortedCategoriesAndItems.ToList();
 
       // Update Categories And Items if needed
-      if (this.searchString != this.lastSearchString || this.itemCategory != this.lastItemCategory)
+      if (this.searchString != this.lastSearchString || this.itemCategory != this.lastItemCategory
+                                                     || this.lastlvlmin != this.lvlmin
+                                                     || this.lastlvlmax != this.lvlmax)
       {
         this.UpdateCategoriesAndItems();
       }
@@ -201,12 +205,12 @@ namespace MarketBoardPlugin.GUI
         ImGui.ListBox("###ListBox", ref this.itemCategory, this.categoryLabels, this.categoryLabels.Length);
         if (this.itemCategory is 1 or 2)
         {
-          ImGui.Text("Min ilvl : ");
+          ImGui.Text("Min level : ");
           ImGui.SameLine();
-          ImGui.InputInt("##ilvlmin", ref this.ilvlmin);
-          ImGui.Text("Max ilvl : ");
+          ImGui.InputInt("##lvlmin", ref this.lvlmin);
+          ImGui.Text("Max level : ");
           ImGui.SameLine();
-          ImGui.InputInt("##ilvlmax", ref this.ilvlmax);
+          ImGui.InputInt("##lvlmax", ref this.lvlmax);
         }
       }
 
@@ -659,6 +663,7 @@ namespace MarketBoardPlugin.GUI
             kv.Value
               .Where(i =>
                 i.Name.ToString().ToUpperInvariant().Contains(this.searchString.ToUpperInvariant(), StringComparison.InvariantCulture))
+              .Where(i => i.LevelEquip >= this.lvlmin && i.LevelEquip <= this.lvlmax)
               .ToList()))
           .Where(kv => kv.Value.Count > 0)
           .ToList();
@@ -666,11 +671,17 @@ namespace MarketBoardPlugin.GUI
       else
       {
         this.enumerableCategoriesAndItems = this.sortedCategoriesAndItems.Where(c => (this.itemCategory == 0 || (this.itemCategory > 0 && c.Key.Category == this.itemCategory)))
-          .ToList();
+          .Select(kv => new KeyValuePair<ItemSearchCategory, List<Item>>(
+            kv.Key,
+            kv.Value
+              .Where(i => i.LevelEquip >= this.lvlmin && i.LevelEquip <= this.lvlmax)
+              .ToList())).ToList();
       }
 
       this.lastSearchString = this.searchString;
       this.lastItemCategory = this.itemCategory;
+      this.lastlvlmin = this.lvlmin;
+      this.lastlvlmax = this.lvlmax;
     }
 
     private Dictionary<ItemSearchCategory, List<Item>> SortCategoriesAndItems()

@@ -54,13 +54,13 @@ namespace MarketBoardPlugin.GUI
     private string searchString = string.Empty;
     private string lastSearchString = string.Empty;
 
-    private int lvlmin = 0;
-    private int lastlvlmin = 0;
+    private int lvlmin;
+    private int lastlvlmin;
     private int lvlmax = 90;
     private int lastlvlmax = 90;
 
-    private int itemCategory = 0;
-    private int lastItemCategory = 0;
+    private int itemCategory;
+    private int lastItemCategory;
     private string[] categoryLabels = new[] { "All", "Weapons", "Equipments", "Others", "Furniture" };
 
     private Item selectedItem;
@@ -189,14 +189,13 @@ namespace MarketBoardPlugin.GUI
       ImGui.SameLine();
       ImGui.PushFont(UiBuilder.IconFont);
       ImGui.PushStyleColor(ImGuiCol.Text, this.advancedSearchMenuOpen ? 0xFF0000FF : 0xFFFFFFFF);
-      if (ImGui.Button($"{(char)FontAwesomeIcon.Cookie}", new Vector2(32 * ImGui.GetIO().FontGlobalScale, ImGui.GetItemRectSize().Y)))
+      if (ImGui.Button($"{(char)FontAwesomeIcon.Wrench}", new Vector2(32 * ImGui.GetIO().FontGlobalScale, 1.5f * ImGui.GetItemRectSize().Y)))
       {
         this.advancedSearchMenuOpen = !this.advancedSearchMenuOpen;
       }
 
       ImGui.PopStyleColor();
       ImGui.PopFont();
-
 
       if (this.advancedSearchMenuOpen)
       {
@@ -212,13 +211,17 @@ namespace MarketBoardPlugin.GUI
           ImGui.SameLine();
           ImGui.InputInt("##lvlmax", ref this.lvlmax);
         }
+        else
+        {
+          // If the category selected doesn't need an equip level -> reset to default
+          this.lvlmin = 0;
+          this.lvlmax = 90;
+        }
       }
-
 
       ImGui.Separator();
       ImGui.BeginChild("itemTree", new Vector2(0, -2.0f * ImGui.GetFrameHeightWithSpacing()), false, ImGuiWindowFlags.HorizontalScrollbar | ImGuiWindowFlags.AlwaysHorizontalScrollbar);
       var itemTextSize = ImGui.CalcTextSize(string.Empty);
-
 
       if (this.searchHistoryOpen)
       {

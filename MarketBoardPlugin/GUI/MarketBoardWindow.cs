@@ -55,7 +55,7 @@ namespace MarketBoardPlugin.GUI
     private string lastSearchString = string.Empty;
 
     private int ilvlmin = 0;
-    private int ilvlmax = 0;
+    private int ilvlmax = 605;
 
     private int itemCategory = 0;
     private int lastItemCategory = 0;
@@ -198,7 +198,6 @@ namespace MarketBoardPlugin.GUI
       {
         ImGui.Text("Category: ");
         ImGui.SameLine();
-        //ImGui.InputInt("##itemCategory", ref this.itemCategory);
         ImGui.ListBox("###ListBox", ref this.itemCategory, this.categoryLabels, this.categoryLabels.Length);
         if (this.itemCategory is 1 or 2)
         {

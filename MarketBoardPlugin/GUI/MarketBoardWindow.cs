@@ -345,7 +345,8 @@ namespace MarketBoardPlugin.GUI
             if (ImGui.Selectable(world.Item2, isSelected))
             {
               this.selectedWorld = this.worldList.IndexOf(world);
-              this.config.CrossWorld = this.selectedWorld == 0;
+              this.config.CrossDataCenter = this.selectedWorld == 0;
+              this.config.CrossWorld = this.selectedWorld == 1;
               this.RefreshMarketData();
             }
 
@@ -421,7 +422,7 @@ namespace MarketBoardPlugin.GUI
                 ImGui.NextColumn();
                 ImGui.Text($"{listing.Total:##,###}");
                 ImGui.NextColumn();
-                ImGui.Text($"{listing.RetainerName}{(this.selectedWorld == 0 ? $" {SeIconChar.CrossWorld.ToChar()} {listing.WorldName}" : string.Empty)}");
+                ImGui.Text($"{listing.RetainerName} {SeIconChar.CrossWorld.ToChar()} {(this.selectedWorld <= 1 ? listing.WorldName : this.worldList[this.selectedWorld].Item1)}");
                 ImGui.NextColumn();
                 ImGui.Separator();
               }
@@ -483,7 +484,7 @@ namespace MarketBoardPlugin.GUI
                 ImGui.NextColumn();
                 ImGui.Text($"{DateTimeOffset.FromUnixTimeSeconds(history.Timestamp).LocalDateTime:G}");
                 ImGui.NextColumn();
-                ImGui.Text($"{history.BuyerName}{(this.selectedWorld == 0 ? $" {SeIconChar.CrossWorld.ToChar()} {history.WorldName}" : string.Empty)}");
+                ImGui.Text($"{history.BuyerName} {SeIconChar.CrossWorld.ToChar()} {(this.selectedWorld <= 1 ? history.WorldName : this.worldList[this.selectedWorld].Item1)}");
                 ImGui.NextColumn();
                 ImGui.Separator();
               }
@@ -699,11 +700,33 @@ namespace MarketBoardPlugin.GUI
             return (w.Name.ToString(), displayName);
           });
 
+        var regionName = localPlayer.CurrentWorld.GameData.DataCenter.Value.Region switch
+        {
+          1 => "Japan",
+          2 => "North-America",
+          3 => "Europe",
+          4 => "Oceania",
+          _ => string.Empty,
+        };
+
         this.worldList.Clear();
+        this.worldList.Add((regionName, $"Cross-DC {SeIconChar.CrossWorld.ToChar()}"));
         this.worldList.Add((currentDc.Value?.Name, $"Cross-World {SeIconChar.CrossWorld.ToChar()}"));
         this.worldList.AddRange(dcWorlds);
 
-        this.selectedWorld = this.config.CrossWorld ? 0 : this.worldList.FindIndex(w => w.Item1 == localPlayer.CurrentWorld.GameData.Name);
+        if (this.config.CrossDataCenter)
+        {
+          this.selectedWorld = 0;
+        }
+        else if (this.config.CrossWorld)
+        {
+          this.selectedWorld = 1;
+        }
+        else
+        {
+          this.selectedWorld = this.worldList.FindIndex(w => w.Item1 == localPlayer.CurrentWorld.GameData.Name);
+        }
+
         if (this.worldList.Count > 1)
         {
           this.playerId = MBPlugin.ClientState.LocalContentId;

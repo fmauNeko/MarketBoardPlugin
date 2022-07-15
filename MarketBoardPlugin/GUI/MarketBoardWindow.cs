@@ -47,10 +47,21 @@ namespace MarketBoardPlugin.GUI
 
     private bool searchHistoryOpen;
 
+    private bool advancedSearchMenuOpen;
+
     private float progressPosition;
 
     private string searchString = string.Empty;
     private string lastSearchString = string.Empty;
+
+    private int lvlmin;
+    private int lastlvlmin;
+    private int lvlmax = 90;
+    private int lastlvlmax = 90;
+
+    private int itemCategory;
+    private int lastItemCategory;
+    private string[] categoryLabels = new[] { "All", "Weapons", "Equipments", "Others", "Furniture" };
 
     private Item selectedItem;
 
@@ -137,30 +148,17 @@ namespace MarketBoardPlugin.GUI
 
       this.enumerableCategoriesAndItems ??= this.sortedCategoriesAndItems.ToList();
 
-      if (this.searchString != this.lastSearchString)
+      // Update Categories And Items if needed
+      if (this.searchString != this.lastSearchString || this.itemCategory != this.lastItemCategory
+                                                     || this.lastlvlmin != this.lvlmin
+                                                     || this.lastlvlmax != this.lvlmax)
       {
-        if (!string.IsNullOrEmpty(this.searchString))
-        {
-          this.enumerableCategoriesAndItems = this.sortedCategoriesAndItems
-            .Select(kv => new KeyValuePair<ItemSearchCategory, List<Item>>(
-              kv.Key,
-              kv.Value
-                .Where(i =>
-                  i.Name.ToString().ToUpperInvariant().Contains(this.searchString.ToUpperInvariant(), StringComparison.InvariantCulture))
-                .ToList()))
-            .Where(kv => kv.Value.Count > 0)
-            .ToList();
-        }
-        else
-        {
-          this.enumerableCategoriesAndItems = this.sortedCategoriesAndItems.ToList();
-        }
-
-        this.lastSearchString = this.searchString;
+        this.UpdateCategoriesAndItems();
       }
 
       var scale = ImGui.GetIO().FontGlobalScale;
 
+      // Window Setup
       ImGui.SetNextWindowSize(new Vector2(800, 600) * scale, ImGuiCond.FirstUseEver);
       ImGui.SetNextWindowSizeConstraints(new Vector2(700, 450) * scale, new Vector2(10000, 10000) * scale);
 
@@ -170,10 +168,12 @@ namespace MarketBoardPlugin.GUI
         return windowOpen;
       }
 
+      // Item List Column Setup
       ImGui.BeginChild("itemListColumn", new Vector2(267, 0) * scale, true);
 
       ImGui.SetNextItemWidth((-32 * ImGui.GetIO().FontGlobalScale) - ImGui.GetStyle().ItemSpacing.X);
       ImGuiOverrides.InputTextWithHint("##searchString", "Search for item", ref this.searchString, 256);
+
       ImGui.SameLine();
       ImGui.PushFont(UiBuilder.IconFont);
       ImGui.PushStyleColor(ImGuiCol.Text, this.searchHistoryOpen ? 0xFF0000FF : 0xFFFFFFFF);
@@ -184,9 +184,46 @@ namespace MarketBoardPlugin.GUI
 
       ImGui.PopStyleColor();
       ImGui.PopFont();
-      ImGui.Separator();
 
-      ImGui.BeginChild("itemTree", new Vector2(0, -2.0f * ImGui.GetFrameHeightWithSpacing()), false, ImGuiWindowFlags.HorizontalScrollbar | ImGuiWindowFlags.AlwaysHorizontalScrollbar);
+      var previousYCursor = ImGui.GetCursorPosY();
+      ImGui.SetCursorPosY(previousYCursor - (ImGui.GetFontSize() / 2.0f) + (13 * scale));
+      ImGui.Text("Advanced Search");
+      ImGui.SameLine();
+      ImGui.SetCursorPosY(previousYCursor);
+      ImGui.PushFont(UiBuilder.IconFont);
+      ImGui.PushStyleColor(ImGuiCol.Text, this.advancedSearchMenuOpen ? 0xFF0000FF : 0xFFFFFFFF);
+      if (ImGui.Button($"{(char)FontAwesomeIcon.Wrench}", new Vector2(32 * ImGui.GetIO().FontGlobalScale, 1.5f * ImGui.GetItemRectSize().Y)))
+      {
+        this.advancedSearchMenuOpen = !this.advancedSearchMenuOpen;
+      }
+
+      ImGui.PopStyleColor();
+      ImGui.PopFont();
+
+      if (this.advancedSearchMenuOpen)
+      {
+        ImGui.Text("Category: ");
+        ImGui.SameLine();
+        ImGui.ListBox("###ListBox", ref this.itemCategory, this.categoryLabels, this.categoryLabels.Length);
+        if (this.itemCategory is 1 or 2)
+        {
+          ImGui.Text("Min level : ");
+          ImGui.SameLine();
+          ImGui.InputInt("##lvlmin", ref this.lvlmin);
+          ImGui.Text("Max level : ");
+          ImGui.SameLine();
+          ImGui.InputInt("##lvlmax", ref this.lvlmax);
+        }
+        else
+        {
+          // If the category selected doesn't need an equip level -> reset to default
+          this.lvlmin = 0;
+          this.lvlmax = 90;
+        }
+      }
+
+      ImGui.Separator();
+      ImGui.BeginChild("itemTree", new Vector2(0, -3.0f * ImGui.GetFrameHeightWithSpacing()), false, ImGuiWindowFlags.HorizontalScrollbar | ImGuiWindowFlags.AlwaysHorizontalScrollbar);
       var itemTextSize = ImGui.CalcTextSize(string.Empty);
 
       if (this.searchHistoryOpen)
@@ -333,7 +370,7 @@ namespace MarketBoardPlugin.GUI
         ImGui.SetCursorPosY(ImGui.GetCursorPosY() - (ImGui.GetFontSize() / 2.0f) + (19 * scale));
         ImGui.Text(this.selectedItem?.Name);
         ImGui.SameLine(ImGui.GetContentRegionAvail().X - (250 * scale));
-        ImGui.SetCursorPosY(ImGui.GetCursorPosY() + (ImGui.GetFontSize() / 2.0f) - (19 * scale));
+        ImGui.SetCursorPosY(0);
         ImGui.PopFont();
         ImGui.BeginGroup();
         ImGui.SetNextItemWidth(250 * scale);
@@ -345,7 +382,8 @@ namespace MarketBoardPlugin.GUI
             if (ImGui.Selectable(world.Item2, isSelected))
             {
               this.selectedWorld = this.worldList.IndexOf(world);
-              this.config.CrossWorld = this.selectedWorld == 0;
+              this.config.CrossDataCenter = this.selectedWorld == 0;
+              this.config.CrossWorld = this.selectedWorld == 1;
               this.RefreshMarketData();
             }
 
@@ -421,7 +459,7 @@ namespace MarketBoardPlugin.GUI
                 ImGui.NextColumn();
                 ImGui.Text($"{listing.Total:##,###}");
                 ImGui.NextColumn();
-                ImGui.Text($"{listing.RetainerName}{(this.selectedWorld == 0 ? $" {SeIconChar.CrossWorld.ToChar()} {listing.WorldName}" : string.Empty)}");
+                ImGui.Text($"{listing.RetainerName} {SeIconChar.CrossWorld.ToChar()} {(this.selectedWorld <= 1 ? listing.WorldName : this.worldList[this.selectedWorld].Item1)}");
                 ImGui.NextColumn();
                 ImGui.Separator();
               }
@@ -483,7 +521,7 @@ namespace MarketBoardPlugin.GUI
                 ImGui.NextColumn();
                 ImGui.Text($"{DateTimeOffset.FromUnixTimeSeconds(history.Timestamp).LocalDateTime:G}");
                 ImGui.NextColumn();
-                ImGui.Text($"{history.BuyerName}{(this.selectedWorld == 0 ? $" {SeIconChar.CrossWorld.ToChar()} {history.WorldName}" : string.Empty)}");
+                ImGui.Text($"{history.BuyerName} {SeIconChar.CrossWorld.ToChar()} {(this.selectedWorld <= 1 ? history.WorldName : this.worldList[this.selectedWorld].Item1)}");
                 ImGui.NextColumn();
                 ImGui.Separator();
               }
@@ -619,6 +657,40 @@ namespace MarketBoardPlugin.GUI
       this.isDisposed = true;
     }
 
+    /// <summary>
+    /// Update Categories and Items Dictionary based on current searchString.
+    /// </summary>
+    private void UpdateCategoriesAndItems()
+    {
+      if (!string.IsNullOrEmpty(this.searchString))
+      {
+        this.enumerableCategoriesAndItems = this.sortedCategoriesAndItems.Where(c => (this.itemCategory == 0 || (this.itemCategory > 0 && c.Key.Category == this.itemCategory)))
+          .Select(kv => new KeyValuePair<ItemSearchCategory, List<Item>>(
+            kv.Key,
+            kv.Value
+              .Where(i =>
+                i.Name.ToString().ToUpperInvariant().Contains(this.searchString.ToUpperInvariant(), StringComparison.InvariantCulture))
+              .Where(i => i.LevelEquip >= this.lvlmin && i.LevelEquip <= this.lvlmax)
+              .ToList()))
+          .Where(kv => kv.Value.Count > 0)
+          .ToList();
+      }
+      else
+      {
+        this.enumerableCategoriesAndItems = this.sortedCategoriesAndItems.Where(c => (this.itemCategory == 0 || (this.itemCategory > 0 && c.Key.Category == this.itemCategory)))
+          .Select(kv => new KeyValuePair<ItemSearchCategory, List<Item>>(
+            kv.Key,
+            kv.Value
+              .Where(i => i.LevelEquip >= this.lvlmin && i.LevelEquip <= this.lvlmax)
+              .ToList())).ToList();
+      }
+
+      this.lastSearchString = this.searchString;
+      this.lastItemCategory = this.itemCategory;
+      this.lastlvlmin = this.lvlmin;
+      this.lastlvlmax = this.lvlmax;
+    }
+
     private Dictionary<ItemSearchCategory, List<Item>> SortCategoriesAndItems()
     {
       try
@@ -699,11 +771,33 @@ namespace MarketBoardPlugin.GUI
             return (w.Name.ToString(), displayName);
           });
 
+        var regionName = localPlayer.CurrentWorld.GameData.DataCenter.Value.Region switch
+        {
+          1 => "Japan",
+          2 => "North-America",
+          3 => "Europe",
+          4 => "Oceania",
+          _ => string.Empty,
+        };
+
         this.worldList.Clear();
+        this.worldList.Add((regionName, $"Cross-DC {SeIconChar.CrossWorld.ToChar()}"));
         this.worldList.Add((currentDc.Value?.Name, $"Cross-World {SeIconChar.CrossWorld.ToChar()}"));
         this.worldList.AddRange(dcWorlds);
 
-        this.selectedWorld = this.config.CrossWorld ? 0 : this.worldList.FindIndex(w => w.Item1 == localPlayer.CurrentWorld.GameData.Name);
+        if (this.config.CrossDataCenter)
+        {
+          this.selectedWorld = 0;
+        }
+        else if (this.config.CrossWorld)
+        {
+          this.selectedWorld = 1;
+        }
+        else
+        {
+          this.selectedWorld = this.worldList.FindIndex(w => w.Item1 == localPlayer.CurrentWorld.GameData.Name);
+        }
+
         if (this.worldList.Count > 1)
         {
           this.playerId = MBPlugin.ClientState.LocalContentId;

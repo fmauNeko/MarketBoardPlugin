@@ -7,13 +7,16 @@ namespace MarketBoardPlugin
   using System;
   using System.Diagnostics.CodeAnalysis;
 
+  using Dalamud.ContextMenu;
   using Dalamud.Data;
   using Dalamud.Game;
   using Dalamud.Game.ClientState;
   using Dalamud.Game.Command;
   using Dalamud.Game.Gui;
-  using Dalamud.Game.Gui.ContextMenus;
+  using Dalamud.Game.Text.SeStringHandling;
+  using Dalamud.Game.Text.SeStringHandling.Payloads;
   using Dalamud.IoC;
+  using Dalamud.Logging;
   using Dalamud.Plugin;
 
   using Lumina.Excel.GeneratedSheets;
@@ -26,7 +29,9 @@ namespace MarketBoardPlugin
   [SuppressMessage("ReSharper", "UnusedMember.Global", Justification = "Plugin entry point")]
   public class MBPlugin : IDalamudPlugin
   {
-    private readonly string contextMenuSearchString;
+    private readonly DalamudContextMenuBase contextMenuBase;
+
+    private readonly InventoryContextMenuItem inventoryContextMenuItem;
 
     private readonly MarketBoardWindow marketBoardWindow;
 
@@ -52,10 +57,11 @@ namespace MarketBoardPlugin
 
       PluginInterface.UiBuilder.Draw += this.BuildMarketBoardUi;
 
-      this.contextMenuSearchString = Data?.Excel?.GetSheet<Addon>()?.GetRow(4379)?.Text?.RawString ?? "Search for Item";
-
-      // TODO: Uncomment when context menus are fixed
-      // ContextMenu.ContextMenuOpened += this.ContextMenuOnContextMenuOpened;
+      // Set up context menu
+      this.contextMenuBase = new DalamudContextMenuBase();
+      this.inventoryContextMenuItem = new InventoryContextMenuItem(
+        new SeString(new TextPayload("Search with Market Board Plugin")), this.OnSelectContextMenuItem);
+      this.contextMenuBase.Functions.ContextMenu.OnOpenInventoryContextMenu += this.OnContextMenuOpened;
 
 #if DEBUG
       this.marketBoardWindow.IsOpen = true;
@@ -84,9 +90,6 @@ namespace MarketBoardPlugin
 
     [PluginService]
     internal static GameGui GameGui { get; private set; } = null!;
-
-    [PluginService]
-    internal static ContextMenu ContextMenu { get; private set; } = null!;
 
     /// <inheritdoc/>
     public void Dispose()
@@ -117,14 +120,14 @@ namespace MarketBoardPlugin
         this.marketBoardWindow.Dispose();
 
         // Remove context menu handler
-        // TODO: Uncomment when restoring context menu functionality
-        // ContextMenu.ContextMenuOpened -= this.ContextMenuOnContextMenuOpened;
+        this.contextMenuBase.Functions.ContextMenu.OnOpenInventoryContextMenu -= this.OnContextMenuOpened;
+        this.contextMenuBase.Dispose();
       }
 
       this.isDisposed = true;
     }
 
-    private void ContextMenuOnContextMenuOpened(ContextMenuOpenedArgs args)
+    private void OnContextMenuOpened(InventoryContextMenuOpenArgs args)
     {
       if (!this.config.ContextMenuIntegration)
       {
@@ -144,11 +147,25 @@ namespace MarketBoardPlugin
         return;
       }
 
-      args.AddCustomItem("Search with Market Board Plugin", (_) =>
+      if (args.ItemId == 0)
+      {
+        return;
+      }
+
+      args.AddCustomItem(this.inventoryContextMenuItem);
+    }
+
+    private void OnSelectContextMenuItem(InventoryContextMenuItemSelectedArgs args)
+    {
+      try
       {
         this.marketBoardWindow.IsOpen = true;
-        this.marketBoardWindow.ChangeSelectedItem(i);
-      });
+        this.marketBoardWindow.ChangeSelectedItem(args.ItemId);
+      }
+      catch (Exception ex)
+      {
+        PluginLog.LogError(ex, "Failed on context menu for itemId" + args.ItemId);
+      }
     }
 
     private void OnOpenMarketBoardCommand(string command, string arguments)

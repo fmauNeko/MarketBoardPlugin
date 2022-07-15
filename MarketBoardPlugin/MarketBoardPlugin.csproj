@@ -46,6 +46,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="Dalamud.ContextMenu" Version="1.0.0" />
     <PackageReference Include="DalamudPackager" Version="2.1.6" />
     <PackageReference Include="MSBuildGitHash" Version="2.0.2">
       <PrivateAssets>all</PrivateAssets>

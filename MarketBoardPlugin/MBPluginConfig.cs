@@ -19,6 +19,11 @@ namespace MarketBoardPlugin
     public int Version { get; set; } = 1;
 
     /// <summary>
+    /// Gets or sets a value indicating whether cross data center was selected.
+    /// </summary>
+    public bool CrossDataCenter { get; set; }
+
+    /// <summary>
     /// Gets or sets a value indicating whether cross world was selected.
     /// </summary>
     public bool CrossWorld { get; set; }

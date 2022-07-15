@@ -6,6 +6,7 @@ namespace MarketBoardPlugin
 {
   using System;
   using System.Diagnostics.CodeAnalysis;
+
   using Dalamud.ContextMenu;
   using Dalamud.Data;
   using Dalamud.Game;
@@ -17,7 +18,9 @@ namespace MarketBoardPlugin
   using Dalamud.IoC;
   using Dalamud.Logging;
   using Dalamud.Plugin;
+
   using Lumina.Excel.GeneratedSheets;
+
   using MarketBoardPlugin.GUI;
 
   /// <summary>
@@ -29,8 +32,6 @@ namespace MarketBoardPlugin
     private readonly DalamudContextMenuBase contextMenuBase;
 
     private readonly InventoryContextMenuItem inventoryContextMenuItem;
-
-    private readonly string contextMenuSearchString;
 
     private readonly MarketBoardWindow marketBoardWindow;
 
@@ -55,8 +56,6 @@ namespace MarketBoardPlugin
       });
 
       PluginInterface.UiBuilder.Draw += this.BuildMarketBoardUi;
-
-      this.contextMenuSearchString = Data?.Excel?.GetSheet<Addon>()?.GetRow(4379)?.Text?.RawString ?? "Search for Item";
 
       // Set up context menu
       this.contextMenuBase = new DalamudContextMenuBase();

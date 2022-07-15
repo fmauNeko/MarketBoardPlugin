@@ -185,8 +185,11 @@ namespace MarketBoardPlugin.GUI
       ImGui.PopStyleColor();
       ImGui.PopFont();
 
+      var previousYCursor = ImGui.GetCursorPosY();
+      ImGui.SetCursorPosY(previousYCursor - (ImGui.GetFontSize() / 2.0f) + (13 * scale));
       ImGui.Text("Advanced Search");
       ImGui.SameLine();
+      ImGui.SetCursorPosY(previousYCursor);
       ImGui.PushFont(UiBuilder.IconFont);
       ImGui.PushStyleColor(ImGuiCol.Text, this.advancedSearchMenuOpen ? 0xFF0000FF : 0xFFFFFFFF);
       if (ImGui.Button($"{(char)FontAwesomeIcon.Wrench}", new Vector2(32 * ImGui.GetIO().FontGlobalScale, 1.5f * ImGui.GetItemRectSize().Y)))
@@ -220,7 +223,7 @@ namespace MarketBoardPlugin.GUI
       }
 
       ImGui.Separator();
-      ImGui.BeginChild("itemTree", new Vector2(0, -2.0f * ImGui.GetFrameHeightWithSpacing()), false, ImGuiWindowFlags.HorizontalScrollbar | ImGuiWindowFlags.AlwaysHorizontalScrollbar);
+      ImGui.BeginChild("itemTree", new Vector2(0, -3.0f * ImGui.GetFrameHeightWithSpacing()), false, ImGuiWindowFlags.HorizontalScrollbar | ImGuiWindowFlags.AlwaysHorizontalScrollbar);
       var itemTextSize = ImGui.CalcTextSize(string.Empty);
 
       if (this.searchHistoryOpen)
@@ -367,7 +370,7 @@ namespace MarketBoardPlugin.GUI
         ImGui.SetCursorPosY(ImGui.GetCursorPosY() - (ImGui.GetFontSize() / 2.0f) + (19 * scale));
         ImGui.Text(this.selectedItem?.Name);
         ImGui.SameLine(ImGui.GetContentRegionAvail().X - (250 * scale));
-        ImGui.SetCursorPosY(ImGui.GetCursorPosY() + (ImGui.GetFontSize() / 2.0f) - (19 * scale));
+        ImGui.SetCursorPosY(0);
         ImGui.PopFont();
         ImGui.BeginGroup();
         ImGui.SetNextItemWidth(250 * scale);

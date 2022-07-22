@@ -2,6 +2,9 @@
 // Copyright (c) Florian Maunier. All rights reserved.
 // </copyright>
 
+using System.ComponentModel;
+using Lumina.Excel;
+
 namespace MarketBoardPlugin.GUI
 {
   using System;
@@ -86,6 +89,10 @@ namespace MarketBoardPlugin.GUI
     private bool hasHistoryHQColumnWidthBeenSet;
 
     private List<KeyValuePair<ItemSearchCategory, List<Item>>> enumerableCategoriesAndItems;
+
+    private List<Item> shoppingList;
+
+    private bool DebugLog = true;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="MarketBoardWindow"/> class.
@@ -296,6 +303,17 @@ namespace MarketBoardPlugin.GUI
               {
                 this.ChangeSelectedItem(item.RowId);
               }
+
+              if (ImGui.BeginPopupContextItem("shoplist"))
+              {
+                if (ImGui.Selectable("Add to the shopping list"))
+                {
+                  shoppingList.Add(item);
+                }
+                ImGui.EndPopup();
+              }
+
+                ImGui.OpenPopupOnItemClick("shoplist", ImGuiPopupFlags.MouseButtonRight);
             }
 
             ImGui.Indent(ImGui.GetTreeNodeToLabelSpacing());
@@ -616,6 +634,8 @@ namespace MarketBoardPlugin.GUI
     {
       this.selectedItem = this.items.Single(i => i.RowId == itemId);
 
+      PrintItemInfo(this.selectedItem);
+
       var iconId = this.selectedItem.Icon;
       var iconTexFile = MBPlugin.Data.GetIcon(iconId);
       this.selectedItemIcon?.Dispose();
@@ -834,6 +854,17 @@ namespace MarketBoardPlugin.GUI
       else
       {
         this.itemBeingHovered = 0;
+      }
+    }
+
+    private void PrintItemInfo(Item itm)
+    {
+      //PluginLog.Information(itm.Rarity.ToString());
+      foreach(PropertyDescriptor descriptor in TypeDescriptor.GetProperties(itm))
+      {
+        string name = descriptor.Name;
+        object value = descriptor.GetValue(itm);
+        PluginLog.LogInformation("{0}={1}", name, value);
       }
     }
 

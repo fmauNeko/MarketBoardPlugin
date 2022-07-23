@@ -300,7 +300,7 @@ namespace MarketBoardPlugin.GUI
 
               if (ImGui.BeginPopupContextItem("shoplist" + category.Key.Name + i))
               {
-                if (ImGui.Selectable("Add to the shopping list"))
+                if (ImGui.Selectable("Add to the shopping list") && this.marketData != null && this.selectedWorld >= 0)
                 {
                   this.shoppingList.Add(new SavedItem(item, this.marketData.Listings.OrderBy(l => l.PricePerUnit).ToList()[0].PricePerUnit, this.worldList[this.selectedWorld].Item2));
                 }
@@ -682,14 +682,19 @@ namespace MarketBoardPlugin.GUI
     {
 
       ImGui.Begin("Shopping List");
-      ImGui.Columns(3, "recentHistoryColumns");
+      ImGui.Columns(4, "recentHistoryColumns");
       ImGui.Text("Name");
       ImGui.NextColumn();
       ImGui.Text("Price");
       ImGui.NextColumn();
       ImGui.Text("World");
       ImGui.NextColumn();
+      ImGui.Text("Action");
+      ImGui.NextColumn();
       ImGui.Separator();
+
+      List<SavedItem> todel = new List<SavedItem>();
+
       foreach (var item in this.shoppingList)
       {
         ImGui.Text(item.SourceItem.Name);
@@ -698,7 +703,20 @@ namespace MarketBoardPlugin.GUI
         ImGui.NextColumn();
         ImGui.Text(item.World);
         ImGui.NextColumn();
+        ImGui.PushFont(UiBuilder.IconFont);
+        if (ImGui.Button($"{(char)FontAwesomeIcon.Slash}", new Vector2(32 * ImGui.GetIO().FontGlobalScale, 1.5f * ImGui.GetItemRectSize().Y)))
+        {
+          todel.Add(item);
+        }
+
+        ImGui.PopFont();
+        ImGui.NextColumn();
         ImGui.Separator();
+      }
+
+      foreach (var item in todel)
+      {
+        this.shoppingList.Remove(item);
       }
 
       ImGui.End();

@@ -90,9 +90,7 @@ namespace MarketBoardPlugin.GUI
 
     private List<KeyValuePair<ItemSearchCategory, List<Item>>> enumerableCategoriesAndItems;
 
-    private List<Item> shoppingList;
-
-    private bool DebugLog = true;
+    private List<Item> shoppingList = new List<Item>();
 
     /// <summary>
     /// Initializes a new instance of the <see cref="MarketBoardWindow"/> class.
@@ -304,16 +302,17 @@ namespace MarketBoardPlugin.GUI
                 this.ChangeSelectedItem(item.RowId);
               }
 
-              if (ImGui.BeginPopupContextItem("shoplist"))
+              if (ImGui.BeginPopupContextItem("shoplist" + category.Key.Name + i))
               {
                 if (ImGui.Selectable("Add to the shopping list"))
                 {
-                  shoppingList.Add(item);
+                  this.shoppingList.Add(item);
                 }
+
                 ImGui.EndPopup();
               }
 
-                ImGui.OpenPopupOnItemClick("shoplist", ImGuiPopupFlags.MouseButtonRight);
+              ImGui.OpenPopupOnItemClick("shoplist" + category.Key.Name + i, ImGuiPopupFlags.MouseButtonRight);
             }
 
             ImGui.Indent(ImGui.GetTreeNodeToLabelSpacing());
@@ -627,14 +626,17 @@ namespace MarketBoardPlugin.GUI
       ImGui.EndChild();
       ImGui.End();
 
+      if (this.shoppingList.Count > 0)
+      {
+        this.ShowShoppingListMenu();
+      }
+
       return windowOpen;
     }
 
     internal void ChangeSelectedItem(uint itemId, bool noHistory = false)
     {
       this.selectedItem = this.items.Single(i => i.RowId == itemId);
-
-      PrintItemInfo(this.selectedItem);
 
       var iconId = this.selectedItem.Icon;
       var iconTexFile = MBPlugin.Data.GetIcon(iconId);
@@ -675,6 +677,20 @@ namespace MarketBoardPlugin.GUI
       }
 
       this.isDisposed = true;
+    }
+
+    /// <summary>
+    /// Create a new separate window showing the shopping list.
+    /// </summary>
+    private void ShowShoppingListMenu()
+    {
+      ImGui.Begin("Shopping List");
+      foreach (var item in this.shoppingList)
+      {
+        ImGui.Text(item.Name);
+      }
+
+      ImGui.End();
     }
 
     /// <summary>
@@ -857,10 +873,13 @@ namespace MarketBoardPlugin.GUI
       }
     }
 
-    private void PrintItemInfo(Item itm)
+    /// <summary>
+    ///  Function used for debug purposes : Log every attributes of an Item.
+    /// </summary>
+    /// <param name="itm"> Item class to show in logs.</param>
+    private static void LogItemInfo(Item itm)
     {
-      //PluginLog.Information(itm.Rarity.ToString());
-      foreach(PropertyDescriptor descriptor in TypeDescriptor.GetProperties(itm))
+      foreach (PropertyDescriptor descriptor in TypeDescriptor.GetProperties(itm))
       {
         string name = descriptor.Name;
         object value = descriptor.GetValue(itm);

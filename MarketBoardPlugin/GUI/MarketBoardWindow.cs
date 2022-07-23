@@ -680,8 +680,9 @@ namespace MarketBoardPlugin.GUI
     /// </summary>
     private void ShowShoppingListMenu()
     {
+
       ImGui.Begin("Shopping List");
-      ImGui.Separator();
+      ImGui.Columns(3, "recentHistoryColumns");
       ImGui.Text("Name");
       ImGui.NextColumn();
       ImGui.Text("Price");
@@ -691,7 +692,6 @@ namespace MarketBoardPlugin.GUI
       ImGui.Separator();
       foreach (var item in this.shoppingList)
       {
-        ImGui.Separator();
         ImGui.Text(item.SourceItem.Name);
         ImGui.NextColumn();
         ImGui.Text(item.Price.ToString());

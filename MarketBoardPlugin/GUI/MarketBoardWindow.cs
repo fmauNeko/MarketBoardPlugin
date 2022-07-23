@@ -2,33 +2,29 @@
 // Copyright (c) Florian Maunier. All rights reserved.
 // </copyright>
 
-using System.ComponentModel;
-using Lumina.Excel;
-
 namespace MarketBoardPlugin.GUI
 {
   using System;
   using System.Collections.Generic;
+  using System.ComponentModel;
   using System.IO;
   using System.Linq;
   using System.Numerics;
   using System.Runtime.InteropServices;
   using System.Threading;
   using System.Threading.Tasks;
-
   using Dalamud.Game;
   using Dalamud.Game.Text;
   using Dalamud.Interface;
   using Dalamud.Logging;
   using Dalamud.Utility;
-
   using ImGuiNET;
   using ImGuiScene;
-
+  using Lumina.Excel;
   using Lumina.Excel.GeneratedSheets;
-
   using MarketBoardPlugin.Extensions;
   using MarketBoardPlugin.Helpers;
+  using MarketBoardPlugin.Models.ShoppingList;
   using MarketBoardPlugin.Models.Universalis;
 
   /// <summary>
@@ -90,7 +86,7 @@ namespace MarketBoardPlugin.GUI
 
     private List<KeyValuePair<ItemSearchCategory, List<Item>>> enumerableCategoriesAndItems;
 
-    private List<Item> shoppingList = new List<Item>();
+    private List<SavedItem> shoppingList = new List<SavedItem>();
 
     /// <summary>
     /// Initializes a new instance of the <see cref="MarketBoardWindow"/> class.
@@ -306,7 +302,7 @@ namespace MarketBoardPlugin.GUI
               {
                 if (ImGui.Selectable("Add to the shopping list"))
                 {
-                  this.shoppingList.Add(item);
+                  this.shoppingList.Add(new SavedItem(item, this.marketData.Listings.OrderBy(l => l.PricePerUnit).ToList()[0].PricePerUnit, this.worldList[this.selectedWorld].Item2));
                 }
 
                 ImGui.EndPopup();
@@ -685,9 +681,24 @@ namespace MarketBoardPlugin.GUI
     private void ShowShoppingListMenu()
     {
       ImGui.Begin("Shopping List");
+      ImGui.Separator();
+      ImGui.Text("Name");
+      ImGui.NextColumn();
+      ImGui.Text("Price");
+      ImGui.NextColumn();
+      ImGui.Text("World");
+      ImGui.NextColumn();
+      ImGui.Separator();
       foreach (var item in this.shoppingList)
       {
-        ImGui.Text(item.Name);
+        ImGui.Separator();
+        ImGui.Text(item.SourceItem.Name);
+        ImGui.NextColumn();
+        ImGui.Text(item.Price.ToString());
+        ImGui.NextColumn();
+        ImGui.Text(item.World);
+        ImGui.NextColumn();
+        ImGui.Separator();
       }
 
       ImGui.End();

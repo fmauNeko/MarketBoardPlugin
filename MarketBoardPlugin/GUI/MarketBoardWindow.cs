@@ -49,6 +49,8 @@ namespace MarketBoardPlugin.GUI
 
     private bool advancedSearchMenuOpen;
 
+    private bool settingMenuOpen;
+
     private float progressPosition;
 
     private string searchString = string.Empty;
@@ -306,20 +308,6 @@ namespace MarketBoardPlugin.GUI
 
       ImGui.EndChild();
 
-      var contextMenuIntegration = this.config.ContextMenuIntegration;
-      if (ImGui.Checkbox("Context menu integration", ref contextMenuIntegration))
-      {
-        this.config.ContextMenuIntegration = contextMenuIntegration;
-        MBPlugin.PluginInterface.SavePluginConfig(this.config);
-      }
-
-      if (ImGui.Checkbox("Watch for hovered item", ref this.watchingForHoveredItem))
-      {
-        this.config.WatchForHovered = this.watchingForHoveredItem;
-      }
-
-      ImGui.SameLine();
-      ImGui.TextDisabled("(?)");
       if (ImGui.IsItemHovered())
       {
         ImGui.BeginTooltip();
@@ -349,6 +337,16 @@ namespace MarketBoardPlugin.GUI
       }
 
       ImGui.ProgressBar(this.progressPosition, new Vector2(-1, 0), string.Empty);
+
+      ImGui.Text("Settings : ");
+      ImGui.SameLine();
+      ImGui.PushFont(UiBuilder.IconFont);
+      if (ImGui.Button($"{(char)FontAwesomeIcon.Cog}"))
+      {
+        this.settingMenuOpen = !this.settingMenuOpen;
+      }
+
+      ImGui.PopFont();
 
       ImGui.EndChild();
       ImGui.SameLine();
@@ -609,6 +607,11 @@ namespace MarketBoardPlugin.GUI
       ImGui.EndChild();
       ImGui.End();
 
+      if (this.settingMenuOpen)
+      {
+        this.OpenSettingMenu();
+      }
+
       return windowOpen;
     }
 
@@ -655,6 +658,24 @@ namespace MarketBoardPlugin.GUI
       }
 
       this.isDisposed = true;
+    }
+
+    private void OpenSettingMenu()
+    {
+      ImGui.Begin("Settings");
+      var contextMenuIntegration = this.config.ContextMenuIntegration;
+      if (ImGui.Checkbox("Context menu integration", ref contextMenuIntegration))
+      {
+        this.config.ContextMenuIntegration = contextMenuIntegration;
+        MBPlugin.PluginInterface.SavePluginConfig(this.config);
+      }
+
+      if (ImGui.Checkbox("Watch for hovered item", ref this.watchingForHoveredItem))
+      {
+        this.config.WatchForHovered = this.watchingForHoveredItem;
+      }
+
+      ImGui.End();
     }
 
     /// <summary>

@@ -308,15 +308,6 @@ namespace MarketBoardPlugin.GUI
 
       ImGui.EndChild();
 
-      if (ImGui.IsItemHovered())
-      {
-        ImGui.BeginTooltip();
-        ImGui.PushTextWrapPos(ImGui.GetFontSize() * 35.0f);
-        ImGui.TextUnformatted("Automatically select the item hovered in any of the in-game inventory window after 1 second.");
-        ImGui.PopTextWrapPos();
-        ImGui.EndTooltip();
-      }
-
       if (this.itemBeingHovered != 0)
       {
         if (this.progressPosition < 1.0f)
@@ -673,6 +664,18 @@ namespace MarketBoardPlugin.GUI
       if (ImGui.Checkbox("Watch for hovered item", ref this.watchingForHoveredItem))
       {
         this.config.WatchForHovered = this.watchingForHoveredItem;
+      }
+
+      ImGui.SameLine();
+      ImGui.TextDisabled("(?)");
+
+      if (ImGui.IsItemHovered())
+      {
+        ImGui.BeginTooltip();
+        ImGui.PushTextWrapPos(ImGui.GetFontSize() * 35.0f);
+        ImGui.TextUnformatted("Automatically select the item hovered in any of the in-game inventory window after 1 second.");
+        ImGui.PopTextWrapPos();
+        ImGui.EndTooltip();
       }
 
       ImGui.End();

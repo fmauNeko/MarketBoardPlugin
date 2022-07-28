@@ -160,7 +160,7 @@ namespace MarketBoardPlugin.GUI
 
       // Window Setup
       ImGui.SetNextWindowSize(new Vector2(800, 600) * scale, ImGuiCond.FirstUseEver);
-      ImGui.SetNextWindowSizeConstraints(new Vector2(700, 450) * scale, new Vector2(10000, 10000) * scale);
+      ImGui.SetNextWindowSizeConstraints(new Vector2(350, 225) * scale, new Vector2(10000, 10000) * scale);
 
       if (!ImGui.Begin($"Market Board", ref windowOpen, ImGuiWindowFlags.NoScrollbar))
       {

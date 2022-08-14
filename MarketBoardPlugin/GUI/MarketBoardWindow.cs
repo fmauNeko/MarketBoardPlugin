@@ -827,7 +827,7 @@ namespace MarketBoardPlugin.GUI
 
       var item = MBPlugin.Data.Excel.GetSheet<Item>().GetRow((uint)itemId % 500000);
 
-      if (item != null && this.enumerableCategoriesAndItems != null && this.sortedCategoriesAndItems.Any(i => i.Value != null && i.Value.Contains(item)))
+      if (item != null && this.enumerableCategoriesAndItems != null && this.sortedCategoriesAndItems.Any(i => i.Value != null && i.Value.Any(k => k.ToString() == item.ToString())))
       {
         this.itemBeingHovered = itemId;
       }

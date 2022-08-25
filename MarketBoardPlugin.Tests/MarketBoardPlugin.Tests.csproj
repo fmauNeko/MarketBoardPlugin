@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net5.0-windows7.0</TargetFramework>
+    <TargetFramework>net6.0-windows7.0</TargetFramework>
     <AssemblyName>MarketBoardPlugin.Tests</AssemblyName>
     <Authors>Florian Maunier</Authors>
     <OutputType>Library</OutputType>
@@ -13,6 +13,7 @@
     <CollectCoverage>true</CollectCoverage>
     <Platform>x64</Platform>
     <Platforms>x64</Platforms>
+    <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile> 
   </PropertyGroup>
 
   <ItemGroup>

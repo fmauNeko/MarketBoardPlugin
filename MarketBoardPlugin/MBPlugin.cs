@@ -29,7 +29,7 @@ namespace MarketBoardPlugin
   [SuppressMessage("ReSharper", "UnusedMember.Global", Justification = "Plugin entry point")]
   public class MBPlugin : IDalamudPlugin
   {
-    private readonly DalamudContextMenuBase contextMenuBase;
+    private readonly DalamudContextMenu contextMenuBase;
 
     private readonly InventoryContextMenuItem inventoryContextMenuItem;
 
@@ -58,10 +58,10 @@ namespace MarketBoardPlugin
       PluginInterface.UiBuilder.Draw += this.BuildMarketBoardUi;
 
       // Set up context menu
-      this.contextMenuBase = new DalamudContextMenuBase();
+      this.contextMenuBase = new DalamudContextMenu();
       this.inventoryContextMenuItem = new InventoryContextMenuItem(
-        new SeString(new TextPayload("Search with Market Board Plugin")), this.OnSelectContextMenuItem);
-      this.contextMenuBase.Functions.ContextMenu.OnOpenInventoryContextMenu += this.OnContextMenuOpened;
+        new SeString(new TextPayload("Search with Market Board Plugin")), this.OnSelectContextMenuItem, true);
+      this.contextMenuBase.OnOpenInventoryContextMenu += this.OnContextMenuOpened;
 
 #if DEBUG
       this.marketBoardWindow.IsOpen = true;
@@ -120,7 +120,7 @@ namespace MarketBoardPlugin
         this.marketBoardWindow.Dispose();
 
         // Remove context menu handler
-        this.contextMenuBase.Functions.ContextMenu.OnOpenInventoryContextMenu -= this.OnContextMenuOpened;
+        this.contextMenuBase.OnOpenInventoryContextMenu -= this.OnContextMenuOpened;
         this.contextMenuBase.Dispose();
       }
 

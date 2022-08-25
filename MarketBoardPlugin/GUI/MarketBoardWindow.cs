@@ -6,26 +6,25 @@ namespace MarketBoardPlugin.GUI
 {
   using System;
   using System.Collections.Generic;
+  using System.ComponentModel;
   using System.IO;
   using System.Linq;
   using System.Numerics;
   using System.Runtime.InteropServices;
   using System.Threading;
   using System.Threading.Tasks;
-
   using Dalamud.Game;
   using Dalamud.Game.Text;
   using Dalamud.Interface;
   using Dalamud.Logging;
   using Dalamud.Utility;
-
   using ImGuiNET;
   using ImGuiScene;
-
+  using Lumina.Excel;
   using Lumina.Excel.GeneratedSheets;
-
   using MarketBoardPlugin.Extensions;
   using MarketBoardPlugin.Helpers;
+  using MarketBoardPlugin.Models.ShoppingList;
   using MarketBoardPlugin.Models.Universalis;
 
   /// <summary>
@@ -86,6 +85,8 @@ namespace MarketBoardPlugin.GUI
     private bool hasHistoryHQColumnWidthBeenSet;
 
     private List<KeyValuePair<ItemSearchCategory, List<Item>>> enumerableCategoriesAndItems;
+
+    private List<SavedItem> shoppingList = new List<SavedItem>();
 
     /// <summary>
     /// Initializes a new instance of the <see cref="MarketBoardWindow"/> class.
@@ -296,6 +297,23 @@ namespace MarketBoardPlugin.GUI
               {
                 this.ChangeSelectedItem(item.RowId);
               }
+
+              if (ImGui.BeginPopupContextItem("shoplist" + category.Key.Name + i))
+              {
+                if (this.selectedItem != null && item != null && this.selectedItem.RowId != item.RowId)
+                {
+                  this.ChangeSelectedItem(item.RowId);
+                }
+
+                if (ImGui.Selectable("Add to the shopping list") && this.marketData != null && this.selectedWorld >= 0)
+                {
+                  this.shoppingList.Add(new SavedItem(item, this.marketData.Listings.OrderBy(l => l.PricePerUnit).ToList()[0].PricePerUnit, this.worldList[this.selectedWorld].Item2));
+                }
+
+                ImGui.EndPopup();
+              }
+
+              ImGui.OpenPopupOnItemClick("shoplist" + category.Key.Name + i, ImGuiPopupFlags.MouseButtonRight);
             }
 
             ImGui.Indent(ImGui.GetTreeNodeToLabelSpacing());
@@ -609,6 +627,11 @@ namespace MarketBoardPlugin.GUI
       ImGui.EndChild();
       ImGui.End();
 
+      if (this.shoppingList.Count > 0)
+      {
+        this.ShowShoppingListMenu();
+      }
+
       return windowOpen;
     }
 
@@ -655,6 +678,54 @@ namespace MarketBoardPlugin.GUI
       }
 
       this.isDisposed = true;
+    }
+
+    /// <summary>
+    /// Create a new separate window showing the shopping list.
+    /// </summary>
+    private void ShowShoppingListMenu()
+    {
+      ImGui.Begin("Shopping List");
+      ImGui.Columns(4, "recentHistoryColumns");
+      ImGui.Text("Name");
+      ImGui.NextColumn();
+      ImGui.Text("Price");
+      ImGui.NextColumn();
+      ImGui.Text("World");
+      ImGui.NextColumn();
+      ImGui.Text("Action");
+      ImGui.NextColumn();
+      ImGui.Separator();
+
+      List<SavedItem> todel = new List<SavedItem>();
+
+      int k = 0;
+      foreach (var item in this.shoppingList)
+      {
+        ImGui.Text(item.SourceItem.Name);
+        ImGui.NextColumn();
+        ImGui.Text(item.Price.ToString());
+        ImGui.NextColumn();
+        ImGui.Text(item.World);
+        ImGui.NextColumn();
+        ImGui.PushFont(UiBuilder.IconFont);
+        if (ImGui.Button($"{(char)FontAwesomeIcon.Slash}##shoplist" + k, new Vector2(32 * ImGui.GetIO().FontGlobalScale, 1.5f * ImGui.GetItemRectSize().Y)))
+        {
+          todel.Add(item);
+        }
+
+        ImGui.PopFont();
+        ImGui.NextColumn();
+        ImGui.Separator();
+        k += 1;
+      }
+
+      foreach (var item in todel)
+      {
+        this.shoppingList.Remove(item);
+      }
+
+      ImGui.End();
     }
 
     /// <summary>
@@ -834,6 +905,20 @@ namespace MarketBoardPlugin.GUI
       else
       {
         this.itemBeingHovered = 0;
+      }
+    }
+
+    /// <summary>
+    ///  Function used for debug purposes : Log every attributes of an Item.
+    /// </summary>
+    /// <param name="itm"> Item class to show in logs.</param>
+    private static void LogItemInfo(Item itm)
+    {
+      foreach (PropertyDescriptor descriptor in TypeDescriptor.GetProperties(itm))
+      {
+        string name = descriptor.Name;
+        object value = descriptor.GetValue(itm);
+        PluginLog.LogInformation("{0}={1}", name, value);
       }
     }
 

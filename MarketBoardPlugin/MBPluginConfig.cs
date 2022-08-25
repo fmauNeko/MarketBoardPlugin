@@ -43,5 +43,10 @@ namespace MarketBoardPlugin
     /// Gets or sets a value indicating whether the 'Search with Market Board Plugin' is added to game context menus.
     /// </summary>
     public bool ContextMenuIntegration { get; set; } = true;
+
+    /// <summary>
+    /// Gets the favorite items.
+    /// </summary>
+    public IEnumerable<uint> Favorites { get; }
   }
 }

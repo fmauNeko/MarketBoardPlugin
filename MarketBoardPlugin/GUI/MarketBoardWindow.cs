@@ -7,9 +7,11 @@ namespace MarketBoardPlugin.GUI
   using System;
   using System.Collections.Generic;
   using System.ComponentModel;
+  using System.Globalization;
   using System.IO;
   using System.Linq;
   using System.Numerics;
+  using System.Reflection;
   using System.Runtime.InteropServices;
   using System.Threading;
   using System.Threading.Tasks;
@@ -90,6 +92,8 @@ namespace MarketBoardPlugin.GUI
 
     private List<SavedItem> shoppingList = new List<SavedItem>();
 
+    private NumberFormatInfo numberFormatInfo;
+
     /// <summary>
     /// Initializes a new instance of the <see cref="MarketBoardWindow"/> class.
     /// </summary>
@@ -107,6 +111,10 @@ namespace MarketBoardPlugin.GUI
       MBPlugin.PluginInterface.UiBuilder.RebuildFonts();
 
       this.watchingForHoveredItem = this.config.WatchForHovered;
+
+      this.numberFormatInfo = (NumberFormatInfo)CultureInfo.CurrentCulture.NumberFormat.Clone();
+      this.numberFormatInfo.CurrencySymbol = SeIconChar.Gil.ToIconString();
+      this.numberFormatInfo.CurrencyDecimalDigits = 0;
 
 #if DEBUG
       this.worldList.Add(("Chaos", "Chaos"));
@@ -709,6 +717,11 @@ namespace MarketBoardPlugin.GUI
     /// </summary>
     private void ShowShoppingListMenu()
     {
+      var scale = ImGui.GetIO().FontGlobalScale;
+
+      ImGui.SetNextWindowSize(new Vector2(400, 150) * scale, ImGuiCond.FirstUseEver);
+      ImGui.SetNextWindowSizeConstraints(new Vector2(400, 150) * scale, new Vector2(10000, 10000) * scale);
+
       ImGui.Begin("Shopping List");
       ImGui.Columns(4, "recentHistoryColumns");
       ImGui.Text("Name");
@@ -728,7 +741,7 @@ namespace MarketBoardPlugin.GUI
       {
         ImGui.Text(item.SourceItem.Name);
         ImGui.NextColumn();
-        ImGui.Text(item.Price.ToString());
+        ImGui.Text(item.Price.ToString("C", this.numberFormatInfo));
         ImGui.NextColumn();
         ImGui.Text(item.World);
         ImGui.NextColumn();

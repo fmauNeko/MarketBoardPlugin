@@ -234,7 +234,7 @@ namespace MarketBoardPlugin.GUI
       }
 
       ImGui.Separator();
-      ImGui.BeginChild("itemTree", new Vector2(0, -3.0f * ImGui.GetFrameHeightWithSpacing()), false, ImGuiWindowFlags.HorizontalScrollbar | ImGuiWindowFlags.AlwaysHorizontalScrollbar);
+      ImGui.BeginChild("itemTree", new Vector2(0, -2.0f * ImGui.GetFrameHeightWithSpacing()), false, ImGuiWindowFlags.HorizontalScrollbar | ImGuiWindowFlags.AlwaysHorizontalScrollbar);
       var itemTextSize = ImGui.CalcTextSize(string.Empty);
 
       if (this.searchHistoryOpen)
@@ -353,8 +353,6 @@ namespace MarketBoardPlugin.GUI
         this.progressPosition = 0.0f;
       }
 
-      ImGui.ProgressBar(this.progressPosition, new Vector2(-1, 0), string.Empty);
-
       ImGui.Text("Settings : ");
       ImGui.SameLine();
       ImGui.PushFont(UiBuilder.IconFont);
@@ -364,6 +362,8 @@ namespace MarketBoardPlugin.GUI
       }
 
       ImGui.PopFont();
+
+      ImGui.ProgressBar(this.progressPosition, new Vector2(-1, 0), string.Empty);
 
       ImGui.EndChild();
       ImGui.SameLine();
@@ -468,11 +468,11 @@ namespace MarketBoardPlugin.GUI
                 }
 
                 ImGui.NextColumn();
-                ImGui.Text($"{listing.PricePerUnit:##,###}");
+                ImGui.Text(listing.PricePerUnit.ToString("C", this.numberFormatInfo));
                 ImGui.NextColumn();
                 ImGui.Text($"{listing.Quantity:##,###}");
                 ImGui.NextColumn();
-                ImGui.Text($"{listing.Total:##,###}");
+                ImGui.Text(listing.Total.ToString("C", this.numberFormatInfo));
                 ImGui.NextColumn();
                 ImGui.Text($"{listing.RetainerName} {SeIconChar.CrossWorld.ToChar()} {(this.selectedWorld <= 1 ? listing.WorldName : this.worldList[this.selectedWorld].Item1)}");
                 ImGui.NextColumn();
@@ -528,11 +528,11 @@ namespace MarketBoardPlugin.GUI
                 }
 
                 ImGui.NextColumn();
-                ImGui.Text($"{history.PricePerUnit:##,###}");
+                ImGui.Text(history.PricePerUnit.ToString("C", this.numberFormatInfo));
                 ImGui.NextColumn();
                 ImGui.Text($"{history.Quantity:##,###}");
                 ImGui.NextColumn();
-                ImGui.Text($"{history.Total:##,###}");
+                ImGui.Text(history.Total.ToString("C", this.numberFormatInfo));
                 ImGui.NextColumn();
                 ImGui.Text($"{DateTimeOffset.FromUnixTimeSeconds(history.Timestamp).LocalDateTime:G}");
                 ImGui.NextColumn();

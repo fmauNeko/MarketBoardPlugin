@@ -6,26 +6,27 @@ namespace MarketBoardPlugin.GUI
 {
   using System;
   using System.Collections.Generic;
+  using System.ComponentModel;
+  using System.Globalization;
   using System.IO;
   using System.Linq;
   using System.Numerics;
+  using System.Reflection;
   using System.Runtime.InteropServices;
   using System.Threading;
   using System.Threading.Tasks;
-
   using Dalamud.Game;
   using Dalamud.Game.Text;
   using Dalamud.Interface;
   using Dalamud.Logging;
   using Dalamud.Utility;
-
   using ImGuiNET;
   using ImGuiScene;
-
+  using Lumina.Excel;
   using Lumina.Excel.GeneratedSheets;
-
   using MarketBoardPlugin.Extensions;
   using MarketBoardPlugin.Helpers;
+  using MarketBoardPlugin.Models.ShoppingList;
   using MarketBoardPlugin.Models.Universalis;
 
   /// <summary>
@@ -48,6 +49,8 @@ namespace MarketBoardPlugin.GUI
     private bool searchHistoryOpen;
 
     private bool advancedSearchMenuOpen;
+
+    private bool settingMenuOpen;
 
     private float progressPosition;
 
@@ -87,6 +90,10 @@ namespace MarketBoardPlugin.GUI
 
     private List<KeyValuePair<ItemSearchCategory, List<Item>>> enumerableCategoriesAndItems;
 
+    private List<SavedItem> shoppingList = new List<SavedItem>();
+
+    private NumberFormatInfo numberFormatInfo;
+
     /// <summary>
     /// Initializes a new instance of the <see cref="MarketBoardWindow"/> class.
     /// </summary>
@@ -104,6 +111,10 @@ namespace MarketBoardPlugin.GUI
       MBPlugin.PluginInterface.UiBuilder.RebuildFonts();
 
       this.watchingForHoveredItem = this.config.WatchForHovered;
+
+      this.numberFormatInfo = (NumberFormatInfo)CultureInfo.CurrentCulture.NumberFormat.Clone();
+      this.numberFormatInfo.CurrencySymbol = SeIconChar.Gil.ToIconString();
+      this.numberFormatInfo.CurrencyDecimalDigits = 0;
 
 #if DEBUG
       this.worldList.Add(("Chaos", "Chaos"));
@@ -160,7 +171,7 @@ namespace MarketBoardPlugin.GUI
 
       // Window Setup
       ImGui.SetNextWindowSize(new Vector2(800, 600) * scale, ImGuiCond.FirstUseEver);
-      ImGui.SetNextWindowSizeConstraints(new Vector2(700, 450) * scale, new Vector2(10000, 10000) * scale);
+      ImGui.SetNextWindowSizeConstraints(new Vector2(350, 225) * scale, new Vector2(10000, 10000) * scale);
 
       if (!ImGui.Begin($"Market Board", ref windowOpen, ImGuiWindowFlags.NoScrollbar))
       {
@@ -223,7 +234,7 @@ namespace MarketBoardPlugin.GUI
       }
 
       ImGui.Separator();
-      ImGui.BeginChild("itemTree", new Vector2(0, -3.0f * ImGui.GetFrameHeightWithSpacing()), false, ImGuiWindowFlags.HorizontalScrollbar | ImGuiWindowFlags.AlwaysHorizontalScrollbar);
+      ImGui.BeginChild("itemTree", new Vector2(0, -2.0f * ImGui.GetFrameHeightWithSpacing()), false, ImGuiWindowFlags.HorizontalScrollbar | ImGuiWindowFlags.AlwaysHorizontalScrollbar);
       var itemTextSize = ImGui.CalcTextSize(string.Empty);
 
       if (this.searchHistoryOpen)
@@ -296,6 +307,23 @@ namespace MarketBoardPlugin.GUI
               {
                 this.ChangeSelectedItem(item.RowId);
               }
+
+              if (ImGui.BeginPopupContextItem("shoplist" + category.Key.Name + i))
+              {
+                if (this.selectedItem != null && item != null && this.selectedItem.RowId != item.RowId)
+                {
+                  this.ChangeSelectedItem(item.RowId);
+                }
+
+                if (ImGui.Selectable("Add to the shopping list") && this.marketData != null && this.selectedWorld >= 0)
+                {
+                  this.shoppingList.Add(new SavedItem(item, this.marketData.Listings.OrderBy(l => l.PricePerUnit).ToList()[0].PricePerUnit, this.worldList[this.selectedWorld].Item2));
+                }
+
+                ImGui.EndPopup();
+              }
+
+              ImGui.OpenPopupOnItemClick("shoplist" + category.Key.Name + i, ImGuiPopupFlags.MouseButtonRight);
             }
 
             ImGui.Indent(ImGui.GetTreeNodeToLabelSpacing());
@@ -305,29 +333,6 @@ namespace MarketBoardPlugin.GUI
       }
 
       ImGui.EndChild();
-
-      var contextMenuIntegration = this.config.ContextMenuIntegration;
-      if (ImGui.Checkbox("Context menu integration", ref contextMenuIntegration))
-      {
-        this.config.ContextMenuIntegration = contextMenuIntegration;
-        MBPlugin.PluginInterface.SavePluginConfig(this.config);
-      }
-
-      if (ImGui.Checkbox("Watch for hovered item", ref this.watchingForHoveredItem))
-      {
-        this.config.WatchForHovered = this.watchingForHoveredItem;
-      }
-
-      ImGui.SameLine();
-      ImGui.TextDisabled("(?)");
-      if (ImGui.IsItemHovered())
-      {
-        ImGui.BeginTooltip();
-        ImGui.PushTextWrapPos(ImGui.GetFontSize() * 35.0f);
-        ImGui.TextUnformatted("Automatically select the item hovered in any of the in-game inventory window after 1 second.");
-        ImGui.PopTextWrapPos();
-        ImGui.EndTooltip();
-      }
 
       if (this.itemBeingHovered != 0)
       {
@@ -347,6 +352,16 @@ namespace MarketBoardPlugin.GUI
       {
         this.progressPosition = 0.0f;
       }
+
+      ImGui.Text("Settings : ");
+      ImGui.SameLine();
+      ImGui.PushFont(UiBuilder.IconFont);
+      if (ImGui.Button($"{(char)FontAwesomeIcon.Cog}"))
+      {
+        this.settingMenuOpen = !this.settingMenuOpen;
+      }
+
+      ImGui.PopFont();
 
       ImGui.ProgressBar(this.progressPosition, new Vector2(-1, 0), string.Empty);
 
@@ -453,11 +468,11 @@ namespace MarketBoardPlugin.GUI
                 }
 
                 ImGui.NextColumn();
-                ImGui.Text($"{listing.PricePerUnit:##,###}");
+                ImGui.Text(listing.PricePerUnit.ToString("C", this.numberFormatInfo));
                 ImGui.NextColumn();
                 ImGui.Text($"{listing.Quantity:##,###}");
                 ImGui.NextColumn();
-                ImGui.Text($"{listing.Total:##,###}");
+                ImGui.Text(listing.Total.ToString("C", this.numberFormatInfo));
                 ImGui.NextColumn();
                 ImGui.Text($"{listing.RetainerName} {SeIconChar.CrossWorld.ToChar()} {(this.selectedWorld <= 1 ? listing.WorldName : this.worldList[this.selectedWorld].Item1)}");
                 ImGui.NextColumn();
@@ -513,11 +528,11 @@ namespace MarketBoardPlugin.GUI
                 }
 
                 ImGui.NextColumn();
-                ImGui.Text($"{history.PricePerUnit:##,###}");
+                ImGui.Text(history.PricePerUnit.ToString("C", this.numberFormatInfo));
                 ImGui.NextColumn();
                 ImGui.Text($"{history.Quantity:##,###}");
                 ImGui.NextColumn();
-                ImGui.Text($"{history.Total:##,###}");
+                ImGui.Text(history.Total.ToString("C", this.numberFormatInfo));
                 ImGui.NextColumn();
                 ImGui.Text($"{DateTimeOffset.FromUnixTimeSeconds(history.Timestamp).LocalDateTime:G}");
                 ImGui.NextColumn();
@@ -609,6 +624,16 @@ namespace MarketBoardPlugin.GUI
       ImGui.EndChild();
       ImGui.End();
 
+      if (this.settingMenuOpen)
+      {
+        this.OpenSettingMenu();
+      }
+
+      if (this.shoppingList.Count > 0)
+      {
+        this.ShowShoppingListMenu();
+      }
+
       return windowOpen;
     }
 
@@ -655,6 +680,89 @@ namespace MarketBoardPlugin.GUI
       }
 
       this.isDisposed = true;
+    }
+
+    private void OpenSettingMenu()
+    {
+      ImGui.Begin("Settings");
+      var contextMenuIntegration = this.config.ContextMenuIntegration;
+      if (ImGui.Checkbox("Context menu integration", ref contextMenuIntegration))
+      {
+        this.config.ContextMenuIntegration = contextMenuIntegration;
+        MBPlugin.PluginInterface.SavePluginConfig(this.config);
+      }
+
+      if (ImGui.Checkbox("Watch for hovered item", ref this.watchingForHoveredItem))
+      {
+        this.config.WatchForHovered = this.watchingForHoveredItem;
+      }
+
+      ImGui.SameLine();
+      ImGui.TextDisabled("(?)");
+
+      if (ImGui.IsItemHovered())
+      {
+        ImGui.BeginTooltip();
+        ImGui.PushTextWrapPos(ImGui.GetFontSize() * 35.0f);
+        ImGui.TextUnformatted("Automatically select the item hovered in any of the in-game inventory window after 1 second.");
+        ImGui.PopTextWrapPos();
+        ImGui.EndTooltip();
+      }
+
+      ImGui.End();
+    }
+
+    /// <summary>
+    /// Create a new separate window showing the shopping list.
+    /// </summary>
+    private void ShowShoppingListMenu()
+    {
+      var scale = ImGui.GetIO().FontGlobalScale;
+
+      ImGui.SetNextWindowSize(new Vector2(400, 150) * scale, ImGuiCond.FirstUseEver);
+      ImGui.SetNextWindowSizeConstraints(new Vector2(400, 150) * scale, new Vector2(10000, 10000) * scale);
+
+      ImGui.Begin("Shopping List");
+      ImGui.Columns(4, "recentHistoryColumns");
+      ImGui.Text("Name");
+      ImGui.NextColumn();
+      ImGui.Text("Price");
+      ImGui.NextColumn();
+      ImGui.Text("World");
+      ImGui.NextColumn();
+      ImGui.Text("Action");
+      ImGui.NextColumn();
+      ImGui.Separator();
+
+      List<SavedItem> todel = new List<SavedItem>();
+
+      int k = 0;
+      foreach (var item in this.shoppingList)
+      {
+        ImGui.Text(item.SourceItem.Name);
+        ImGui.NextColumn();
+        ImGui.Text(item.Price.ToString("C", this.numberFormatInfo));
+        ImGui.NextColumn();
+        ImGui.Text(item.World);
+        ImGui.NextColumn();
+        ImGui.PushFont(UiBuilder.IconFont);
+        if (ImGui.Button($"{(char)FontAwesomeIcon.Slash}##shoplist" + k, new Vector2(32 * ImGui.GetIO().FontGlobalScale, 1.5f * ImGui.GetItemRectSize().Y)))
+        {
+          todel.Add(item);
+        }
+
+        ImGui.PopFont();
+        ImGui.NextColumn();
+        ImGui.Separator();
+        k += 1;
+      }
+
+      foreach (var item in todel)
+      {
+        this.shoppingList.Remove(item);
+      }
+
+      ImGui.End();
     }
 
     /// <summary>
@@ -827,13 +935,27 @@ namespace MarketBoardPlugin.GUI
 
       var item = MBPlugin.Data.Excel.GetSheet<Item>().GetRow((uint)itemId % 500000);
 
-      if (item != null && this.enumerableCategoriesAndItems != null && this.enumerableCategoriesAndItems.Any(i => i.Value != null && i.Value.Contains(item)))
+      if (item != null && this.enumerableCategoriesAndItems != null && this.sortedCategoriesAndItems.Any(i => i.Value != null && i.Value.Any(k => k.ToString() == item.ToString())))
       {
         this.itemBeingHovered = itemId;
       }
       else
       {
         this.itemBeingHovered = 0;
+      }
+    }
+
+    /// <summary>
+    ///  Function used for debug purposes : Log every attributes of an Item.
+    /// </summary>
+    /// <param name="itm"> Item class to show in logs.</param>
+    private static void LogItemInfo(Item itm)
+    {
+      foreach (PropertyDescriptor descriptor in TypeDescriptor.GetProperties(itm))
+      {
+        string name = descriptor.Name;
+        object value = descriptor.GetValue(itm);
+        PluginLog.LogInformation("{0}={1}", name, value);
       }
     }
 

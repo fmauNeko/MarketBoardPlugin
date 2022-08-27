@@ -43,5 +43,10 @@ namespace MarketBoardPlugin
     /// Gets or sets a value indicating whether the 'Search with Market Board Plugin' is added to game context menus.
     /// </summary>
     public bool ContextMenuIntegration { get; set; } = true;
+
+    /// <summary>
+    /// Gets or sets a value indicating whether 'PriceIconShown' is enabled.
+    /// </summary>
+    public bool PriceIconShown { get; set; } = true;
   }
 }

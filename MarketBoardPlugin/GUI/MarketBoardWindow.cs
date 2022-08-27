@@ -2,6 +2,8 @@
 // Copyright (c) Florian Maunier. All rights reserved.
 // </copyright>
 
+using System.Data.SqlTypes;
+
 namespace MarketBoardPlugin.GUI
 {
   using System;
@@ -71,6 +73,8 @@ namespace MarketBoardPlugin.GUI
     private TextureWrap selectedItemIcon;
 
     private bool watchingForHoveredItem = true;
+
+    private bool priceIconShown = true;
 
     private ulong playerId;
 
@@ -468,11 +472,27 @@ namespace MarketBoardPlugin.GUI
                 }
 
                 ImGui.NextColumn();
-                ImGui.Text(listing.PricePerUnit.ToString("C", this.numberFormatInfo));
+                if (this.priceIconShown)
+                {
+                  ImGui.Text(listing.PricePerUnit.ToString("C", this.numberFormatInfo));
+                }
+                else
+                {
+                  ImGui.Text(listing.PricePerUnit.ToString("N0", CultureInfo.CreateSpecificCulture("sv-SE")));
+                }
+
                 ImGui.NextColumn();
                 ImGui.Text($"{listing.Quantity:##,###}");
                 ImGui.NextColumn();
-                ImGui.Text(listing.Total.ToString("C", this.numberFormatInfo));
+                if (this.priceIconShown)
+                {
+                  ImGui.Text(listing.Total.ToString("C", this.numberFormatInfo));
+                }
+                else
+                {
+                  ImGui.Text(listing.Total.ToString("N0", CultureInfo.CreateSpecificCulture("sv-SE")));
+                }
+
                 ImGui.NextColumn();
                 ImGui.Text($"{listing.RetainerName} {SeIconChar.CrossWorld.ToChar()} {(this.selectedWorld <= 1 ? listing.WorldName : this.worldList[this.selectedWorld].Item1)}");
                 ImGui.NextColumn();
@@ -528,11 +548,27 @@ namespace MarketBoardPlugin.GUI
                 }
 
                 ImGui.NextColumn();
-                ImGui.Text(history.PricePerUnit.ToString("C", this.numberFormatInfo));
+                if (this.priceIconShown)
+                {
+                  ImGui.Text(history.PricePerUnit.ToString("C", this.numberFormatInfo));
+                }
+                else
+                {
+                  ImGui.Text(history.PricePerUnit.ToString("N0", CultureInfo.CreateSpecificCulture("sv-SE")));
+                }
+
                 ImGui.NextColumn();
                 ImGui.Text($"{history.Quantity:##,###}");
                 ImGui.NextColumn();
-                ImGui.Text(history.Total.ToString("C", this.numberFormatInfo));
+                if (this.priceIconShown)
+                {
+                  ImGui.Text(history.Total.ToString("C", this.numberFormatInfo));
+                }
+                else
+                {
+                  ImGui.Text(history.PricePerUnit.ToString("N0", CultureInfo.CreateSpecificCulture("sv-SE")));
+                }
+
                 ImGui.NextColumn();
                 ImGui.Text($"{DateTimeOffset.FromUnixTimeSeconds(history.Timestamp).LocalDateTime:G}");
                 ImGui.NextColumn();
@@ -684,11 +720,20 @@ namespace MarketBoardPlugin.GUI
 
     private void OpenSettingMenu()
     {
+      var scale = ImGui.GetIO().FontGlobalScale;
+      ImGui.SetNextWindowSize(new Vector2(150, 75) * scale, ImGuiCond.FirstUseEver);
+
       ImGui.Begin("Settings");
       var contextMenuIntegration = this.config.ContextMenuIntegration;
       if (ImGui.Checkbox("Context menu integration", ref contextMenuIntegration))
       {
         this.config.ContextMenuIntegration = contextMenuIntegration;
+        MBPlugin.PluginInterface.SavePluginConfig(this.config);
+      }
+
+      if (ImGui.Checkbox("Gil Icon Shown", ref this.priceIconShown))
+      {
+        this.config.PriceIconShown = this.priceIconShown;
         MBPlugin.PluginInterface.SavePluginConfig(this.config);
       }
 
@@ -741,7 +786,15 @@ namespace MarketBoardPlugin.GUI
       {
         ImGui.Text(item.SourceItem.Name);
         ImGui.NextColumn();
-        ImGui.Text(item.Price.ToString("C", this.numberFormatInfo));
+        if (this.priceIconShown)
+        {
+          ImGui.Text(item.Price.ToString("C", this.numberFormatInfo));
+        }
+        else
+        {
+          ImGui.Text(item.Price.ToString("N0", CultureInfo.CreateSpecificCulture("sv-SE")));
+        }
+
         ImGui.NextColumn();
         ImGui.Text(item.World);
         ImGui.NextColumn();

@@ -478,7 +478,7 @@ namespace MarketBoardPlugin.GUI
                 }
                 else
                 {
-                  ImGui.Text(listing.PricePerUnit.ToString("N0", CultureInfo.CreateSpecificCulture("sv-SE")));
+                  ImGui.Text(listing.PricePerUnit.ToString("N0"));
                 }
 
                 ImGui.NextColumn();
@@ -490,7 +490,7 @@ namespace MarketBoardPlugin.GUI
                 }
                 else
                 {
-                  ImGui.Text(listing.Total.ToString("N0", CultureInfo.CreateSpecificCulture("sv-SE")));
+                  ImGui.Text(listing.Total.ToString("N0"));
                 }
 
                 ImGui.NextColumn();
@@ -554,7 +554,7 @@ namespace MarketBoardPlugin.GUI
                 }
                 else
                 {
-                  ImGui.Text(history.PricePerUnit.ToString("N0", CultureInfo.CreateSpecificCulture("sv-SE")));
+                  ImGui.Text(history.PricePerUnit.ToString("N0"));
                 }
 
                 ImGui.NextColumn();
@@ -566,7 +566,7 @@ namespace MarketBoardPlugin.GUI
                 }
                 else
                 {
-                  ImGui.Text(history.PricePerUnit.ToString("N0", CultureInfo.CreateSpecificCulture("sv-SE")));
+                  ImGui.Text(history.PricePerUnit.ToString("N0"));
                 }
 
                 ImGui.NextColumn();
@@ -792,7 +792,7 @@ namespace MarketBoardPlugin.GUI
         }
         else
         {
-          ImGui.Text(item.Price.ToString("N0", CultureInfo.CreateSpecificCulture("sv-SE")));
+          ImGui.Text(item.Price.ToString("N0"));
         }
 
         ImGui.NextColumn();

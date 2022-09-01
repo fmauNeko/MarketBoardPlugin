@@ -13,7 +13,6 @@ namespace MarketBoardPlugin.GUI
   using System.IO;
   using System.Linq;
   using System.Numerics;
-  using System.Reflection;
   using System.Runtime.InteropServices;
   using System.Threading;
   using System.Threading.Tasks;
@@ -24,7 +23,7 @@ namespace MarketBoardPlugin.GUI
   using Dalamud.Utility;
   using ImGuiNET;
   using ImGuiScene;
-  using Lumina.Excel;
+  using Lumina.Data.Parsing;
   using Lumina.Excel.GeneratedSheets;
   using MarketBoardPlugin.Extensions;
   using MarketBoardPlugin.Helpers;
@@ -76,6 +75,8 @@ namespace MarketBoardPlugin.GUI
 
     private bool priceIconShown = true;
 
+    private bool hQOnly;
+
     private ulong playerId;
 
     private int selectedWorld = -1;
@@ -115,6 +116,7 @@ namespace MarketBoardPlugin.GUI
       MBPlugin.PluginInterface.UiBuilder.RebuildFonts();
 
       this.watchingForHoveredItem = this.config.WatchForHovered;
+      this.priceIconShown = this.config.PriceIconShown;
 
       this.numberFormatInfo = (NumberFormatInfo)CultureInfo.CurrentCulture.NumberFormat.Clone();
       this.numberFormatInfo.CurrencySymbol = SeIconChar.Gil.ToIconString();
@@ -219,7 +221,10 @@ namespace MarketBoardPlugin.GUI
       {
         ImGui.Text("Category: ");
         ImGui.SameLine();
-        ImGui.ListBox("###ListBox", ref this.itemCategory, this.categoryLabels, this.categoryLabels.Length);
+        ImGui.Combo("###ListBox", ref this.itemCategory, this.categoryLabels, this.categoryLabels.Length);
+        ImGui.Text("HQ Only : ");
+        ImGui.SameLine();
+        ImGui.Checkbox("###Checkbox", ref this.hQOnly);
         if (this.itemCategory is 1 or 2)
         {
           ImGui.Text("Min level : ");
@@ -456,7 +461,7 @@ namespace MarketBoardPlugin.GUI
             ImGui.NextColumn();
             ImGui.Separator();
 
-            var marketDataListings = this.marketData?.Listings.OrderBy(l => l.PricePerUnit).ToList();
+            var marketDataListings = this.marketData?.Listings.Where(i => !this.hQOnly || i.Hq).OrderBy(l => l.PricePerUnit).ToList();
             if (marketDataListings != null)
             {
               foreach (var listing in marketDataListings)
@@ -655,7 +660,32 @@ namespace MarketBoardPlugin.GUI
       }
 
       ImGui.SetCursorPosY(ImGui.GetWindowContentRegionMax().Y - ImGui.GetTextLineHeightWithSpacing());
-      ImGui.Text("Data provided by Universalis (https://universalis.app/)");
+      if (ImGui.Button("Data provided by Universalis"))
+      {
+        Utilities.OpenBrowser("https://universalis.app/");
+      }
+
+      ImGui.SameLine(ImGui.GetContentRegionAvail().X - (120 * scale));
+
+      if (!this.config.KofiHidden)
+      {
+        var buttonText = "Support on Ko-fi";
+        var buttonColor = 0x005E5BFFu;
+        ImGui.PushStyleColor(ImGuiCol.Button, 0xFF000000 | buttonColor);
+        ImGui.PushStyleColor(ImGuiCol.ButtonActive, 0xDD000000 | buttonColor);
+        ImGui.PushStyleColor(ImGuiCol.ButtonHovered, 0xAA000000 | buttonColor);
+
+        if (ImGui.Button(buttonText, new Vector2(120, 24)))
+        {
+          Utilities.OpenBrowser("https://ko-fi.com/fmauneko");
+        }
+
+        ImGui.PopStyleColor(3);
+      }
+      else
+      {
+        ImGui.Dummy(new Vector2(120, 24));
+      }
 
       ImGui.EndChild();
       ImGui.End();
@@ -725,6 +755,7 @@ namespace MarketBoardPlugin.GUI
 
       ImGui.Begin("Settings");
       var contextMenuIntegration = this.config.ContextMenuIntegration;
+      var kofiHidden = this.config.KofiHidden;
       if (ImGui.Checkbox("Context menu integration", ref contextMenuIntegration))
       {
         this.config.ContextMenuIntegration = contextMenuIntegration;
@@ -752,6 +783,12 @@ namespace MarketBoardPlugin.GUI
         ImGui.TextUnformatted("Automatically select the item hovered in any of the in-game inventory window after 1 second.");
         ImGui.PopTextWrapPos();
         ImGui.EndTooltip();
+      }
+
+      if (ImGui.Checkbox("Hide Ko-Fi button", ref kofiHidden))
+      {
+        this.config.KofiHidden = kofiHidden;
+        MBPlugin.PluginInterface.SavePluginConfig(this.config);
       }
 
       ImGui.End();

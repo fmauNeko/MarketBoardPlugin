@@ -115,6 +115,7 @@ namespace MarketBoardPlugin.GUI
       MBPlugin.PluginInterface.UiBuilder.RebuildFonts();
 
       this.watchingForHoveredItem = this.config.WatchForHovered;
+      this.priceIconShown = this.config.PriceIconShown;
 
       this.numberFormatInfo = (NumberFormatInfo)CultureInfo.CurrentCulture.NumberFormat.Clone();
       this.numberFormatInfo.CurrencySymbol = SeIconChar.Gil.ToIconString();

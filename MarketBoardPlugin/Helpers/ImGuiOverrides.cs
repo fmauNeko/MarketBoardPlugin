@@ -69,9 +69,9 @@ namespace MarketBoardPlugin.Helpers
 
       var utf8LabelByteCount = Encoding.UTF8.GetByteCount(label);
       byte* utf8LabelBytes;
-      if (utf8LabelByteCount > Util.StackAllocationSizeLimit)
+      if (utf8LabelByteCount > UnsafeUtilities.StackAllocationSizeLimit)
       {
-        utf8LabelBytes = Util.Allocate(utf8LabelByteCount + 1);
+        utf8LabelBytes = UnsafeUtilities.Allocate(utf8LabelByteCount + 1);
       }
       else
       {
@@ -79,13 +79,13 @@ namespace MarketBoardPlugin.Helpers
         utf8LabelBytes = stackPtr;
       }
 
-      Util.GetUtf8(label, utf8LabelBytes, utf8LabelByteCount);
+      UnsafeUtilities.GetUtf8(label, utf8LabelBytes, utf8LabelByteCount);
 
       var utf8HintByteCount = Encoding.UTF8.GetByteCount(hint);
       byte* utf8HintBytes;
-      if (utf8HintByteCount > Util.StackAllocationSizeLimit)
+      if (utf8HintByteCount > UnsafeUtilities.StackAllocationSizeLimit)
       {
-        utf8HintBytes = Util.Allocate(utf8HintByteCount + 1);
+        utf8HintBytes = UnsafeUtilities.Allocate(utf8HintByteCount + 1);
       }
       else
       {
@@ -93,17 +93,17 @@ namespace MarketBoardPlugin.Helpers
         utf8HintBytes = stackPtr;
       }
 
-      Util.GetUtf8(hint, utf8HintBytes, utf8HintByteCount);
+      UnsafeUtilities.GetUtf8(hint, utf8HintBytes, utf8HintByteCount);
 
       var utf8InputByteCount = Encoding.UTF8.GetByteCount(input);
       var inputBufSize = Math.Max((int)maxLength + 1, utf8InputByteCount + 1);
 
       byte* utf8InputBytes;
       byte* originalUtf8InputBytes;
-      if (inputBufSize > Util.StackAllocationSizeLimit)
+      if (inputBufSize > UnsafeUtilities.StackAllocationSizeLimit)
       {
-        utf8InputBytes = Util.Allocate(inputBufSize);
-        originalUtf8InputBytes = Util.Allocate(inputBufSize);
+        utf8InputBytes = UnsafeUtilities.Allocate(inputBufSize);
+        originalUtf8InputBytes = UnsafeUtilities.Allocate(inputBufSize);
       }
       else
       {
@@ -113,7 +113,7 @@ namespace MarketBoardPlugin.Helpers
         originalUtf8InputBytes = originalInputStackBytes;
       }
 
-      Util.GetUtf8(input, utf8InputBytes, inputBufSize);
+      UnsafeUtilities.GetUtf8(input, utf8InputBytes, inputBufSize);
       var clearBytesCount = (uint)(inputBufSize - utf8InputByteCount);
       Unsafe.InitBlockUnaligned(utf8InputBytes + utf8InputByteCount, 0, clearBytesCount);
       Unsafe.CopyBlock(originalUtf8InputBytes, utf8InputBytes, (uint)inputBufSize);
@@ -126,25 +126,25 @@ namespace MarketBoardPlugin.Helpers
         flags,
         callback,
         userData.ToPointer());
-      if (!Util.AreStringsEqual(originalUtf8InputBytes, inputBufSize, utf8InputBytes))
+      if (!UnsafeUtilities.AreStringsEqual(originalUtf8InputBytes, inputBufSize, utf8InputBytes))
       {
-        input = Util.StringFromPtr(utf8InputBytes);
+        input = UnsafeUtilities.StringFromPtr(utf8InputBytes);
       }
 
-      if (utf8LabelByteCount > Util.StackAllocationSizeLimit)
+      if (utf8LabelByteCount > UnsafeUtilities.StackAllocationSizeLimit)
       {
-        Util.Free(utf8LabelBytes);
+        UnsafeUtilities.Free(utf8LabelBytes);
       }
 
-      if (utf8HintByteCount > Util.StackAllocationSizeLimit)
+      if (utf8HintByteCount > UnsafeUtilities.StackAllocationSizeLimit)
       {
-        Util.Free(utf8HintBytes);
+        UnsafeUtilities.Free(utf8HintBytes);
       }
 
-      if (inputBufSize > Util.StackAllocationSizeLimit)
+      if (inputBufSize > UnsafeUtilities.StackAllocationSizeLimit)
       {
-        Util.Free(utf8InputBytes);
-        Util.Free(originalUtf8InputBytes);
+        UnsafeUtilities.Free(utf8InputBytes);
+        UnsafeUtilities.Free(originalUtf8InputBytes);
       }
 
       return result != 0;

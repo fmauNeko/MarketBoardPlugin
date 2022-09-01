@@ -48,5 +48,10 @@ namespace MarketBoardPlugin
     /// Gets or sets a value indicating whether 'PriceIconShown' is enabled.
     /// </summary>
     public bool PriceIconShown { get; set; } = true;
+
+    /// <summary>
+    /// Gets or sets a value indicating whether the Ko-Fi button has been hidden.
+    /// </summary>
+    public bool KofiHidden { get; set; } = false;
   }
 }

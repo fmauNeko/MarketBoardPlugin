@@ -76,6 +76,8 @@ namespace MarketBoardPlugin.GUI
 
     private bool priceIconShown = true;
 
+    private bool hQOnly;
+
     private ulong playerId;
 
     private int selectedWorld = -1;
@@ -220,7 +222,10 @@ namespace MarketBoardPlugin.GUI
       {
         ImGui.Text("Category: ");
         ImGui.SameLine();
-        ImGui.ListBox("###ListBox", ref this.itemCategory, this.categoryLabels, this.categoryLabels.Length);
+        ImGui.Combo("###ListBox", ref this.itemCategory, this.categoryLabels, this.categoryLabels.Length);
+        ImGui.Text("HQ Only : ");
+        ImGui.SameLine();
+        ImGui.Checkbox("###Checkbox", ref this.hQOnly);
         if (this.itemCategory is 1 or 2)
         {
           ImGui.Text("Min level : ");
@@ -457,7 +462,7 @@ namespace MarketBoardPlugin.GUI
             ImGui.NextColumn();
             ImGui.Separator();
 
-            var marketDataListings = this.marketData?.Listings.OrderBy(l => l.PricePerUnit).ToList();
+            var marketDataListings = this.marketData?.Listings.Where(i => !this.hQOnly || i.Hq).OrderBy(l => l.PricePerUnit).ToList();
             if (marketDataListings != null)
             {
               foreach (var listing in marketDataListings)

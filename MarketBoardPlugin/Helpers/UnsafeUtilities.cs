@@ -1,4 +1,4 @@
-// <copyright file="Util.cs" company="Florian Maunier">
+// <copyright file="UnsafeUtilities.cs" company="Florian Maunier">
 // Copyright (c) Florian Maunier. All rights reserved.
 // </copyright>
 
@@ -8,7 +8,7 @@ namespace MarketBoardPlugin.Helpers
   using System.Runtime.InteropServices;
   using System.Text;
 
-  internal static unsafe class Util
+  internal static unsafe class UnsafeUtilities
   {
     internal const int StackAllocationSizeLimit = 2048;
 

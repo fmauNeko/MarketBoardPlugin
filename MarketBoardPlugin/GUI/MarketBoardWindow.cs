@@ -58,6 +58,8 @@ namespace MarketBoardPlugin.GUI
     private string searchString = string.Empty;
     private string lastSearchString = string.Empty;
 
+    private ClassJob lastSelectedClassJob;
+
     private int lvlmin;
     private int lastlvlmin;
     private int lvlmax = 90;
@@ -66,8 +68,11 @@ namespace MarketBoardPlugin.GUI
     private int itemCategory;
     private int lastItemCategory;
     private string[] categoryLabels = new[] { "All", "Weapons", "Equipments", "Others", "Furniture" };
+    private readonly List<ClassJob> classJobs;
 
     private Item selectedItem;
+
+    private ClassJob selectedClassJob;
 
     private TextureWrap selectedItemIcon;
 
@@ -108,6 +113,20 @@ namespace MarketBoardPlugin.GUI
     public MarketBoardWindow(MBPluginConfig config)
     {
       this.items = MBPlugin.Data.GetExcelSheet<Item>();
+      this.classJobs = MBPlugin.Data.GetExcelSheet<ClassJob>()?
+        .Where(cj => cj.RowId != 0)
+        .OrderBy(cj =>
+        {
+          return cj.Role switch
+          {
+            0 => 3,
+            1 => 0,
+            2 => 2,
+            3 => 2,
+            4 => 1,
+            _ => 4,
+          };
+        }).ToList();
       this.config = config ?? throw new ArgumentNullException(nameof(config));
       this.sortedCategoriesAndItems = this.SortCategoriesAndItems();
 
@@ -170,7 +189,8 @@ namespace MarketBoardPlugin.GUI
       // Update Categories And Items if needed
       if (this.searchString != this.lastSearchString || this.itemCategory != this.lastItemCategory
                                                      || this.lastlvlmin != this.lvlmin
-                                                     || this.lastlvlmax != this.lvlmax)
+                                                     || this.lastlvlmax != this.lvlmax
+                                                     || this.lastSelectedClassJob != this.selectedClassJob)
       {
         this.UpdateCategoriesAndItems();
       }
@@ -230,6 +250,36 @@ namespace MarketBoardPlugin.GUI
         ImGui.Text("Min Qty : ");
         ImGui.SameLine();
         ImGui.InputInt("###MinQuantity", ref this.minQuantityFilter);
+        ImGui.Text("Class: ");
+        ImGui.SameLine();
+        if (ImGui.BeginCombo(
+          "###ClassJobCombo",
+          this.selectedClassJob == null ? "All Classes" : this.selectedClassJob.Abbreviation))
+        {
+          void SelectClassJob(ClassJob classJob)
+          {
+            var selected = this.selectedClassJob == classJob;
+            if (ImGui.Selectable(classJob == null ? "All Classes" : classJob.Abbreviation, selected))
+            {
+              this.selectedClassJob = classJob;
+            }
+
+            if (selected)
+            {
+              ImGui.SetItemDefaultFocus();
+            }
+          }
+
+          SelectClassJob(null);
+
+          foreach (var classJob in this.classJobs)
+          {
+            SelectClassJob(classJob);
+          }
+
+          ImGui.EndCombo();
+        }
+
         if (this.itemCategory is 1 or 2)
         {
           ImGui.Text("Min level : ");
@@ -875,6 +925,7 @@ namespace MarketBoardPlugin.GUI
               .Where(i =>
                 i.Name.ToString().ToUpperInvariant().Contains(this.searchString.ToUpperInvariant(), StringComparison.InvariantCulture))
               .Where(i => i.LevelEquip >= this.lvlmin && i.LevelEquip <= this.lvlmax)
+              .Where(i => i.ClassJobCategory.Value.HasClass(this.selectedClassJob))
               .ToList()))
           .Where(kv => kv.Value.Count > 0)
           .ToList();
@@ -886,11 +937,15 @@ namespace MarketBoardPlugin.GUI
             kv.Key,
             kv.Value
               .Where(i => i.LevelEquip >= this.lvlmin && i.LevelEquip <= this.lvlmax)
-              .ToList())).ToList();
+              .Where(i => i.ClassJobCategory.Value.HasClass(this.selectedClassJob))
+              .ToList()))
+          .Where(kv => kv.Value.Count > 0)
+          .ToList();
       }
 
       this.lastSearchString = this.searchString;
       this.lastItemCategory = this.itemCategory;
+      this.lastSelectedClassJob = this.selectedClassJob;
       this.lastlvlmin = this.lvlmin;
       this.lastlvlmax = this.lvlmax;
     }

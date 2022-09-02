@@ -227,7 +227,7 @@ namespace MarketBoardPlugin.GUI
         ImGui.Text("HQ Only : ");
         ImGui.SameLine();
         ImGui.Checkbox("###Checkbox", ref this.hQOnly);
-        ImGui.Text("Min Qte : ");
+        ImGui.Text("Min Qty : ");
         ImGui.SameLine();
         ImGui.InputInt("###MinQuantity", ref this.minQuantityFilter);
         if (this.itemCategory is 1 or 2)

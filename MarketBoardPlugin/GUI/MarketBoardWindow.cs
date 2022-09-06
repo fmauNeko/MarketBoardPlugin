@@ -84,6 +84,8 @@ namespace MarketBoardPlugin.GUI
 
     private ulong playerId;
 
+    private int minQuantityFilter;
+
     private int selectedWorld = -1;
 
     private MarketDataResponse marketData;
@@ -245,6 +247,9 @@ namespace MarketBoardPlugin.GUI
         ImGui.Text("HQ Only : ");
         ImGui.SameLine();
         ImGui.Checkbox("###Checkbox", ref this.hQOnly);
+        ImGui.Text("Min Qty : ");
+        ImGui.SameLine();
+        ImGui.InputInt("###MinQuantity", ref this.minQuantityFilter);
         ImGui.Text("Class: ");
         ImGui.SameLine();
         if (ImGui.BeginCombo(
@@ -511,7 +516,8 @@ namespace MarketBoardPlugin.GUI
             ImGui.NextColumn();
             ImGui.Separator();
 
-            var marketDataListings = this.marketData?.Listings.Where(i => !this.hQOnly || i.Hq).OrderBy(l => l.PricePerUnit).ToList();
+            var marketDataListings = this.marketData?.Listings.Where(i => !this.hQOnly || i.Hq)
+              .Where(l => l.Quantity >= this.minQuantityFilter).OrderBy(l => l.PricePerUnit).ToList();
             if (marketDataListings != null)
             {
               foreach (var listing in marketDataListings)

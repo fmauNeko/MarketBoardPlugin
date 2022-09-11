@@ -628,7 +628,7 @@ namespace MarketBoardPlugin.GUI
                 }
                 else
                 {
-                  ImGui.Text(history.PricePerUnit.ToString("N0"));
+                  ImGui.Text(history.Total.ToString("N0"));
                 }
 
                 ImGui.NextColumn();

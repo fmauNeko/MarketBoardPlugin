@@ -381,7 +381,8 @@ namespace MarketBoardPlugin.GUI
 
                 if (ImGui.Selectable("Add to the shopping list") && this.marketData != null && this.selectedWorld >= 0)
                 {
-                  this.shoppingList.Add(new SavedItem(item, this.marketData.Listings.OrderBy(l => l.PricePerUnit).ToList()[0].PricePerUnit, this.worldList[this.selectedWorld].Item2));
+                  MarketDataListing itm = this.marketData.Listings.OrderBy(l => l.PricePerUnit).ToList()[0];
+                  this.shoppingList.Add(new SavedItem(item, itm.PricePerUnit, itm.WorldName));
                 }
 
                 ImGui.EndPopup();
@@ -627,7 +628,7 @@ namespace MarketBoardPlugin.GUI
                 }
                 else
                 {
-                  ImGui.Text(history.PricePerUnit.ToString("N0"));
+                  ImGui.Text(history.Total.ToString("N0"));
                 }
 
                 ImGui.NextColumn();

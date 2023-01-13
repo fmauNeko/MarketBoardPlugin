@@ -58,6 +58,8 @@ namespace MarketBoardPlugin.GUI
     private string searchString = string.Empty;
     private string lastSearchString = string.Empty;
 
+    private ClassJob lastSelectedClassJob;
+
     private int lvlmin;
     private int lastlvlmin;
     private int lvlmax = 90;
@@ -66,8 +68,11 @@ namespace MarketBoardPlugin.GUI
     private int itemCategory;
     private int lastItemCategory;
     private string[] categoryLabels = new[] { "All", "Weapons", "Equipments", "Others", "Furniture" };
+    private readonly List<ClassJob> classJobs;
 
     private Item selectedItem;
+
+    private ClassJob selectedClassJob;
 
     private TextureWrap selectedItemIcon;
 
@@ -78,6 +83,8 @@ namespace MarketBoardPlugin.GUI
     private bool hQOnly;
 
     private ulong playerId;
+
+    private int minQuantityFilter;
 
     private int selectedWorld = -1;
 
@@ -106,6 +113,20 @@ namespace MarketBoardPlugin.GUI
     public MarketBoardWindow(MBPluginConfig config)
     {
       this.items = MBPlugin.Data.GetExcelSheet<Item>();
+      this.classJobs = MBPlugin.Data.GetExcelSheet<ClassJob>()?
+        .Where(cj => cj.RowId != 0)
+        .OrderBy(cj =>
+        {
+          return cj.Role switch
+          {
+            0 => 3,
+            1 => 0,
+            2 => 2,
+            3 => 2,
+            4 => 1,
+            _ => 4,
+          };
+        }).ToList();
       this.config = config ?? throw new ArgumentNullException(nameof(config));
       this.sortedCategoriesAndItems = this.SortCategoriesAndItems();
 
@@ -168,7 +189,8 @@ namespace MarketBoardPlugin.GUI
       // Update Categories And Items if needed
       if (this.searchString != this.lastSearchString || this.itemCategory != this.lastItemCategory
                                                      || this.lastlvlmin != this.lvlmin
-                                                     || this.lastlvlmax != this.lvlmax)
+                                                     || this.lastlvlmax != this.lvlmax
+                                                     || this.lastSelectedClassJob != this.selectedClassJob)
       {
         this.UpdateCategoriesAndItems();
       }
@@ -225,6 +247,39 @@ namespace MarketBoardPlugin.GUI
         ImGui.Text("HQ Only : ");
         ImGui.SameLine();
         ImGui.Checkbox("###Checkbox", ref this.hQOnly);
+        ImGui.Text("Min Qty : ");
+        ImGui.SameLine();
+        ImGui.InputInt("###MinQuantity", ref this.minQuantityFilter);
+        ImGui.Text("Class: ");
+        ImGui.SameLine();
+        if (ImGui.BeginCombo(
+          "###ClassJobCombo",
+          this.selectedClassJob == null ? "All Classes" : this.selectedClassJob.Abbreviation))
+        {
+          void SelectClassJob(ClassJob classJob)
+          {
+            var selected = this.selectedClassJob == classJob;
+            if (ImGui.Selectable(classJob == null ? "All Classes" : classJob.Abbreviation, selected))
+            {
+              this.selectedClassJob = classJob;
+            }
+
+            if (selected)
+            {
+              ImGui.SetItemDefaultFocus();
+            }
+          }
+
+          SelectClassJob(null);
+
+          foreach (var classJob in this.classJobs)
+          {
+            SelectClassJob(classJob);
+          }
+
+          ImGui.EndCombo();
+        }
+
         if (this.itemCategory is 1 or 2)
         {
           ImGui.Text("Min level : ");
@@ -326,7 +381,8 @@ namespace MarketBoardPlugin.GUI
 
                 if (ImGui.Selectable("Add to the shopping list") && this.marketData != null && this.selectedWorld >= 0)
                 {
-                  this.shoppingList.Add(new SavedItem(item, this.marketData.Listings.OrderBy(l => l.PricePerUnit).ToList()[0].PricePerUnit, this.worldList[this.selectedWorld].Item2));
+                  MarketDataListing itm = this.marketData.Listings.OrderBy(l => l.PricePerUnit).ToList()[0];
+                  this.shoppingList.Add(new SavedItem(item, itm.PricePerUnit, itm.WorldName));
                 }
 
                 ImGui.EndPopup();
@@ -461,7 +517,8 @@ namespace MarketBoardPlugin.GUI
             ImGui.NextColumn();
             ImGui.Separator();
 
-            var marketDataListings = this.marketData?.Listings.Where(i => !this.hQOnly || i.Hq).OrderBy(l => l.PricePerUnit).ToList();
+            var marketDataListings = this.marketData?.Listings.Where(i => !this.hQOnly || i.Hq)
+              .Where(l => l.Quantity >= this.minQuantityFilter).OrderBy(l => l.PricePerUnit).ToList();
             if (marketDataListings != null)
             {
               foreach (var listing in marketDataListings)
@@ -571,7 +628,7 @@ namespace MarketBoardPlugin.GUI
                 }
                 else
                 {
-                  ImGui.Text(history.PricePerUnit.ToString("N0"));
+                  ImGui.Text(history.Total.ToString("N0"));
                 }
 
                 ImGui.NextColumn();
@@ -869,6 +926,7 @@ namespace MarketBoardPlugin.GUI
               .Where(i =>
                 i.Name.ToString().ToUpperInvariant().Contains(this.searchString.ToUpperInvariant(), StringComparison.InvariantCulture))
               .Where(i => i.LevelEquip >= this.lvlmin && i.LevelEquip <= this.lvlmax)
+              .Where(i => i.ClassJobCategory.Value.HasClass(this.selectedClassJob))
               .ToList()))
           .Where(kv => kv.Value.Count > 0)
           .ToList();
@@ -880,11 +938,15 @@ namespace MarketBoardPlugin.GUI
             kv.Key,
             kv.Value
               .Where(i => i.LevelEquip >= this.lvlmin && i.LevelEquip <= this.lvlmax)
-              .ToList())).ToList();
+              .Where(i => i.ClassJobCategory.Value.HasClass(this.selectedClassJob))
+              .ToList()))
+          .Where(kv => kv.Value.Count > 0)
+          .ToList();
       }
 
       this.lastSearchString = this.searchString;
       this.lastItemCategory = this.itemCategory;
+      this.lastSelectedClassJob = this.selectedClassJob;
       this.lastlvlmin = this.lvlmin;
       this.lastlvlmax = this.lvlmax;
     }

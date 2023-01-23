@@ -719,7 +719,7 @@ namespace MarketBoardPlugin.GUI
       ImGui.SetCursorPosY(ImGui.GetWindowContentRegionMax().Y - ImGui.GetTextLineHeightWithSpacing());
       if (ImGui.Button("Data provided by Universalis"))
       {
-        var universalisUrl = $"https://universalis.app";
+        var universalisUrl = "https://universalis.app";
         if (this.selectedItem != null)
         {
           universalisUrl += $"/market/{this.selectedItem.RowId}";

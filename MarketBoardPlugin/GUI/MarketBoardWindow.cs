@@ -488,6 +488,13 @@ namespace MarketBoardPlugin.GUI
             $"Last update: {DateTimeOffset.FromUnixTimeMilliseconds(this.marketData.LastUploadTime).LocalDateTime:G}");
           ImGui.SetCursorPosY(ImGui.GetCursorPosY() + ImGui.GetTextLineHeight() - ImGui.GetTextLineHeightWithSpacing());
         }
+        else
+        {
+          ImGui.SetNextItemWidth(250 * scale);
+          ImGui.Text(
+            $"Fetching data from Universalis...");
+          ImGui.SetCursorPosY(ImGui.GetCursorPosY() + ImGui.GetTextLineHeight() - ImGui.GetTextLineHeightWithSpacing());
+        }
 
         ImGui.EndGroup();
 

@@ -90,6 +90,10 @@ namespace MarketBoardPlugin.GUI
 
     private MarketDataResponse marketData;
 
+    private List<MarketDataResponse> marketBuffer;
+
+    private int marketBufferMaxSize = 10;
+
     private int selectedListing = -1;
 
     private int selectedHistory = -1;
@@ -112,6 +116,7 @@ namespace MarketBoardPlugin.GUI
     /// <param name="config">The <see cref="MBPluginConfig"/>.</param>
     public MarketBoardWindow(MBPluginConfig config)
     {
+      this.marketBuffer = new List<MarketDataResponse>();
       this.items = MBPlugin.Data.GetExcelSheet<Item>();
       this.classJobs = MBPlugin.Data.GetExcelSheet<ClassJob>()?
         .Where(cj => cj.RowId != 0)
@@ -847,6 +852,8 @@ namespace MarketBoardPlugin.GUI
         this.config.KofiHidden = kofiHidden;
         MBPlugin.PluginInterface.SavePluginConfig(this.config);
       }
+      ImGui.Text("Number of buffered item : ");
+      ImGui.InputInt("###marketBufferSize", ref this.marketBufferMaxSize);
 
       ImGui.End();
     }
@@ -1114,12 +1121,27 @@ namespace MarketBoardPlugin.GUI
     private void RefreshMarketData()
     {
       Task.Run(async () =>
-      {
-        this.marketData = null;
-        this.marketData = await UniversalisClient
-          .GetMarketData(this.selectedItem.RowId, this.worldList[this.selectedWorld].Item1, 50, CancellationToken.None)
-          .ConfigureAwait(false);
-      });
+        {
+          if (this.marketBuffer.Any(data => data.ItemId == this.selectedItem.RowId))
+          {
+            this.marketData = this.marketBuffer.First(data => data.ItemId == this.selectedItem.RowId);
+          }
+          else
+          {
+            if(this.marketData != null)
+              this.marketBuffer.Add(this.marketData);
+            if (this.marketBuffer.Count > this.marketBufferMaxSize)
+            {
+              this.marketBuffer.RemoveAt(0);
+            }
+
+            this.marketData = null;
+            this.marketData = await UniversalisClient
+              .GetMarketData(this.selectedItem.RowId, this.worldList[this.selectedWorld].Item1, 50,
+                CancellationToken.None)
+              .ConfigureAwait(false);
+          }
+        });
     }
   }
 }

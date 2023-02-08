@@ -94,6 +94,8 @@ namespace MarketBoardPlugin.GUI
 
     private int marketBufferMaxSize = 10;
 
+    private int oldMarketBufferMaxSize = 10;
+
     private int selectedListing = -1;
 
     private int selectedHistory = -1;
@@ -859,8 +861,15 @@ namespace MarketBoardPlugin.GUI
         this.config.KofiHidden = kofiHidden;
         MBPlugin.PluginInterface.SavePluginConfig(this.config);
       }
+
       ImGui.Text("Number of buffered item : ");
       ImGui.InputInt("###marketBufferSize", ref this.marketBufferMaxSize);
+      if (this.oldMarketBufferMaxSize != this.marketBufferMaxSize)
+      {
+        this.config.MarketBufferSize = this.marketBufferMaxSize;
+        MBPlugin.PluginInterface.SavePluginConfig(this.config);
+        this.oldMarketBufferMaxSize = this.marketBufferMaxSize;
+      }
 
       ImGui.End();
     }
@@ -1135,8 +1144,11 @@ namespace MarketBoardPlugin.GUI
           }
           else
           {
-            if(this.marketData != null)
+            if (this.marketData != null)
+            {
               this.marketBuffer.Add(this.marketData);
+            }
+
             if (this.marketBuffer.Count > this.marketBufferMaxSize)
             {
               this.marketBuffer.RemoveAt(0);

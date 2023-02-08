@@ -53,5 +53,10 @@ namespace MarketBoardPlugin
     /// Gets or sets a value indicating whether the Ko-Fi button has been hidden.
     /// </summary>
     public bool KofiHidden { get; set; } = false;
+
+    /// <summary>
+    /// Gets or sets a value indicating the maximum size of the Market item buffer.
+    /// </summary>
+    public int MarketBufferSize { get; set; } = 10;
   }
 }

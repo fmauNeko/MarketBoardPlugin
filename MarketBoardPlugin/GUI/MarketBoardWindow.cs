@@ -494,7 +494,7 @@ namespace MarketBoardPlugin.GUI
           ImGui.SetNextItemWidth(250 * scale);
           ImGui.Text(
             $"Last update: {DateTimeOffset.FromUnixTimeMilliseconds(this.marketData.LastUploadTime).LocalDateTime:G}" +
-                $"\nLast Fetch : {DateTimeOffset.FromUnixTimeMilliseconds(this.marketData.FetchTimestamp)}");
+                $"\nLast Fetch : {DateTimeOffset.FromUnixTimeMilliseconds(this.marketData.FetchTimestamp).LocalDateTime:G}");
 
           ImGui.SetCursorPosY(ImGui.GetCursorPosY() + ImGui.GetTextLineHeight() - ImGui.GetTextLineHeightWithSpacing());
         }
@@ -1155,20 +1155,16 @@ namespace MarketBoardPlugin.GUI
     {
       Task.Run(async () =>
       {
-          var cachedItem = this.marketBuffer.FirstOrDefault(data => data.ItemId == this.selectedItem.RowId, null);
-          if (cachedItem != null)
-          {
-            this.marketData = cachedItem;
-          }
+        var cachedItem = this.marketBuffer.FirstOrDefault(data => data.ItemId == this.selectedItem.RowId, null);
+        if (cachedItem != null)
+        {
+          this.marketData = cachedItem;
+        }
 
-          if (cachedItem == null || DateTimeOffset.Now.ToUnixTimeMilliseconds() - cachedItem.FetchTimestamp > this.bufferRefreshTimeout)
+        if (cachedItem == null || DateTimeOffset.Now.ToUnixTimeMilliseconds() - cachedItem.FetchTimestamp > this.bufferRefreshTimeout)
+        {
+          if (cachedItem == null)
           {
-            MarketDataResponse response = null;
-            response = await UniversalisClient
-              .GetMarketData(this.selectedItem.RowId, this.worldList[this.selectedWorld].Item1, 50,
-                CancellationToken.None)
-              .ConfigureAwait(false);
-
             if (this.marketData != null)
             {
               this.marketBuffer.Add(this.marketData);
@@ -1179,9 +1175,21 @@ namespace MarketBoardPlugin.GUI
               this.marketBuffer.RemoveAt(0);
             }
 
-            this.marketData = response;
+            this.marketData = null;
           }
-        });
+
+          this.marketData = await UniversalisClient
+            .GetMarketData(this.selectedItem.RowId, this.worldList[this.selectedWorld].Item1, 50,
+              CancellationToken.None)
+            .ConfigureAwait(false);
+
+          if (cachedItem != null)
+          {
+            this.marketBuffer.Remove(cachedItem);
+            this.marketBuffer.Add(this.marketData);
+          }
+        }
+      });
     }
   }
 }

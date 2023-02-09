@@ -80,6 +80,8 @@ namespace MarketBoardPlugin.GUI
 
     private bool priceIconShown = true;
 
+    private bool recentHistoryDisabled = false;
+
     private bool hQOnly;
 
     private ulong playerId;
@@ -151,6 +153,7 @@ namespace MarketBoardPlugin.GUI
       this.priceIconShown = this.config.PriceIconShown;
       this.bufferRefreshTimeout = this.config.ItemRefreshTimeout;
       this.marketBufferMaxSize = this.config.MarketBufferSize;
+      this.recentHistoryDisabled = this.config.RecentHistoryDisabled;
 
       this.numberFormatInfo = (NumberFormatInfo)CultureInfo.CurrentCulture.NumberFormat.Clone();
       this.numberFormatInfo.CurrencySymbol = SeIconChar.Gil.ToIconString();
@@ -513,7 +516,8 @@ namespace MarketBoardPlugin.GUI
           if (ImGui.BeginTabItem("Market Data##marketDataTab"))
           {
             ImGui.PushFont(this.fontPtr);
-            var tableHeight = (ImGui.GetContentRegionAvail().Y / 2) - (ImGui.GetTextLineHeightWithSpacing() * 2);
+            int usedTile = this.recentHistoryDisabled ? 1 : 2;
+            var tableHeight = (ImGui.GetContentRegionAvail().Y / usedTile) - (ImGui.GetTextLineHeightWithSpacing() * 2);
             ImGui.Text("Current listings (Includes 5%% GST)");
             ImGui.PopFont();
 
@@ -548,9 +552,9 @@ namespace MarketBoardPlugin.GUI
                 var index = marketDataListings.IndexOf(listing);
 
                 if (ImGui.Selectable(
-                  $"{(listing.Hq ? SeIconChar.HighQuality.AsString() : string.Empty)}##listing{index}",
-                  this.selectedListing == index,
-                  ImGuiSelectableFlags.SpanAllColumns))
+                      $"{(listing.Hq ? SeIconChar.HighQuality.AsString() : string.Empty)}##listing{index}",
+                      this.selectedListing == index,
+                      ImGuiSelectableFlags.SpanAllColumns))
                 {
                   this.selectedListing = index;
                 }
@@ -578,95 +582,99 @@ namespace MarketBoardPlugin.GUI
                 }
 
                 ImGui.NextColumn();
-                ImGui.Text($"{listing.RetainerName} {SeIconChar.CrossWorld.ToChar()} {(this.selectedWorld <= 1 ? listing.WorldName : this.worldList[this.selectedWorld].Item1)}");
+                ImGui.Text(
+                  $"{listing.RetainerName} {SeIconChar.CrossWorld.ToChar()} {(this.selectedWorld <= 1 ? listing.WorldName : this.worldList[this.selectedWorld].Item1)}");
                 ImGui.NextColumn();
                 ImGui.Separator();
               }
             }
 
             ImGui.EndChild();
-
-            ImGui.Separator();
-
-            ImGui.PushFont(this.fontPtr);
-            ImGui.Text("Recent history");
-            ImGui.PopFont();
-
-            ImGui.BeginChild("recentHistory", new Vector2(0.0f, tableHeight));
-            ImGui.Columns(6, "recentHistoryColumns");
-
-            if (!this.hasHistoryHQColumnWidthBeenSet)
+            if (!this.recentHistoryDisabled)
             {
-              ImGui.SetColumnWidth(0, 30.0f);
-              this.hasHistoryHQColumnWidthBeenSet = true;
-            }
+              ImGui.Separator();
 
-            ImGui.Separator();
-            ImGui.Text("HQ");
-            ImGui.NextColumn();
-            ImGui.Text("Price");
-            ImGui.NextColumn();
-            ImGui.Text("Qty");
-            ImGui.NextColumn();
-            ImGui.Text("Total");
-            ImGui.NextColumn();
-            ImGui.Text("Date");
-            ImGui.NextColumn();
-            ImGui.Text("Buyer");
-            ImGui.NextColumn();
-            ImGui.Separator();
+              ImGui.PushFont(this.fontPtr);
+              ImGui.Text("Recent history");
+              ImGui.PopFont();
 
-            var marketDataRecentHistory = this.marketData?.RecentHistory.OrderByDescending(h => h.Timestamp).ToList();
-            if (marketDataRecentHistory != null)
-            {
-              foreach (var history in marketDataRecentHistory)
+              ImGui.BeginChild("recentHistory", new Vector2(0.0f, tableHeight));
+              ImGui.Columns(6, "recentHistoryColumns");
+
+              if (!this.hasHistoryHQColumnWidthBeenSet)
               {
-                var index = marketDataRecentHistory.IndexOf(history);
-
-                if (ImGui.Selectable(
-                  $"{(history.Hq ? SeIconChar.HighQuality.AsString() : string.Empty)}##history{index}",
-                  this.selectedHistory == index,
-                  ImGuiSelectableFlags.SpanAllColumns))
-                {
-                  this.selectedHistory = index;
-                }
-
-                ImGui.NextColumn();
-                if (this.priceIconShown)
-                {
-                  ImGui.Text(history.PricePerUnit.ToString("C", this.numberFormatInfo));
-                }
-                else
-                {
-                  ImGui.Text(history.PricePerUnit.ToString("N0"));
-                }
-
-                ImGui.NextColumn();
-                ImGui.Text($"{history.Quantity:##,###}");
-                ImGui.NextColumn();
-                if (this.priceIconShown)
-                {
-                  ImGui.Text(history.Total.ToString("C", this.numberFormatInfo));
-                }
-                else
-                {
-                  ImGui.Text(history.Total.ToString("N0"));
-                }
-
-                ImGui.NextColumn();
-                ImGui.Text($"{DateTimeOffset.FromUnixTimeSeconds(history.Timestamp).LocalDateTime:G}");
-                ImGui.NextColumn();
-                ImGui.Text($"{history.BuyerName} {SeIconChar.CrossWorld.ToChar()} {(this.selectedWorld <= 1 ? history.WorldName : this.worldList[this.selectedWorld].Item1)}");
-                ImGui.NextColumn();
-                ImGui.Separator();
+                ImGui.SetColumnWidth(0, 30.0f);
+                this.hasHistoryHQColumnWidthBeenSet = true;
               }
-            }
 
-            ImGui.EndChild();
-            ImGui.Separator();
-            ImGui.EndTabItem();
+              ImGui.Separator();
+              ImGui.Text("HQ");
+              ImGui.NextColumn();
+              ImGui.Text("Price");
+              ImGui.NextColumn();
+              ImGui.Text("Qty");
+              ImGui.NextColumn();
+              ImGui.Text("Total");
+              ImGui.NextColumn();
+              ImGui.Text("Date");
+              ImGui.NextColumn();
+              ImGui.Text("Buyer");
+              ImGui.NextColumn();
+              ImGui.Separator();
+
+              var marketDataRecentHistory = this.marketData?.RecentHistory.OrderByDescending(h => h.Timestamp).ToList();
+              if (marketDataRecentHistory != null)
+              {
+                foreach (var history in marketDataRecentHistory)
+                {
+                  var index = marketDataRecentHistory.IndexOf(history);
+
+                  if (ImGui.Selectable(
+                        $"{(history.Hq ? SeIconChar.HighQuality.AsString() : string.Empty)}##history{index}",
+                        this.selectedHistory == index,
+                        ImGuiSelectableFlags.SpanAllColumns))
+                  {
+                    this.selectedHistory = index;
+                  }
+
+                  ImGui.NextColumn();
+                  if (this.priceIconShown)
+                  {
+                    ImGui.Text(history.PricePerUnit.ToString("C", this.numberFormatInfo));
+                  }
+                  else
+                  {
+                    ImGui.Text(history.PricePerUnit.ToString("N0"));
+                  }
+
+                  ImGui.NextColumn();
+                  ImGui.Text($"{history.Quantity:##,###}");
+                  ImGui.NextColumn();
+                  if (this.priceIconShown)
+                  {
+                    ImGui.Text(history.Total.ToString("C", this.numberFormatInfo));
+                  }
+                  else
+                  {
+                    ImGui.Text(history.Total.ToString("N0"));
+                  }
+
+                  ImGui.NextColumn();
+                  ImGui.Text($"{DateTimeOffset.FromUnixTimeSeconds(history.Timestamp).LocalDateTime:G}");
+                  ImGui.NextColumn();
+                  ImGui.Text(
+                    $"{history.BuyerName} {SeIconChar.CrossWorld.ToChar()} {(this.selectedWorld <= 1 ? history.WorldName : this.worldList[this.selectedWorld].Item1)}");
+                  ImGui.NextColumn();
+                  ImGui.Separator();
+                }
+              }
+
+              ImGui.EndChild();
+            }
           }
 
+          ImGui.Separator();
+          ImGui.EndTabItem();
           if (ImGui.BeginTabItem("Charts##chartsTab"))
           {
             var tableHeight = (ImGui.GetContentRegionAvail().Y / 2) - (ImGui.GetTextLineHeightWithSpacing() * 2);
@@ -830,7 +838,7 @@ namespace MarketBoardPlugin.GUI
     private void OpenSettingMenu()
     {
       var scale = ImGui.GetIO().FontGlobalScale;
-      ImGui.SetNextWindowSize(new Vector2(150, 75) * scale, ImGuiCond.FirstUseEver);
+      ImGui.SetNextWindowSize(new Vector2(150, 90) * scale, ImGuiCond.FirstUseEver);
 
       ImGui.Begin("Settings");
       var contextMenuIntegration = this.config.ContextMenuIntegration;
@@ -844,6 +852,12 @@ namespace MarketBoardPlugin.GUI
       if (ImGui.Checkbox("Gil Icon Shown", ref this.priceIconShown))
       {
         this.config.PriceIconShown = this.priceIconShown;
+        MBPlugin.PluginInterface.SavePluginConfig(this.config);
+      }
+
+      if (ImGui.Checkbox("Disable Recent History", ref this.recentHistoryDisabled))
+      {
+        this.config.RecentHistoryDisabled = this.recentHistoryDisabled;
         MBPlugin.PluginInterface.SavePluginConfig(this.config);
       }
 

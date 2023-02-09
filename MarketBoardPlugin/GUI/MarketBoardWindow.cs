@@ -96,6 +96,10 @@ namespace MarketBoardPlugin.GUI
 
     private int oldMarketBufferMaxSize = 10;
 
+    private int bufferRefreshTimeout = 30000; // milliseconds
+
+    private int oldIntRefreshTimeout = 30000;
+
     private int selectedListing = -1;
 
     private int selectedHistory = -1;
@@ -145,6 +149,8 @@ namespace MarketBoardPlugin.GUI
 
       this.watchingForHoveredItem = this.config.WatchForHovered;
       this.priceIconShown = this.config.PriceIconShown;
+      this.bufferRefreshTimeout = this.config.ItemRefreshTimeout;
+      this.marketBufferMaxSize = this.config.MarketBufferSize;
 
       this.numberFormatInfo = (NumberFormatInfo)CultureInfo.CurrentCulture.NumberFormat.Clone();
       this.numberFormatInfo.CurrencySymbol = SeIconChar.Gil.ToIconString();
@@ -487,7 +493,9 @@ namespace MarketBoardPlugin.GUI
         {
           ImGui.SetNextItemWidth(250 * scale);
           ImGui.Text(
-            $"Last update: {DateTimeOffset.FromUnixTimeMilliseconds(this.marketData.LastUploadTime).LocalDateTime:G}");
+            $"Last update: {DateTimeOffset.FromUnixTimeMilliseconds(this.marketData.LastUploadTime).LocalDateTime:G}" +
+                $"\nLast Fetch : {DateTimeOffset.FromUnixTimeMilliseconds(this.marketData.FetchTimestamp)}");
+
           ImGui.SetCursorPosY(ImGui.GetCursorPosY() + ImGui.GetTextLineHeight() - ImGui.GetTextLineHeightWithSpacing());
         }
         else
@@ -871,6 +879,15 @@ namespace MarketBoardPlugin.GUI
         this.oldMarketBufferMaxSize = this.marketBufferMaxSize;
       }
 
+      ImGui.Text("Item buffer Timeout (ms) :");
+      ImGui.InputInt("###refreshTimeout", ref this.bufferRefreshTimeout);
+      if (this.oldIntRefreshTimeout != this.bufferRefreshTimeout)
+      {
+        this.config.ItemRefreshTimeout = this.bufferRefreshTimeout;
+        MBPlugin.PluginInterface.SavePluginConfig(this.config);
+        this.oldIntRefreshTimeout = this.bufferRefreshTimeout;
+      }
+
       ImGui.End();
     }
 
@@ -1137,13 +1154,21 @@ namespace MarketBoardPlugin.GUI
     private void RefreshMarketData()
     {
       Task.Run(async () =>
-        {
-          if (this.marketBuffer.Any(data => data.ItemId == this.selectedItem.RowId))
+      {
+          var cachedItem = this.marketBuffer.FirstOrDefault(data => data.ItemId == this.selectedItem.RowId, null);
+          if (cachedItem != null)
           {
-            this.marketData = this.marketBuffer.First(data => data.ItemId == this.selectedItem.RowId);
+            this.marketData = cachedItem;
           }
-          else
+
+          if (cachedItem == null || DateTimeOffset.Now.ToUnixTimeMilliseconds() - cachedItem.FetchTimestamp > this.bufferRefreshTimeout)
           {
+            MarketDataResponse response = null;
+            response = await UniversalisClient
+              .GetMarketData(this.selectedItem.RowId, this.worldList[this.selectedWorld].Item1, 50,
+                CancellationToken.None)
+              .ConfigureAwait(false);
+
             if (this.marketData != null)
             {
               this.marketBuffer.Add(this.marketData);
@@ -1154,11 +1179,7 @@ namespace MarketBoardPlugin.GUI
               this.marketBuffer.RemoveAt(0);
             }
 
-            this.marketData = null;
-            this.marketData = await UniversalisClient
-              .GetMarketData(this.selectedItem.RowId, this.worldList[this.selectedWorld].Item1, 50,
-                CancellationToken.None)
-              .ConfigureAwait(false);
+            this.marketData = response;
           }
         });
     }

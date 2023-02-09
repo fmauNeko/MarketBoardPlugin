@@ -58,5 +58,10 @@ namespace MarketBoardPlugin
     /// Gets or sets a value indicating the maximum size of the Market item buffer.
     /// </summary>
     public int MarketBufferSize { get; set; } = 10;
+
+    /// <summary>
+    ///  Gets or sets the number of ms an item can be cached.
+    /// </summary>
+    public int ItemRefreshTimeout { get; set; } = 30000;
   }
 }

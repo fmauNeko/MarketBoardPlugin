@@ -82,6 +82,11 @@ namespace MarketBoardPlugin.Models.Universalis
     public double SaleVelocityHq { get; set; }
 
     /// <summary>
+    /// Gets or sets the fetch timestamp.
+    /// </summary>
+    public long FetchTimestamp { get; set; }
+
+    /// <summary>
     /// Gets the stack size histogram.
     /// </summary>
     [JsonPropertyName("stackSizeHistogram")]

@@ -41,6 +41,10 @@ namespace MarketBoardPlugin.Helpers
       var parsedRes = await JsonSerializer
         .DeserializeAsync<MarketDataResponse>(res, cancellationToken: cancellationToken)
         .ConfigureAwait(false);
+      if (parsedRes != null)
+      {
+        parsedRes.FetchTimestamp = DateTimeOffset.Now.ToUnixTimeMilliseconds();
+      }
 
       return parsedRes;
     }

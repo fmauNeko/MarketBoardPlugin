@@ -719,7 +719,13 @@ namespace MarketBoardPlugin.GUI
       ImGui.SetCursorPosY(ImGui.GetWindowContentRegionMax().Y - ImGui.GetTextLineHeightWithSpacing());
       if (ImGui.Button("Data provided by Universalis"))
       {
-        Utilities.OpenBrowser("https://universalis.app/");
+        var universalisUrl = "https://universalis.app";
+        if (this.selectedItem != null)
+        {
+          universalisUrl += $"/market/{this.selectedItem.RowId}";
+        }
+
+        Utilities.OpenBrowser(universalisUrl);
       }
 
       ImGui.SameLine(ImGui.GetContentRegionAvail().X - (120 * scale));

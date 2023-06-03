@@ -53,5 +53,20 @@ namespace MarketBoardPlugin
     /// Gets or sets a value indicating whether the Ko-Fi button has been hidden.
     /// </summary>
     public bool KofiHidden { get; set; } = false;
+
+    /// <summary>
+    /// Gets or sets a value indicating the maximum size of the Market item buffer.
+    /// </summary>
+    public int MarketBufferSize { get; set; } = 10;
+
+    /// <summary>
+    ///  Gets or sets a value indicating the number of ms an item can be cached.
+    /// </summary>
+    public int ItemRefreshTimeout { get; set; } = 30000;
+
+    /// <summary>
+    ///  Gets or sets a value indicating whether the recent history menu is disabled or not.
+    /// </summary>
+    public bool RecentHistoryDisabled { get; set; } = false;
   }
 }

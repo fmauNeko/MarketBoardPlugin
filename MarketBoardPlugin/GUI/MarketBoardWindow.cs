@@ -90,6 +90,8 @@ namespace MarketBoardPlugin.GUI
 
     private int selectedWorld = -1;
 
+    private int previousSelectedWorld = -1;
+
     private MarketDataResponse marketData;
 
     private List<MarketDataResponse> marketBuffer;
@@ -477,6 +479,7 @@ namespace MarketBoardPlugin.GUI
             var isSelected = this.selectedWorld == this.worldList.IndexOf(world);
             if (ImGui.Selectable(world.Item2, isSelected))
             {
+              this.previousSelectedWorld = this.selectedWorld;
               this.selectedWorld = this.worldList.IndexOf(world);
               this.config.CrossDataCenter = this.selectedWorld == 0;
               this.config.CrossWorld = this.selectedWorld == 1;
@@ -749,7 +752,13 @@ namespace MarketBoardPlugin.GUI
       ImGui.SetCursorPosY(ImGui.GetWindowContentRegionMax().Y - ImGui.GetTextLineHeightWithSpacing());
       if (ImGui.Button("Data provided by Universalis"))
       {
-        Utilities.OpenBrowser("https://universalis.app/");
+        var universalisUrl = "https://universalis.app";
+        if (this.selectedItem != null)
+        {
+          universalisUrl += $"/market/{this.selectedItem.RowId}";
+        }
+
+        Utilities.OpenBrowser(universalisUrl);
       }
 
       ImGui.SameLine(ImGui.GetContentRegionAvail().X - (120 * scale));
@@ -1175,8 +1184,9 @@ namespace MarketBoardPlugin.GUI
           this.marketData = cachedItem;
         }
 
-        if (cachedItem == null || DateTimeOffset.Now.ToUnixTimeMilliseconds() - cachedItem.FetchTimestamp > this.bufferRefreshTimeout)
+        if (cachedItem == null || this.selectedWorld != this.previousSelectedWorld || DateTimeOffset.Now.ToUnixTimeMilliseconds() - cachedItem.FetchTimestamp > this.bufferRefreshTimeout)
         {
+          this.previousSelectedWorld = this.selectedWorld;
           if (cachedItem == null)
           {
             if (this.marketData != null)

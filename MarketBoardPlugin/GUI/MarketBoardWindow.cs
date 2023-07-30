@@ -862,7 +862,7 @@ namespace MarketBoardPlugin.GUI
         MBPlugin.PluginInterface.SavePluginConfig(this.config);
       }
 
-      if (ImGui.Checkbox("No Gil Sales Taxt", ref this.noGilSalesTax))
+      if (ImGui.Checkbox("No Gil Sales Tax", ref this.noGilSalesTax))
       {
         this.config.NoGilSalesTax = this.noGilSalesTax;
         MBPlugin.PluginInterface.SavePluginConfig(this.config);

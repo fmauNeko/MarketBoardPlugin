@@ -791,11 +791,6 @@ namespace MarketBoardPlugin.GUI
         this.OpenSettingMenu();
       }
 
-      if (this.shoppingList.Count > 0)
-      {
-        this.ShowShoppingListMenu();
-      }
-
       return windowOpen;
     }
 
@@ -917,8 +912,13 @@ namespace MarketBoardPlugin.GUI
     /// <summary>
     /// Create a new separate window showing the shopping list.
     /// </summary>
-    private void ShowShoppingListMenu()
+    public void ShowShoppingListMenu()
     {
+      if (this.shoppingList.Count == 0)
+      {
+        return;
+      }
+
       var scale = ImGui.GetIO().FontGlobalScale;
 
       ImGui.SetNextWindowSize(new Vector2(400, 150) * scale, ImGuiCond.FirstUseEver);

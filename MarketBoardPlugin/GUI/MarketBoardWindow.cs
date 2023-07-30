@@ -82,6 +82,8 @@ namespace MarketBoardPlugin.GUI
 
     private bool priceIconShown = true;
 
+    private bool noGilSalesTax = false;
+
     private bool recentHistoryDisabled = false;
 
     private bool hQOnly;
@@ -158,6 +160,7 @@ namespace MarketBoardPlugin.GUI
       this.bufferRefreshTimeout = this.config.ItemRefreshTimeout;
       this.marketBufferMaxSize = this.config.MarketBufferSize;
       this.recentHistoryDisabled = this.config.RecentHistoryDisabled;
+      this.noGilSalesTax = this.config.NoGilSalesTax;
 
       this.numberFormatInfo = (NumberFormatInfo)CultureInfo.CurrentCulture.NumberFormat.Clone();
       this.numberFormatInfo.CurrencySymbol = SeIconChar.Gil.ToIconString();
@@ -860,6 +863,14 @@ namespace MarketBoardPlugin.GUI
         MBPlugin.PluginInterface.SavePluginConfig(this.config);
       }
 
+      if (ImGui.Checkbox("No Gil Sales Taxt", ref this.noGilSalesTax))
+      {
+        this.config.NoGilSalesTax = this.noGilSalesTax;
+        MBPlugin.PluginInterface.SavePluginConfig(this.config);
+        this.marketBuffer.Clear();
+        this.RefreshMarketData();
+      }
+
       if (ImGui.Checkbox("Disable Recent History", ref this.recentHistoryDisabled))
       {
         this.config.RecentHistoryDisabled = this.recentHistoryDisabled;
@@ -1205,7 +1216,7 @@ namespace MarketBoardPlugin.GUI
 
           this.marketData = await UniversalisClient
             .GetMarketData(this.selectedItem.RowId, this.worldList[this.selectedWorld].Item1, 50,
-              CancellationToken.None)
+              this.noGilSalesTax, CancellationToken.None)
             .ConfigureAwait(false);
 
           if (cachedItem != null)

@@ -19,7 +19,9 @@ namespace MarketBoardPlugin.GUI
   using Dalamud.Game;
   using Dalamud.Game.Text;
   using Dalamud.Interface;
+  using Dalamud.Interface.Internal;
   using Dalamud.Logging;
+  using Dalamud.Plugin.Services;
   using Dalamud.Utility;
   using ImGuiNET;
   using ImGuiScene;
@@ -74,7 +76,7 @@ namespace MarketBoardPlugin.GUI
 
     private ClassJob selectedClassJob;
 
-    private TextureWrap selectedItemIcon;
+    private IDalamudTextureWrap selectedItemIcon;
 
     private bool watchingForHoveredItem = true;
 
@@ -804,9 +806,8 @@ namespace MarketBoardPlugin.GUI
       this.selectedItem = this.items.Single(i => i.RowId == itemId);
 
       var iconId = this.selectedItem.Icon;
-      var iconTexFile = MBPlugin.Data.GetIcon(iconId);
       this.selectedItemIcon?.Dispose();
-      this.selectedItemIcon = MBPlugin.PluginInterface.UiBuilder.LoadImageRaw(iconTexFile.GetRgbaImageData(), iconTexFile.Header.Width, iconTexFile.Header.Height, 4);
+      this.selectedItemIcon = MBPlugin.TextureProvider.GetIcon(iconId);
 
       this.RefreshMarketData();
       if (!noHistory)
@@ -1038,7 +1039,7 @@ namespace MarketBoardPlugin.GUI
       }
       catch (Exception ex)
       {
-        PluginLog.Error(ex, $"Error loading category list.");
+        MBPlugin.Log.Error(ex, $"Error loading category list.");
         return null;
       }
     }
@@ -1068,7 +1069,7 @@ namespace MarketBoardPlugin.GUI
       fontRangeHandle.Free();
     }
 
-    private void HandleFrameworkUpdateEvent(Framework framework)
+    private void HandleFrameworkUpdateEvent(IFramework framework)
     {
       if (MBPlugin.ClientState.LocalContentId != 0 && this.playerId != MBPlugin.ClientState.LocalContentId)
       {
@@ -1170,7 +1171,7 @@ namespace MarketBoardPlugin.GUI
       {
         string name = descriptor.Name;
         object value = descriptor.GetValue(itm);
-        PluginLog.LogInformation("{0}={1}", name, value);
+        MBPlugin.Log.Information("{0}={1}", name, value);
       }
     }
 

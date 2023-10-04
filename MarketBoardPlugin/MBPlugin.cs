@@ -8,17 +8,12 @@ namespace MarketBoardPlugin
   using System.Diagnostics.CodeAnalysis;
 
   using Dalamud.ContextMenu;
-  using Dalamud.Data;
-  using Dalamud.Game;
-  using Dalamud.Game.ClientState;
   using Dalamud.Game.Command;
-  using Dalamud.Game.Gui;
   using Dalamud.Game.Text.SeStringHandling;
   using Dalamud.Game.Text.SeStringHandling.Payloads;
   using Dalamud.IoC;
-  using Dalamud.Logging;
   using Dalamud.Plugin;
-
+  using Dalamud.Plugin.Services;
   using Lumina.Excel.GeneratedSheets;
 
   using MarketBoardPlugin.GUI;
@@ -58,7 +53,7 @@ namespace MarketBoardPlugin
       PluginInterface.UiBuilder.Draw += this.BuildMarketBoardUi;
 
       // Set up context menu
-      this.contextMenuBase = new DalamudContextMenu();
+      this.contextMenuBase = new DalamudContextMenu(PluginInterface);
       this.inventoryContextMenuItem = new InventoryContextMenuItem(
         new SeString(new TextPayload("Search with Market Board Plugin")), this.OnSelectContextMenuItem, true);
       this.contextMenuBase.OnOpenInventoryContextMenu += this.OnContextMenuOpened;
@@ -77,19 +72,25 @@ namespace MarketBoardPlugin
     internal static DalamudPluginInterface PluginInterface { get; private set; } = null!;
 
     [PluginService]
-    internal static DataManager Data { get; private set; } = null!;
+    internal static IDataManager Data { get; private set; } = null!;
 
     [PluginService]
-    internal static CommandManager CommandManager { get; private set; } = null!;
+    internal static ICommandManager CommandManager { get; private set; } = null!;
 
     [PluginService]
-    internal static Framework Framework { get; private set; } = null!;
+    internal static IFramework Framework { get; private set; } = null!;
 
     [PluginService]
-    internal static ClientState ClientState { get; private set; } = null!;
+    internal static IClientState ClientState { get; private set; } = null!;
 
     [PluginService]
-    internal static GameGui GameGui { get; private set; } = null!;
+    internal static IGameGui GameGui { get; private set; } = null!;
+
+    [PluginService]
+    internal static ITextureProvider TextureProvider { get; private set; } = null!;
+
+    [PluginService]
+    internal static IPluginLog Log { get; private set; } = null!;
 
     /// <inheritdoc/>
     public void Dispose()
@@ -164,7 +165,7 @@ namespace MarketBoardPlugin
       }
       catch (Exception ex)
       {
-        PluginLog.LogError(ex, "Failed on context menu for itemId" + args.ItemId);
+        Log.Error(ex, "Failed on context menu for itemId" + args.ItemId);
       }
     }
 

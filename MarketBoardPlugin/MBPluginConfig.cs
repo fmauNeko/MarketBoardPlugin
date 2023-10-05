@@ -50,6 +50,11 @@ namespace MarketBoardPlugin
     public bool PriceIconShown { get; set; } = true;
 
     /// <summary>
+    /// Gets or sets a value indicating whether 'NoGilSalesTax' is enabled.
+    /// </summary>
+    public bool NoGilSalesTax { get; set; } = false;
+
+    /// <summary>
     /// Gets or sets a value indicating whether the Ko-Fi button has been hidden.
     /// </summary>
     public bool KofiHidden { get; set; } = false;

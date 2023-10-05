@@ -192,9 +192,13 @@ namespace MarketBoardPlugin
 
     private void BuildMarketBoardUi()
     {
-      if (this.marketBoardWindow != null && this.marketBoardWindow.IsOpen)
+      if (this.marketBoardWindow != null)
       {
-        this.marketBoardWindow.IsOpen = this.marketBoardWindow.Draw();
+        if (this.marketBoardWindow.IsOpen)
+        {
+          this.marketBoardWindow.IsOpen = this.marketBoardWindow.Draw();
+        }
+        this.marketBoardWindow.ShowShoppingListMenu();
       }
     }
   }

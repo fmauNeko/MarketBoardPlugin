@@ -3,6 +3,7 @@
 // </copyright>
 
 using System.Data.SqlTypes;
+using System.Text.RegularExpressions;
 
 namespace MarketBoardPlugin.GUI
 {
@@ -123,6 +124,12 @@ namespace MarketBoardPlugin.GUI
     private List<SavedItem> shoppingList = new List<SavedItem>();
 
     private NumberFormatInfo numberFormatInfo;
+
+    private static Dictionary<char, int> RomanNumberMap = new Dictionary<char, int> {
+      {'I', 1},
+      {'V', 5},
+      {'X', 10},
+    };
 
     /// <summary>
     /// Initializes a new instance of the <see cref="MarketBoardWindow"/> class.
@@ -1026,6 +1033,32 @@ namespace MarketBoardPlugin.GUI
       this.lastlvlmax = this.lvlmax;
     }
 
+    private static string PadNumbers(string input)
+    {
+      return Regex.Replace(input, "[0-9]+", match => match.Value.PadLeft(10, '0'));
+    }
+
+    private string ConvertItemNameToSortableFormat(string itemName)
+    {
+      Regex regex = new Regex(@"^[IVX]+$");
+      foreach (var word in itemName.Split(' '))
+      {
+        if (word.Length <= 4 && regex.IsMatch(word))
+        {
+          int value = 0;
+          for (int index = word.Length - 1, lastValue = 0; index >= 0; index--)
+          {
+            int currentValue = RomanNumberMap[word[index]];
+            value += (currentValue < lastValue ? -currentValue : currentValue);
+            lastValue = currentValue;
+          }
+
+          return PadNumbers(itemName.Replace(word, value.ToString()));
+        }
+      }
+      return itemName;
+    }
+
     private Dictionary<ItemSearchCategory, List<Item>> SortCategoriesAndItems()
     {
       try
@@ -1043,7 +1076,7 @@ namespace MarketBoardPlugin.GUI
             continue;
           }
 
-          sortedCategoriesDict.Add(c, this.items.Where(i => i.ItemSearchCategory.Row == c.RowId).OrderBy(i => i.Name.ToString()).ToList());
+          sortedCategoriesDict.Add(c, this.items.Where(i => i.ItemSearchCategory.Row == c.RowId).OrderBy(i => ConvertItemNameToSortableFormat(i.Name.ToString())).ToList());
         }
 
         return sortedCategoriesDict;

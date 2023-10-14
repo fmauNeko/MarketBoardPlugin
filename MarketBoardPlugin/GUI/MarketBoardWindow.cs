@@ -679,10 +679,10 @@ namespace MarketBoardPlugin.GUI
 
               ImGui.EndChild();
             }
+            ImGui.EndTabItem();
           }
 
           ImGui.Separator();
-          ImGui.EndTabItem();
           if (ImGui.BeginTabItem("Charts##chartsTab"))
           {
             var tableHeight = (ImGui.GetContentRegionAvail().Y / 2) - (ImGui.GetTextLineHeightWithSpacing() * 2);

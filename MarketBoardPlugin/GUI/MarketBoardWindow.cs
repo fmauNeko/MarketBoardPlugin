@@ -2,19 +2,18 @@
 // Copyright (c) Florian Maunier. All rights reserved.
 // </copyright>
 
-using System.Data.SqlTypes;
-using System.Text.RegularExpressions;
-
 namespace MarketBoardPlugin.GUI
 {
   using System;
   using System.Collections.Generic;
   using System.ComponentModel;
+  using System.Data.SqlTypes;
   using System.Globalization;
   using System.IO;
   using System.Linq;
   using System.Numerics;
   using System.Runtime.InteropServices;
+  using System.Text.RegularExpressions;
   using System.Threading;
   using System.Threading.Tasks;
   using Dalamud.Game;
@@ -125,10 +124,11 @@ namespace MarketBoardPlugin.GUI
 
     private NumberFormatInfo numberFormatInfo;
 
-    private static Dictionary<char, int> RomanNumberMap = new Dictionary<char, int> {
-      {'I', 1},
-      {'V', 5},
-      {'X', 10},
+    private static Dictionary<char, int> RomanNumberMap = new Dictionary<char, int>
+    {
+      { 'I', 1 },
+      { 'V', 5 },
+      { 'X', 10 },
     };
 
     /// <summary>
@@ -468,7 +468,12 @@ namespace MarketBoardPlugin.GUI
       {
         if (this.selectedItemIcon != null)
         {
-          ImGui.Image(this.selectedItemIcon.ImGuiHandle, new Vector2(40, 40));
+          if (ImGui.ImageButton(this.selectedItemIcon.ImGuiHandle, new Vector2(40, 40)))
+          {
+            ImGui.LogToClipboard();
+            ImGui.LogText(this.selectedItem.Name);
+            ImGui.LogFinish();
+          }
         }
         else
         {
@@ -1038,7 +1043,7 @@ namespace MarketBoardPlugin.GUI
       return Regex.Replace(input, "[0-9]+", match => match.Value.PadLeft(10, '0'));
     }
 
-    private string ConvertItemNameToSortableFormat(string itemName)
+    private static string ConvertItemNameToSortableFormat(string itemName)
     {
       Regex regex = new Regex(@"^[IVX]+$");
       foreach (var word in itemName.Split(' '))
@@ -1049,7 +1054,7 @@ namespace MarketBoardPlugin.GUI
           for (int index = word.Length - 1, lastValue = 0; index >= 0; index--)
           {
             int currentValue = RomanNumberMap[word[index]];
-            value += (currentValue < lastValue ? -currentValue : currentValue);
+            value += currentValue < lastValue ? -currentValue : currentValue;
             lastValue = currentValue;
           }
 

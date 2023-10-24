@@ -20,6 +20,7 @@ namespace MarketBoardPlugin.GUI
   using Dalamud.Game.Text;
   using Dalamud.Interface;
   using Dalamud.Interface.Internal;
+  using Dalamud.Interface.Windowing;
   using Dalamud.Logging;
   using Dalamud.Plugin.Services;
   using Dalamud.Utility;
@@ -35,11 +36,11 @@ namespace MarketBoardPlugin.GUI
   /// <summary>
   /// The market board window.
   /// </summary>
-  public class MarketBoardWindow : IDisposable
+  public class MarketBoardWindow : Window, IDisposable
   {
     private readonly IEnumerable<Item> items;
 
-    private readonly MBPluginConfig config;
+    private readonly MBPlugin plugin;
 
     private readonly List<(string, string)> worldList = new List<(string, string)>();
 
@@ -52,8 +53,6 @@ namespace MarketBoardPlugin.GUI
     private bool searchHistoryOpen;
 
     private bool advancedSearchMenuOpen;
-
-    private bool settingMenuOpen;
 
     private float progressPosition;
 
@@ -120,10 +119,6 @@ namespace MarketBoardPlugin.GUI
 
     private List<KeyValuePair<ItemSearchCategory, List<Item>>> enumerableCategoriesAndItems;
 
-    private List<SavedItem> shoppingList = new List<SavedItem>();
-
-    private NumberFormatInfo numberFormatInfo;
-
     private static Dictionary<char, int> RomanNumberMap = new Dictionary<char, int>
     {
       { 'I', 1 },
@@ -134,9 +129,19 @@ namespace MarketBoardPlugin.GUI
     /// <summary>
     /// Initializes a new instance of the <see cref="MarketBoardWindow"/> class.
     /// </summary>
-    /// <param name="config">The <see cref="MBPluginConfig"/>.</param>
-    public MarketBoardWindow(MBPluginConfig config)
+    /// <param name="plugin">The <see cref="MBPlugin"/>.</param>
+    public MarketBoardWindow(MBPlugin plugin)
+      : base("Market Board")
     {
+      this.Flags = ImGuiWindowFlags.NoScrollbar;
+      this.Size = new Vector2(800, 600);
+      this.SizeCondition = ImGuiCond.FirstUseEver;
+      this.SizeConstraints = new WindowSizeConstraints
+      {
+        MinimumSize = new Vector2(350, 225),
+        MaximumSize = new Vector2(float.MaxValue, float.MaxValue),
+      };
+
       this.marketBuffer = new List<MarketDataResponse>();
       this.items = MBPlugin.Data.GetExcelSheet<Item>();
       this.classJobs = MBPlugin.Data.GetExcelSheet<ClassJob>()?
@@ -153,7 +158,7 @@ namespace MarketBoardPlugin.GUI
             _ => 4,
           };
         }).ToList();
-      this.config = config ?? throw new ArgumentNullException(nameof(config));
+      this.plugin = plugin ?? throw new ArgumentNullException(nameof(plugin));
       this.sortedCategoriesAndItems = this.SortCategoriesAndItems();
 
       MBPlugin.Framework.Update += this.HandleFrameworkUpdateEvent;
@@ -161,17 +166,6 @@ namespace MarketBoardPlugin.GUI
       MBPlugin.PluginInterface.UiBuilder.BuildFonts += this.HandleBuildFonts;
 
       MBPlugin.PluginInterface.UiBuilder.RebuildFonts();
-
-      this.watchingForHoveredItem = this.config.WatchForHovered;
-      this.priceIconShown = this.config.PriceIconShown;
-      this.bufferRefreshTimeout = this.config.ItemRefreshTimeout;
-      this.marketBufferMaxSize = this.config.MarketBufferSize;
-      this.recentHistoryDisabled = this.config.RecentHistoryDisabled;
-      this.noGilSalesTax = this.config.NoGilSalesTax;
-
-      this.numberFormatInfo = (NumberFormatInfo)CultureInfo.CurrentCulture.NumberFormat.Clone();
-      this.numberFormatInfo.CurrencySymbol = SeIconChar.Gil.ToIconString();
-      this.numberFormatInfo.CurrencyDecimalDigits = 0;
 
 #if DEBUG
       this.worldList.Add(("Chaos", "Chaos"));
@@ -188,11 +182,6 @@ namespace MarketBoardPlugin.GUI
       set => this.searchString = value;
     }
 
-    /// <summary>
-    /// Gets or sets a value indicating whether the Market Board window is open or not.
-    /// </summary>
-    public bool IsOpen { get; set; }
-
     /// <inheritdoc/>
     public void Dispose()
     {
@@ -200,18 +189,21 @@ namespace MarketBoardPlugin.GUI
       GC.SuppressFinalize(this);
     }
 
+    public void ResetMarketData()
+    {
+      this.marketBuffer.Clear();
+      this.RefreshMarketData();
+    }
+
     /// <summary>
     /// Draws the window.
     /// </summary>
-    /// <returns>A value indicating whether the window is open.</returns>
-    public bool Draw()
+    public override void Draw()
     {
-      var windowOpen = true;
-
       if (this.sortedCategoriesAndItems == null)
       {
         this.sortedCategoriesAndItems = this.SortCategoriesAndItems();
-        return true;
+        return;
       }
 
       this.enumerableCategoriesAndItems ??= this.sortedCategoriesAndItems.ToList();
@@ -226,16 +218,6 @@ namespace MarketBoardPlugin.GUI
       }
 
       var scale = ImGui.GetIO().FontGlobalScale;
-
-      // Window Setup
-      ImGui.SetNextWindowSize(new Vector2(800, 600) * scale, ImGuiCond.FirstUseEver);
-      ImGui.SetNextWindowSizeConstraints(new Vector2(350, 225) * scale, new Vector2(10000, 10000) * scale);
-
-      if (!ImGui.Begin($"Market Board", ref windowOpen, ImGuiWindowFlags.NoScrollbar))
-      {
-        ImGui.End();
-        return windowOpen;
-      }
 
       // Item List Column Setup
       ImGui.BeginChild("itemListColumn", new Vector2(267, 0) * scale, true);
@@ -336,7 +318,7 @@ namespace MarketBoardPlugin.GUI
         ImGui.Text("History");
         ImGui.Separator();
         var sheet = MBPlugin.Data.Excel.GetSheet<Item>();
-        foreach (var id in this.config.History.ToArray())
+        foreach (var id in this.plugin.Config.History.ToArray())
         {
           var item = sheet.GetRow(id);
           if (item == null)
@@ -412,7 +394,7 @@ namespace MarketBoardPlugin.GUI
                 if (ImGui.Selectable("Add to the shopping list") && this.marketData != null && this.selectedWorld >= 0)
                 {
                   MarketDataListing itm = this.marketData.Listings.OrderBy(l => l.PricePerUnit).ToList()[0];
-                  this.shoppingList.Add(new SavedItem(item, itm.PricePerUnit, itm.WorldName));
+                  this.plugin.ShoppingList.Add(new SavedItem(item, itm.PricePerUnit, itm.WorldName));
                 }
 
                 ImGui.EndPopup();
@@ -453,7 +435,7 @@ namespace MarketBoardPlugin.GUI
       ImGui.PushFont(UiBuilder.IconFont);
       if (ImGui.Button($"{(char)FontAwesomeIcon.Cog}"))
       {
-        this.settingMenuOpen = !this.settingMenuOpen;
+        this.plugin.OpenConfigUi();
       }
 
       ImGui.PopFont();
@@ -498,8 +480,8 @@ namespace MarketBoardPlugin.GUI
             {
               this.previousSelectedWorld = this.selectedWorld;
               this.selectedWorld = this.worldList.IndexOf(world);
-              this.config.CrossDataCenter = this.selectedWorld == 0;
-              this.config.CrossWorld = this.selectedWorld == 1;
+              this.plugin.Config.CrossDataCenter = this.selectedWorld == 0;
+              this.plugin.Config.CrossWorld = this.selectedWorld == 1;
               this.RefreshMarketData();
             }
 
@@ -536,7 +518,7 @@ namespace MarketBoardPlugin.GUI
           if (ImGui.BeginTabItem("Market Data##marketDataTab"))
           {
             ImGui.PushFont(this.fontPtr);
-            int usedTile = this.recentHistoryDisabled ? 1 : 2;
+            int usedTile = this.plugin.Config.RecentHistoryDisabled ? 1 : 2;
             var tableHeight = (ImGui.GetContentRegionAvail().Y / usedTile) - (ImGui.GetTextLineHeightWithSpacing() * 2);
             ImGui.Text("Current listings (Includes 5%% GST)");
             ImGui.PopFont();
@@ -580,9 +562,9 @@ namespace MarketBoardPlugin.GUI
                 }
 
                 ImGui.NextColumn();
-                if (this.priceIconShown)
+                if (this.plugin.Config.PriceIconShown)
                 {
-                  ImGui.Text(listing.PricePerUnit.ToString("C", this.numberFormatInfo));
+                  ImGui.Text(listing.PricePerUnit.ToString("C", this.plugin.NumberFormatInfo));
                 }
                 else
                 {
@@ -592,9 +574,9 @@ namespace MarketBoardPlugin.GUI
                 ImGui.NextColumn();
                 ImGui.Text($"{listing.Quantity:##,###}");
                 ImGui.NextColumn();
-                if (this.priceIconShown)
+                if (this.plugin.Config.PriceIconShown)
                 {
-                  ImGui.Text(listing.Total.ToString("C", this.numberFormatInfo));
+                  ImGui.Text(listing.Total.ToString("C", this.plugin.NumberFormatInfo));
                 }
                 else
                 {
@@ -610,7 +592,7 @@ namespace MarketBoardPlugin.GUI
             }
 
             ImGui.EndChild();
-            if (!this.recentHistoryDisabled)
+            if (!this.plugin.Config.RecentHistoryDisabled)
             {
               ImGui.Separator();
 
@@ -658,9 +640,9 @@ namespace MarketBoardPlugin.GUI
                   }
 
                   ImGui.NextColumn();
-                  if (this.priceIconShown)
+                  if (this.plugin.Config.PriceIconShown)
                   {
-                    ImGui.Text(history.PricePerUnit.ToString("C", this.numberFormatInfo));
+                    ImGui.Text(history.PricePerUnit.ToString("C", this.plugin.NumberFormatInfo));
                   }
                   else
                   {
@@ -670,9 +652,9 @@ namespace MarketBoardPlugin.GUI
                   ImGui.NextColumn();
                   ImGui.Text($"{history.Quantity:##,###}");
                   ImGui.NextColumn();
-                  if (this.priceIconShown)
+                  if (this.plugin.Config.PriceIconShown)
                   {
-                    ImGui.Text(history.Total.ToString("C", this.numberFormatInfo));
+                    ImGui.Text(history.Total.ToString("C", this.plugin.NumberFormatInfo));
                   }
                   else
                   {
@@ -780,7 +762,7 @@ namespace MarketBoardPlugin.GUI
 
       ImGui.SameLine(ImGui.GetContentRegionAvail().X - (120 * scale));
 
-      if (!this.config.KofiHidden)
+      if (!this.plugin.Config.KofiHidden)
       {
         var buttonText = "Support on Ko-fi";
         var buttonColor = 0x005E5BFFu;
@@ -801,14 +783,8 @@ namespace MarketBoardPlugin.GUI
       }
 
       ImGui.EndChild();
-      ImGui.End();
 
-      if (this.settingMenuOpen)
-      {
-        this.OpenSettingMenu();
-      }
-
-      return windowOpen;
+      return;
     }
 
     internal void ChangeSelectedItem(uint itemId, bool noHistory = false)
@@ -822,14 +798,14 @@ namespace MarketBoardPlugin.GUI
       this.RefreshMarketData();
       if (!noHistory)
       {
-        this.config.History.RemoveAll(i => i == itemId);
-        this.config.History.Insert(0, itemId);
-        if (this.config.History.Count > 100)
+        this.plugin.Config.History.RemoveAll(i => i == itemId);
+        this.plugin.Config.History.Insert(0, itemId);
+        if (this.plugin.Config.History.Count > 100)
         {
-          this.config.History.RemoveRange(100, this.config.History.Count - 100);
+          this.plugin.Config.History.RemoveRange(100, this.plugin.Config.History.Count - 100);
         }
 
-        MBPlugin.PluginInterface.SavePluginConfig(this.config);
+        MBPlugin.PluginInterface.SavePluginConfig(this.plugin.Config);
       }
     }
 
@@ -853,150 +829,6 @@ namespace MarketBoardPlugin.GUI
       }
 
       this.isDisposed = true;
-    }
-
-    private void OpenSettingMenu()
-    {
-      var scale = ImGui.GetIO().FontGlobalScale;
-      ImGui.SetNextWindowSize(new Vector2(150, 90) * scale, ImGuiCond.FirstUseEver);
-
-      ImGui.Begin("Settings");
-      var contextMenuIntegration = this.config.ContextMenuIntegration;
-      var kofiHidden = this.config.KofiHidden;
-      if (ImGui.Checkbox("Context menu integration", ref contextMenuIntegration))
-      {
-        this.config.ContextMenuIntegration = contextMenuIntegration;
-        MBPlugin.PluginInterface.SavePluginConfig(this.config);
-      }
-
-      if (ImGui.Checkbox("Gil Icon Shown", ref this.priceIconShown))
-      {
-        this.config.PriceIconShown = this.priceIconShown;
-        MBPlugin.PluginInterface.SavePluginConfig(this.config);
-      }
-
-      if (ImGui.Checkbox("No Gil Sales Tax", ref this.noGilSalesTax))
-      {
-        this.config.NoGilSalesTax = this.noGilSalesTax;
-        MBPlugin.PluginInterface.SavePluginConfig(this.config);
-        this.marketBuffer.Clear();
-        this.RefreshMarketData();
-      }
-
-      if (ImGui.Checkbox("Disable Recent History", ref this.recentHistoryDisabled))
-      {
-        this.config.RecentHistoryDisabled = this.recentHistoryDisabled;
-        MBPlugin.PluginInterface.SavePluginConfig(this.config);
-      }
-
-      if (ImGui.Checkbox("Watch for hovered item", ref this.watchingForHoveredItem))
-      {
-        this.config.WatchForHovered = this.watchingForHoveredItem;
-      }
-
-      ImGui.SameLine();
-      ImGui.TextDisabled("(?)");
-
-      if (ImGui.IsItemHovered())
-      {
-        ImGui.BeginTooltip();
-        ImGui.PushTextWrapPos(ImGui.GetFontSize() * 35.0f);
-        ImGui.TextUnformatted("Automatically select the item hovered in any of the in-game inventory window after 1 second.");
-        ImGui.PopTextWrapPos();
-        ImGui.EndTooltip();
-      }
-
-      if (ImGui.Checkbox("Hide Ko-Fi button", ref kofiHidden))
-      {
-        this.config.KofiHidden = kofiHidden;
-        MBPlugin.PluginInterface.SavePluginConfig(this.config);
-      }
-
-      ImGui.Text("Number of buffered item : ");
-      ImGui.InputInt("###marketBufferSize", ref this.marketBufferMaxSize);
-      if (this.oldMarketBufferMaxSize != this.marketBufferMaxSize)
-      {
-        this.config.MarketBufferSize = this.marketBufferMaxSize;
-        MBPlugin.PluginInterface.SavePluginConfig(this.config);
-        this.oldMarketBufferMaxSize = this.marketBufferMaxSize;
-      }
-
-      ImGui.Text("Item buffer Timeout (ms) :");
-      ImGui.InputInt("###refreshTimeout", ref this.bufferRefreshTimeout);
-      if (this.oldIntRefreshTimeout != this.bufferRefreshTimeout)
-      {
-        this.config.ItemRefreshTimeout = this.bufferRefreshTimeout;
-        MBPlugin.PluginInterface.SavePluginConfig(this.config);
-        this.oldIntRefreshTimeout = this.bufferRefreshTimeout;
-      }
-
-      ImGui.End();
-    }
-
-    /// <summary>
-    /// Create a new separate window showing the shopping list.
-    /// </summary>
-    public void ShowShoppingListMenu()
-    {
-      if (this.shoppingList.Count == 0)
-      {
-        return;
-      }
-
-      var scale = ImGui.GetIO().FontGlobalScale;
-
-      ImGui.SetNextWindowSize(new Vector2(400, 150) * scale, ImGuiCond.FirstUseEver);
-      ImGui.SetNextWindowSizeConstraints(new Vector2(400, 150) * scale, new Vector2(10000, 10000) * scale);
-
-      ImGui.Begin("Shopping List");
-      ImGui.Columns(4, "recentHistoryColumns");
-      ImGui.Text("Name");
-      ImGui.NextColumn();
-      ImGui.Text("Price");
-      ImGui.NextColumn();
-      ImGui.Text("World");
-      ImGui.NextColumn();
-      ImGui.Text("Action");
-      ImGui.NextColumn();
-      ImGui.Separator();
-
-      List<SavedItem> todel = new List<SavedItem>();
-
-      int k = 0;
-      foreach (var item in this.shoppingList)
-      {
-        ImGui.Text(item.SourceItem.Name);
-        ImGui.NextColumn();
-        if (this.priceIconShown)
-        {
-          ImGui.Text(item.Price.ToString("C", this.numberFormatInfo));
-        }
-        else
-        {
-          ImGui.Text(item.Price.ToString("N0"));
-        }
-
-        ImGui.NextColumn();
-        ImGui.Text(item.World);
-        ImGui.NextColumn();
-        ImGui.PushFont(UiBuilder.IconFont);
-        if (ImGui.Button($"{(char)FontAwesomeIcon.Slash}##shoplist" + k, new Vector2(32 * ImGui.GetIO().FontGlobalScale, 1.5f * ImGui.GetItemRectSize().Y)))
-        {
-          todel.Add(item);
-        }
-
-        ImGui.PopFont();
-        ImGui.NextColumn();
-        ImGui.Separator();
-        k += 1;
-      }
-
-      foreach (var item in todel)
-      {
-        this.shoppingList.Remove(item);
-      }
-
-      ImGui.End();
     }
 
     /// <summary>
@@ -1158,11 +990,11 @@ namespace MarketBoardPlugin.GUI
         this.worldList.Add((currentDc.Value?.Name, $"Cross-World {SeIconChar.CrossWorld.ToChar()}"));
         this.worldList.AddRange(dcWorlds);
 
-        if (this.config.CrossDataCenter)
+        if (this.plugin.Config.CrossDataCenter)
         {
           this.selectedWorld = 0;
         }
-        else if (this.config.CrossWorld)
+        else if (this.plugin.Config.CrossWorld)
         {
           this.selectedWorld = 1;
         }
@@ -1185,7 +1017,7 @@ namespace MarketBoardPlugin.GUI
 
     private void HandleHoveredItemChange(object sender, ulong itemId)
     {
-      if (!this.watchingForHoveredItem || this.itemBeingHovered == itemId)
+      if (!this.plugin.Config.WatchForHovered || this.itemBeingHovered == itemId)
       {
         return;
       }
@@ -1234,7 +1066,7 @@ namespace MarketBoardPlugin.GUI
           this.marketData = cachedItem;
         }
 
-        if (cachedItem == null || this.selectedWorld != this.previousSelectedWorld || DateTimeOffset.Now.ToUnixTimeMilliseconds() - cachedItem.FetchTimestamp > this.bufferRefreshTimeout)
+        if (cachedItem == null || this.selectedWorld != this.previousSelectedWorld || DateTimeOffset.Now.ToUnixTimeMilliseconds() - cachedItem.FetchTimestamp > this.plugin.Config.ItemRefreshTimeout)
         {
           this.previousSelectedWorld = this.selectedWorld;
           if (cachedItem == null)
@@ -1244,7 +1076,7 @@ namespace MarketBoardPlugin.GUI
               this.marketBuffer.Add(this.marketData);
             }
 
-            if (this.marketBuffer.Count > this.marketBufferMaxSize)
+            if (this.marketBuffer.Count > this.plugin.Config.MarketBufferSize)
             {
               this.marketBuffer.RemoveAt(0);
             }
@@ -1254,7 +1086,7 @@ namespace MarketBoardPlugin.GUI
 
           this.marketData = await UniversalisClient
             .GetMarketData(this.selectedItem.RowId, this.worldList[this.selectedWorld].Item1, 50,
-              this.noGilSalesTax, CancellationToken.None)
+              this.plugin.Config.NoGilSalesTax, CancellationToken.None)
             .ConfigureAwait(false);
 
           if (cachedItem != null)

@@ -52,12 +52,12 @@ namespace MarketBoardPlugin
     /// <summary>
     /// Gets or sets a value indicating whether 'NoGilSalesTax' is enabled.
     /// </summary>
-    public bool NoGilSalesTax { get; set; } = false;
+    public bool NoGilSalesTax { get; set; }
 
     /// <summary>
     /// Gets or sets a value indicating whether the Ko-Fi button has been hidden.
     /// </summary>
-    public bool KofiHidden { get; set; } = false;
+    public bool KofiHidden { get; set; }
 
     /// <summary>
     /// Gets or sets a value indicating the maximum size of the Market item buffer.
@@ -72,6 +72,6 @@ namespace MarketBoardPlugin
     /// <summary>
     ///  Gets or sets a value indicating whether the recent history menu is disabled or not.
     /// </summary>
-    public bool RecentHistoryDisabled { get; set; } = false;
+    public bool RecentHistoryDisabled { get; set; }
   }
 }

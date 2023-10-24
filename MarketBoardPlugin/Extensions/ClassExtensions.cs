@@ -1,4 +1,8 @@
-﻿namespace MarketBoardPlugin.Extensions
+﻿// <copyright file="ClassExtensions.cs" company="Florian Maunier">
+// Copyright (c) Florian Maunier. All rights reserved.
+// </copyright>
+
+namespace MarketBoardPlugin.Extensions
 {
   using Lumina.Excel.GeneratedSheets;
 

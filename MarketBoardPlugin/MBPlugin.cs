@@ -5,18 +5,22 @@
 namespace MarketBoardPlugin
 {
   using System;
+  using System.Collections.Generic;
   using System.Diagnostics.CodeAnalysis;
-
+  using System.Globalization;
   using Dalamud.ContextMenu;
   using Dalamud.Game.Command;
+  using Dalamud.Game.Text;
   using Dalamud.Game.Text.SeStringHandling;
   using Dalamud.Game.Text.SeStringHandling.Payloads;
+  using Dalamud.Interface.Windowing;
   using Dalamud.IoC;
   using Dalamud.Plugin;
   using Dalamud.Plugin.Services;
   using Lumina.Excel.GeneratedSheets;
 
   using MarketBoardPlugin.GUI;
+  using MarketBoardPlugin.Models.ShoppingList;
 
   /// <summary>
   /// The entry point of the plugin.
@@ -30,7 +34,14 @@ namespace MarketBoardPlugin
 
     private readonly MarketBoardWindow marketBoardWindow;
 
-    private readonly MBPluginConfig config;
+    private readonly MarketBoardConfigWindow marketBoardConfigWindow;
+
+    private readonly MarketBoardShoppingListWindow marketBoardShoppingListWindow;
+
+    /// <summary>
+    /// Gets the window system.
+    /// </summary>
+    private readonly WindowSystem windowSystem = new(typeof(MBPlugin).AssemblyQualifiedName);
 
     private bool isDisposed;
 
@@ -40,9 +51,15 @@ namespace MarketBoardPlugin
     /// </summary>
     public MBPlugin()
     {
-      this.config = (MBPluginConfig)PluginInterface.GetPluginConfig() ?? new MBPluginConfig();
+      this.Config = PluginInterface.GetPluginConfig() as MBPluginConfig ?? new MBPluginConfig();
 
-      this.marketBoardWindow = new MarketBoardWindow(this.config);
+      this.marketBoardWindow = new MarketBoardWindow(this);
+      this.marketBoardConfigWindow = new MarketBoardConfigWindow(this);
+      this.marketBoardShoppingListWindow = new MarketBoardShoppingListWindow(this);
+
+      this.windowSystem.AddWindow(this.marketBoardWindow);
+      this.windowSystem.AddWindow(this.marketBoardConfigWindow);
+      this.windowSystem.AddWindow(this.marketBoardShoppingListWindow);
 
       // Set up command handlers
       CommandManager.AddHandler("/pmb", new CommandInfo(this.OnOpenMarketBoardCommand)
@@ -50,13 +67,19 @@ namespace MarketBoardPlugin
         HelpMessage = "Open the market board window.",
       });
 
-      PluginInterface.UiBuilder.Draw += this.BuildMarketBoardUi;
+      PluginInterface.UiBuilder.Draw += this.DrawUi;
+      PluginInterface.UiBuilder.OpenConfigUi += this.OpenConfigUi;
+      PluginInterface.UiBuilder.OpenMainUi += this.OpenMainUi;
 
       // Set up context menu
       this.contextMenuBase = new DalamudContextMenu(PluginInterface);
       this.inventoryContextMenuItem = new InventoryContextMenuItem(
         new SeString(new TextPayload("Search with Market Board Plugin")), this.OnSelectContextMenuItem, true);
       this.contextMenuBase.OnOpenInventoryContextMenu += this.OnContextMenuOpened;
+
+      // Set up number format
+      this.NumberFormatInfo.CurrencySymbol = SeIconChar.Gil.ToIconString();
+      this.NumberFormatInfo.CurrencyDecimalDigits = 0;
 
 #if DEBUG
       this.marketBoardWindow.IsOpen = true;
@@ -66,7 +89,22 @@ namespace MarketBoardPlugin
     /// <summary>
     /// Gets the plugin's name.
     /// </summary>
-    public string Name => "Market Board plugin";
+    public static string Name => "Market Board plugin";
+
+    /// <summary>
+    /// Gets the plugin's configuration.
+    /// </summary>
+    public MBPluginConfig Config { get; private set; }
+
+    /// <summary>
+    /// Gets the shopping list.
+    /// </summary>
+    public IList<SavedItem> ShoppingList { get; init; } = new List<SavedItem>();
+
+    /// <summary>
+    /// Gets the number format info.
+    /// </summary>
+    public NumberFormatInfo NumberFormatInfo { get; init; } = CultureInfo.CurrentCulture.NumberFormat.Clone() as NumberFormatInfo;
 
     [PluginService]
     internal static DalamudPluginInterface PluginInterface { get; private set; } = null!;
@@ -100,6 +138,30 @@ namespace MarketBoardPlugin
     }
 
     /// <summary>
+    /// Reset the market data.
+    /// </summary>
+    public void ResetMarketData()
+    {
+      this.marketBoardWindow.ResetMarketData();
+    }
+
+    /// <summary>
+    /// Open the main UI.
+    /// </summary>
+    public void OpenMainUi()
+    {
+      this.marketBoardWindow.IsOpen = true;
+    }
+
+    /// <summary>
+    /// Open the config UI.
+    /// </summary>
+    public void OpenConfigUi()
+    {
+      this.marketBoardConfigWindow.IsOpen = true;
+    }
+
+    /// <summary>
     /// Protected implementation of Dispose pattern.
     /// </summary>
     /// <param name="disposing">A value indicating whether we are disposing.</param>
@@ -113,12 +175,14 @@ namespace MarketBoardPlugin
       if (disposing)
       {
         // Save config
-        PluginInterface.SavePluginConfig(this.config);
+        PluginInterface.SavePluginConfig(this.Config);
+
+        // Remove windows
+        this.windowSystem.RemoveAllWindows();
+        this.marketBoardWindow.Dispose();
 
         // Remove command handlers
-        PluginInterface.UiBuilder.Draw -= this.BuildMarketBoardUi;
         CommandManager.RemoveHandler("/pmb");
-        this.marketBoardWindow.Dispose();
 
         // Remove context menu handler
         this.contextMenuBase.OnOpenInventoryContextMenu -= this.OnContextMenuOpened;
@@ -130,7 +194,7 @@ namespace MarketBoardPlugin
 
     private void OnContextMenuOpened(InventoryContextMenuOpenArgs args)
     {
-      if (!this.config.ContextMenuIntegration)
+      if (!this.Config.ContextMenuIntegration)
       {
         return;
       }
@@ -190,16 +254,9 @@ namespace MarketBoardPlugin
       }
     }
 
-    private void BuildMarketBoardUi()
+    private void DrawUi()
     {
-      if (this.marketBoardWindow != null)
-      {
-        if (this.marketBoardWindow.IsOpen)
-        {
-          this.marketBoardWindow.IsOpen = this.marketBoardWindow.Draw();
-        }
-        this.marketBoardWindow.ShowShoppingListMenu();
-      }
+      this.windowSystem.Draw();
     }
   }
 }

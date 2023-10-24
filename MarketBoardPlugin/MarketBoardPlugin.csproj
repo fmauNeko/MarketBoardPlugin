@@ -11,9 +11,9 @@
     <DebugType>PdbOnly</DebugType>
     <GenerateFullPaths>true</GenerateFullPaths>
     <MSBuildGitHashCommand>git rev-parse --short HEAD</MSBuildGitHashCommand>
-    <AssemblyVersion>1.3.2</AssemblyVersion>
-    <FileVersion>1.3.2</FileVersion>
-    <Version>1.3.2</Version>
+    <AssemblyVersion>1.3.3</AssemblyVersion>
+    <FileVersion>1.3.3</FileVersion>
+    <Version>1.3.3</Version>
     <Company>Florian Maunier</Company>
     <Description>Market board plugin for Dalamud.</Description>
     <Copyright>Copyright (c) Florian Maunier. All rights reserved.</Copyright>
@@ -87,6 +87,10 @@
       <HintPath>..\..\Dalamud\bin\Lumina.Excel.dll</HintPath>
       <HintPath>$(DalamudLibPath)Lumina.Excel.dll</HintPath>
     </Reference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\OtterGui\OtterGui.csproj" />
   </ItemGroup>
 
 </Project>

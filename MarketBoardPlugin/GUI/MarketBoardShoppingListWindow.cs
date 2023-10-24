@@ -6,6 +6,7 @@ namespace MarketBoardPlugin
 {
   using System;
   using System.Collections.Generic;
+  using System.Globalization;
   using System.Numerics;
   using Dalamud.Interface;
   using Dalamud.Interface.Windowing;
@@ -25,7 +26,6 @@ namespace MarketBoardPlugin
     public MarketBoardShoppingListWindow(MBPlugin plugin)
       : base("Market Board Shopping List")
     {
-
       this.Plugin = plugin ?? throw new ArgumentNullException(nameof(plugin));
 
       this.Flags = ImGuiWindowFlags.NoScrollbar;
@@ -73,7 +73,7 @@ namespace MarketBoardPlugin
         }
         else
         {
-          ImGui.Text(item.Price.ToString("N0"));
+          ImGui.Text(item.Price.ToString("N0", CultureInfo.CurrentCulture));
         }
 
         ImGui.NextColumn();

@@ -6,7 +6,10 @@ namespace MarketBoardPlugin.Helpers
 {
   using System.Diagnostics;
 
-  internal class Utilities
+  /// <summary>
+  /// Utilities.
+  /// </summary>
+  internal static class Utilities
   {
     internal static void OpenBrowser(string url)
     {

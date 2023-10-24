@@ -7,7 +7,6 @@ namespace MarketBoardPlugin.GUI
   using System;
   using System.Collections.Generic;
   using System.ComponentModel;
-  using System.Data.SqlTypes;
   using System.Globalization;
   using System.IO;
   using System.Linq;
@@ -16,17 +15,12 @@ namespace MarketBoardPlugin.GUI
   using System.Text.RegularExpressions;
   using System.Threading;
   using System.Threading.Tasks;
-  using Dalamud.Game;
   using Dalamud.Game.Text;
   using Dalamud.Interface;
   using Dalamud.Interface.Internal;
   using Dalamud.Interface.Windowing;
-  using Dalamud.Logging;
   using Dalamud.Plugin.Services;
-  using Dalamud.Utility;
   using ImGuiNET;
-  using ImGuiScene;
-  using Lumina.Data.Parsing;
   using Lumina.Excel.GeneratedSheets;
   using MarketBoardPlugin.Extensions;
   using MarketBoardPlugin.Helpers;
@@ -38,11 +32,20 @@ namespace MarketBoardPlugin.GUI
   /// </summary>
   public class MarketBoardWindow : Window, IDisposable
   {
+    private static Dictionary<char, int> romanNumberMap = new Dictionary<char, int>
+    {
+      { 'I', 1 },
+      { 'V', 5 },
+      { 'X', 10 },
+    };
+
     private readonly IEnumerable<Item> items;
 
     private readonly MBPlugin plugin;
 
     private readonly List<(string, string)> worldList = new List<(string, string)>();
+
+    private readonly List<ClassJob> classJobs;
 
     private Dictionary<ItemSearchCategory, List<Item>> sortedCategoriesAndItems;
 
@@ -65,25 +68,14 @@ namespace MarketBoardPlugin.GUI
     private int lastlvlmin;
     private int lvlmax = 90;
     private int lastlvlmax = 90;
-
     private int itemCategory;
     private int lastItemCategory;
     private string[] categoryLabels = new[] { "All", "Weapons", "Equipments", "Others", "Furniture" };
-    private readonly List<ClassJob> classJobs;
-
     private Item selectedItem;
 
     private ClassJob selectedClassJob;
 
     private IDalamudTextureWrap selectedItemIcon;
-
-    private bool watchingForHoveredItem = true;
-
-    private bool priceIconShown = true;
-
-    private bool noGilSalesTax = false;
-
-    private bool recentHistoryDisabled = false;
 
     private bool hQOnly;
 
@@ -99,14 +91,6 @@ namespace MarketBoardPlugin.GUI
 
     private List<MarketDataResponse> marketBuffer;
 
-    private int marketBufferMaxSize = 10;
-
-    private int oldMarketBufferMaxSize = 10;
-
-    private int bufferRefreshTimeout = 30000; // milliseconds
-
-    private int oldIntRefreshTimeout = 30000;
-
     private int selectedListing = -1;
 
     private int selectedHistory = -1;
@@ -118,13 +102,6 @@ namespace MarketBoardPlugin.GUI
     private bool hasHistoryHQColumnWidthBeenSet;
 
     private List<KeyValuePair<ItemSearchCategory, List<Item>>> enumerableCategoriesAndItems;
-
-    private static Dictionary<char, int> RomanNumberMap = new Dictionary<char, int>
-    {
-      { 'I', 1 },
-      { 'V', 5 },
-      { 'X', 10 },
-    };
 
     /// <summary>
     /// Initializes a new instance of the <see cref="MarketBoardWindow"/> class.
@@ -189,6 +166,9 @@ namespace MarketBoardPlugin.GUI
       GC.SuppressFinalize(this);
     }
 
+    /// <summary>
+    /// Reset the market data.
+    /// </summary>
     public void ResetMarketData()
     {
       this.marketBuffer.Clear();
@@ -568,7 +548,7 @@ namespace MarketBoardPlugin.GUI
                 }
                 else
                 {
-                  ImGui.Text(listing.PricePerUnit.ToString("N0"));
+                  ImGui.Text(listing.PricePerUnit.ToString("N0", CultureInfo.CurrentCulture));
                 }
 
                 ImGui.NextColumn();
@@ -580,7 +560,7 @@ namespace MarketBoardPlugin.GUI
                 }
                 else
                 {
-                  ImGui.Text(listing.Total.ToString("N0"));
+                  ImGui.Text(listing.Total.ToString("N0", CultureInfo.CurrentCulture));
                 }
 
                 ImGui.NextColumn();
@@ -646,7 +626,7 @@ namespace MarketBoardPlugin.GUI
                   }
                   else
                   {
-                    ImGui.Text(history.PricePerUnit.ToString("N0"));
+                    ImGui.Text(history.PricePerUnit.ToString("N0", CultureInfo.CurrentCulture));
                   }
 
                   ImGui.NextColumn();
@@ -658,7 +638,7 @@ namespace MarketBoardPlugin.GUI
                   }
                   else
                   {
-                    ImGui.Text(history.Total.ToString("N0"));
+                    ImGui.Text(history.Total.ToString("N0", CultureInfo.CurrentCulture));
                   }
 
                   ImGui.NextColumn();
@@ -673,6 +653,7 @@ namespace MarketBoardPlugin.GUI
 
               ImGui.EndChild();
             }
+
             ImGui.EndTabItem();
           }
 
@@ -831,6 +812,47 @@ namespace MarketBoardPlugin.GUI
       this.isDisposed = true;
     }
 
+    private static string PadNumbers(string input)
+    {
+      return Regex.Replace(input, "[0-9]+", match => match.Value.PadLeft(10, '0'));
+    }
+
+    private static string ConvertItemNameToSortableFormat(string itemName)
+    {
+      Regex regex = new Regex(@"^[IVX]+$");
+      foreach (var word in itemName.Split(' '))
+      {
+        if (word.Length <= 4 && regex.IsMatch(word))
+        {
+          int value = 0;
+          for (int index = word.Length - 1, lastValue = 0; index >= 0; index--)
+          {
+            int currentValue = romanNumberMap[word[index]];
+            value += currentValue < lastValue ? -currentValue : currentValue;
+            lastValue = currentValue;
+          }
+
+          return PadNumbers(itemName.Replace(word, value.ToString(CultureInfo.CurrentCulture), StringComparison.CurrentCulture));
+        }
+      }
+
+      return itemName;
+    }
+
+    /// <summary>
+    ///  Function used for debug purposes : Log every attributes of an Item.
+    /// </summary>
+    /// <param name="itm"> Item class to show in logs.</param>
+    private static void LogItemInfo(Item itm)
+    {
+      foreach (PropertyDescriptor descriptor in TypeDescriptor.GetProperties(itm))
+      {
+        string name = descriptor.Name;
+        object value = descriptor.GetValue(itm);
+        MBPlugin.Log.Information("{0}={1}", name, value);
+      }
+    }
+
     /// <summary>
     /// Update Categories and Items Dictionary based on current searchString.
     /// </summary>
@@ -868,32 +890,6 @@ namespace MarketBoardPlugin.GUI
       this.lastSelectedClassJob = this.selectedClassJob;
       this.lastlvlmin = this.lvlmin;
       this.lastlvlmax = this.lvlmax;
-    }
-
-    private static string PadNumbers(string input)
-    {
-      return Regex.Replace(input, "[0-9]+", match => match.Value.PadLeft(10, '0'));
-    }
-
-    private static string ConvertItemNameToSortableFormat(string itemName)
-    {
-      Regex regex = new Regex(@"^[IVX]+$");
-      foreach (var word in itemName.Split(' '))
-      {
-        if (word.Length <= 4 && regex.IsMatch(word))
-        {
-          int value = 0;
-          for (int index = word.Length - 1, lastValue = 0; index >= 0; index--)
-          {
-            int currentValue = RomanNumberMap[word[index]];
-            value += currentValue < lastValue ? -currentValue : currentValue;
-            lastValue = currentValue;
-          }
-
-          return PadNumbers(itemName.Replace(word, value.ToString()));
-        }
-      }
-      return itemName;
     }
 
     private Dictionary<ItemSearchCategory, List<Item>> SortCategoriesAndItems()
@@ -1042,20 +1038,6 @@ namespace MarketBoardPlugin.GUI
       }
     }
 
-    /// <summary>
-    ///  Function used for debug purposes : Log every attributes of an Item.
-    /// </summary>
-    /// <param name="itm"> Item class to show in logs.</param>
-    private static void LogItemInfo(Item itm)
-    {
-      foreach (PropertyDescriptor descriptor in TypeDescriptor.GetProperties(itm))
-      {
-        string name = descriptor.Name;
-        object value = descriptor.GetValue(itm);
-        MBPlugin.Log.Information("{0}={1}", name, value);
-      }
-    }
-
     private void RefreshMarketData()
     {
       Task.Run(async () =>
@@ -1085,8 +1067,12 @@ namespace MarketBoardPlugin.GUI
           }
 
           this.marketData = await UniversalisClient
-            .GetMarketData(this.selectedItem.RowId, this.worldList[this.selectedWorld].Item1, 50,
-              this.plugin.Config.NoGilSalesTax, CancellationToken.None)
+            .GetMarketData(
+              this.selectedItem.RowId,
+              this.worldList[this.selectedWorld].Item1,
+              50,
+              this.plugin.Config.NoGilSalesTax,
+              CancellationToken.None)
             .ConfigureAwait(false);
 
           if (cachedItem != null)

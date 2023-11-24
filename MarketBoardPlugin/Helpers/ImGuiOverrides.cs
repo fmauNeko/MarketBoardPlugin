@@ -52,20 +52,11 @@ namespace MarketBoardPlugin.Helpers
       ImGuiInputTextCallback callback,
       IntPtr userData)
     {
-      if (label == null)
-      {
-        throw new ArgumentNullException(nameof(label));
-      }
+      ArgumentNullException.ThrowIfNull(label);
 
-      if (hint == null)
-      {
-        throw new ArgumentNullException(nameof(hint));
-      }
+      ArgumentNullException.ThrowIfNull(hint);
 
-      if (input == null)
-      {
-        throw new ArgumentNullException(nameof(input));
-      }
+      ArgumentNullException.ThrowIfNull(input);
 
       var utf8LabelByteCount = Encoding.UTF8.GetByteCount(label);
       byte* utf8LabelBytes;

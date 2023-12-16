@@ -374,7 +374,10 @@ namespace MarketBoardPlugin.GUI
                 if (ImGui.Selectable("Add to the shopping list") && this.marketData != null && this.selectedWorld >= 0)
                 {
                   MarketDataListing itm = this.marketData.Listings.OrderBy(l => l.PricePerUnit).ToList()[0];
-                  this.plugin.ShoppingList.Add(new SavedItem(item, itm.PricePerUnit, itm.WorldName));
+                  double price = this.plugin.Config.NoGilSalesTax
+                    ? itm.PricePerUnit
+                    : itm.PricePerUnit + (itm.Tax / itm.Quantity);
+                  this.plugin.ShoppingList.Add(new SavedItem(item, price, itm.WorldName));
                 }
 
                 ImGui.EndPopup();
@@ -542,25 +545,31 @@ namespace MarketBoardPlugin.GUI
                 }
 
                 ImGui.NextColumn();
+                double pricePerUnit = this.plugin.Config.NoGilSalesTax
+                  ? listing.PricePerUnit
+                  : listing.PricePerUnit + (listing.Tax / listing.Quantity);
                 if (this.plugin.Config.PriceIconShown)
                 {
-                  ImGui.Text(listing.PricePerUnit.ToString("C", this.plugin.NumberFormatInfo));
+                  ImGui.Text(pricePerUnit.ToString("C", this.plugin.NumberFormatInfo));
                 }
                 else
                 {
-                  ImGui.Text(listing.PricePerUnit.ToString("N0", CultureInfo.CurrentCulture));
+                  ImGui.Text(pricePerUnit.ToString("N0", CultureInfo.CurrentCulture));
                 }
 
                 ImGui.NextColumn();
                 ImGui.Text($"{listing.Quantity:##,###}");
                 ImGui.NextColumn();
+                double totalPrice = this.plugin.Config.NoGilSalesTax
+                  ? listing.Total
+                  : listing.Total + listing.Tax;
                 if (this.plugin.Config.PriceIconShown)
                 {
-                  ImGui.Text(listing.Total.ToString("C", this.plugin.NumberFormatInfo));
+                  ImGui.Text(totalPrice.ToString("C", this.plugin.NumberFormatInfo));
                 }
                 else
                 {
-                  ImGui.Text(listing.Total.ToString("N0", CultureInfo.CurrentCulture));
+                  ImGui.Text(totalPrice.ToString("N0", CultureInfo.CurrentCulture));
                 }
 
                 ImGui.NextColumn();
@@ -1065,13 +1074,11 @@ namespace MarketBoardPlugin.GUI
 
             this.marketData = null;
           }
-
           this.marketData = await UniversalisClient
             .GetMarketData(
               this.selectedItem.RowId,
               this.worldList[this.selectedWorld].Item1,
               50,
-              this.plugin.Config.NoGilSalesTax,
               CancellationToken.None)
             .ConfigureAwait(false);
 

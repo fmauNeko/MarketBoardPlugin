@@ -26,9 +26,9 @@ namespace MarketBoardPlugin.Helpers
     /// <param name="noGST">Whether to exclude GST from the price.</param>
     /// <param name="cancellationToken">A <see cref="CancellationToken"/>.</param>
     /// <returns>The market data.</returns>
-    public static async Task<MarketDataResponse> GetMarketData(uint itemId, string worldName, int historyCount, bool noGST, CancellationToken cancellationToken)
+    public static async Task<MarketDataResponse> GetMarketData(uint itemId, string worldName, int historyCount, CancellationToken cancellationToken)
     {
-      var uriBuilder = new UriBuilder($"https://universalis.app/api/{worldName}/{itemId}?entries={historyCount}&noGST={Convert.ToInt16(noGST)}");
+      var uriBuilder = new UriBuilder($"https://universalis.app/api/{worldName}/{itemId}?entries={historyCount}");
 
       cancellationToken.ThrowIfCancellationRequested();
 

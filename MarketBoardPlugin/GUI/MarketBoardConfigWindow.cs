@@ -40,6 +40,7 @@ namespace MarketBoardPlugin
       this.Checkbox("No Gil Sales Tax", "Toggles whether the Gil Sales Tax is included", this.Plugin.Config.NoGilSalesTax, (v) =>
       {
         this.Plugin.Config.NoGilSalesTax = v;
+        MBPlugin.PluginInterface.SavePluginConfig(this.Plugin.Config);
         this.Plugin.ResetMarketData();
       });
 

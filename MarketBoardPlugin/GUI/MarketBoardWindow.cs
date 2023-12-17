@@ -21,6 +21,7 @@ namespace MarketBoardPlugin.GUI
   using Dalamud.Interface.Windowing;
   using Dalamud.Plugin.Services;
   using ImGuiNET;
+  using ImPlotNET;
   using Lumina.Excel.GeneratedSheets;
   using MarketBoardPlugin.Extensions;
   using MarketBoardPlugin.Helpers;
@@ -687,25 +688,48 @@ namespace MarketBoardPlugin.GUI
               ImGui.Text("Price variations (per unit)");
               ImGui.PopFont();
 
-              var pricePlotValues = marketDataRecentHistory
-                .Select(h => h.PriceAvg)
-                .ToArray();
-              ImGui.SetNextItemWidth(-1);
-              ImGui.PlotLines(
-                "##pricePlot",
-                ref pricePlotValues[0],
-                pricePlotValues.Length,
-                0,
-                null,
-                float.MaxValue,
-                float.MaxValue,
-                new Vector2(0, tableHeight));
+              if (ImPlot.BeginPlot("##pricePlot", new Vector2(-1, tableHeight)))
+              {
+                var now = DateTimeOffset.Now;
+                var x = new List<long>();
+                var y = new List<long>();
+
+                foreach (var historyEntry in this.marketData?.RecentHistory)
+                {
+                  x.Add(historyEntry.Timestamp);
+                  y.Add(historyEntry.PricePerUnit);
+                }
+
+                ImPlot.SetupAxesLimits(now.AddDays(-7).ToUnixTimeSeconds(), now.ToUnixTimeSeconds(), 0, y.Max(), ImPlotCond.Always);
+                ImPlot.SetupAxisScale(ImAxis.X1, ImPlotScale.Time);
+                ImPlot.SetNextMarkerStyle(ImPlotMarker.Circle);
+                ImPlot.PlotLine("Price", ref x.ToArray()[0], ref y.ToArray()[0], x.Count);
+                ImPlot.EndPlot();
+              }
 
               ImGui.Separator();
 
               ImGui.PushFont(this.fontPtr);
               ImGui.Text("Traded volumes");
               ImGui.PopFont();
+
+              if (ImPlot.BeginPlot("##qtyPlot2", new Vector2(-1, tableHeight)))
+              {
+                var now = DateTimeOffset.Now;
+                var x = new List<long>();
+                var y = new List<long>();
+
+                foreach (var historyEntry in this.marketData?.RecentHistory)
+                {
+                  x.Add(historyEntry.Timestamp);
+                  y.Add(historyEntry.Quantity);
+                }
+
+                ImPlot.SetupAxesLimits(now.AddDays(-7).ToUnixTimeSeconds(), now.ToUnixTimeSeconds(), 0, y.Max(), ImPlotCond.Always);
+                ImPlot.SetupAxisScale(ImAxis.X1, ImPlotScale.Time);
+                ImPlot.PlotBars("Quantities", ref x.ToArray()[0], ref y.ToArray()[0], x.Count, 3600);
+                ImPlot.EndPlot();
+              }
 
               var qtyPlotValues = marketDataRecentHistory
                 .Select(h => h.QtySum)

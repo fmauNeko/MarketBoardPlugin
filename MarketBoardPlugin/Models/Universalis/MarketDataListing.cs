@@ -105,6 +105,12 @@ namespace MarketBoardPlugin.Models.Universalis
     public long StainId { get; set; }
 
     /// <summary>
+    /// Gets or sets the Gil sales tax (GST) to be added to the total price during purchase.
+    /// </summary>
+    [JsonPropertyName("tax")]
+    public long Tax { get; set; }
+
+    /// <summary>
     /// Gets or sets the total.
     /// </summary>
     [JsonPropertyName("total")]

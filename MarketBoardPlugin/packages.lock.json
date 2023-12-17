@@ -8,6 +8,16 @@
         "resolved": "1.3.1",
         "contentHash": "ptAxut5PiLnzZ4G/KQdHJVcyklC/BF3otHJ7zYVUPiKBjsOCoF0n/6h2jK7e+8ev2Y1yAY3Wtx2GuXLFQgt9Uw=="
       },
+      "Dalamud.DrunkenToad": {
+        "type": "Direct",
+        "requested": "[1.8.15, )",
+        "resolved": "1.8.15",
+        "contentHash": "biuHkQR0qmIMWEsa14CcWtUH4f6G7sOTQMDZZKws2MhzTYl/3sw2lDS3z6bBOPd17I1UPtmkFBBn0QbQEpO4PA==",
+        "dependencies": {
+          "Dalamud.Loc": "1.1.2",
+          "Microsoft.Extensions.DependencyInjection": "7.0.0"
+        }
+      },
       "DalamudPackager": {
         "type": "Direct",
         "requested": "[2.1.12, )",
@@ -28,6 +38,24 @@
         "dependencies": {
           "StyleCop.Analyzers.Unstable": "1.2.0.507"
         }
+      },
+      "Dalamud.Loc": {
+        "type": "Transitive",
+        "resolved": "1.1.2",
+        "contentHash": "Sy7ooP1+mGtoCCPltgUNATz3UbnRFihVcDfg9wB2rdsfY5FDfCW/k3jpLZiJZc3xXHyttzwttJeVC3tE3JsEGw=="
+      },
+      "Microsoft.Extensions.DependencyInjection": {
+        "type": "Transitive",
+        "resolved": "7.0.0",
+        "contentHash": "elNeOmkeX3eDVG6pYVeV82p29hr+UKDaBhrZyWvWLw/EVZSYEkZlQdkp0V39k/Xehs2Qa0mvoCvkVj3eQxNQ1Q==",
+        "dependencies": {
+          "Microsoft.Extensions.DependencyInjection.Abstractions": "7.0.0"
+        }
+      },
+      "Microsoft.Extensions.DependencyInjection.Abstractions": {
+        "type": "Transitive",
+        "resolved": "7.0.0",
+        "contentHash": "h3j/QfmFN4S0w4C2A6X7arXij/M/OVw3uQHSOFxnND4DyAzO1F9eMX7Eti7lU/OkSthEE0WzRsfT/Dmx86jzCw=="
       },
       "StyleCop.Analyzers.Unstable": {
         "type": "Transitive",

@@ -17,7 +17,6 @@ namespace MarketBoardPlugin.GUI
   using Dalamud.Interface;
   using Dalamud.Interface.Internal;
   using Dalamud.Interface.ManagedFontAtlas;
-  using Dalamud.Interface.Utility.Raii;
   using Dalamud.Interface.Windowing;
   using Dalamud.Plugin.Services;
   using ImGuiNET;
@@ -47,6 +46,8 @@ namespace MarketBoardPlugin.GUI
     private readonly List<(string, string)> worldList = new List<(string, string)>();
 
     private readonly List<ClassJob> classJobs;
+
+    private readonly IFontHandle defaultFontHandle;
 
     private readonly IFontHandle titleFontHandle;
 
@@ -142,6 +143,19 @@ namespace MarketBoardPlugin.GUI
       MBPlugin.Framework.Update += this.HandleFrameworkUpdateEvent;
       MBPlugin.GameGui.HoveredItemChanged += this.HandleHoveredItemChange;
 
+      this.defaultFontHandle = MBPlugin.PluginInterface.UiBuilder.FontAtlas.NewDelegateFontHandle(e =>
+        e.OnPreBuild(toolkit =>
+          toolkit.AddFontFromStream(
+            this.GetType().Assembly.GetManifestResourceStream("MarketBoardPlugin.Resources.NotoSans-Medium-NNBSP.otf"),
+            new SafeFontConfig()
+            {
+              SizePx = UiBuilder.DefaultFontSizePx,
+              GlyphRanges = FontAtlasBuildToolkitUtilities.ToGlyphRange(char.ConvertFromUtf32(0x202F)),
+              MergeFont = toolkit.AddDalamudDefaultFont(-1),
+            },
+            false,
+            "NNBSP")));
+
       this.titleFontHandle = MBPlugin.PluginInterface.UiBuilder.FontAtlas.NewDelegateFontHandle(e =>
         e.OnPreBuild(toolkit =>
           toolkit.AddDalamudDefaultFont(MBPlugin.PluginInterface.UiBuilder.DefaultFontSpec.SizePx * 1.5f)));
@@ -208,6 +222,8 @@ namespace MarketBoardPlugin.GUI
       }
 
       var scale = ImGui.GetIO().FontGlobalScale;
+
+      using var fontDispose = this.defaultFontHandle.Push();
 
       // Item List Column Setup
       ImGui.BeginChild("itemListColumn", new Vector2(267, 0) * scale, true);
@@ -817,6 +833,7 @@ namespace MarketBoardPlugin.GUI
         MBPlugin.Framework.Update -= this.HandleFrameworkUpdateEvent;
         MBPlugin.GameGui.HoveredItemChanged -= this.HandleHoveredItemChange;
         this.selectedItemIcon?.Dispose();
+        this.defaultFontHandle?.Dispose();
         this.titleFontHandle?.Dispose();
       }
 

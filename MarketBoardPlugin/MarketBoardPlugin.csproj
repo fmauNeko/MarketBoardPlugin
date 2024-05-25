@@ -43,9 +43,11 @@
 
   <ItemGroup>
     <None Include="./MarketBoardPlugin.json" CopyToOutputDirectory="PreserveNewest" />
-    <None Update="Resources\NotoSans-Medium.otf">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Remove="Resources/NotoSans-Medium-NNBSP.otf" />
+    <EmbeddedResource Include="Resources/NotoSans-Medium-NNBSP.otf" />
   </ItemGroup>
 
   <ItemGroup>

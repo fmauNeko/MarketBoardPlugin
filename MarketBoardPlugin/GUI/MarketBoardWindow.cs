@@ -671,7 +671,9 @@ namespace MarketBoardPlugin.GUI
           ImGui.Separator();
           if (ImGui.BeginTabItem("Charts##chartsTab"))
           {
+            this.titleFontHandle.Push();
             var tableHeight = (ImGui.GetContentRegionAvail().Y / 2) - (ImGui.GetTextLineHeightWithSpacing() * 2);
+            this.titleFontHandle.Pop();
             var marketDataRecentHistory = this.marketData?.RecentHistory
               .GroupBy(h => DateTimeOffset.FromUnixTimeSeconds(h.Timestamp).LocalDateTime.Date)
               .Select(g => (Date: g.Key, PriceAvg: (float)g.Average(h => h.PricePerUnit),

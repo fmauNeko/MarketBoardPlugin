@@ -24,12 +24,6 @@
         "resolved": "2.1.12",
         "contentHash": "Sc0PVxvgg4NQjcI8n10/VfUQBAS4O+Fw2pZrAqBdRMbthYGeogzu5+xmIGCGmsEZ/ukMOBuAqiNiB5qA3MRalg=="
       },
-      "MSBuildGitHash": {
-        "type": "Direct",
-        "requested": "[2.0.2, )",
-        "resolved": "2.0.2",
-        "contentHash": "1gA7vw5Wc4w6/H2IDVFx69LGQndIyTSsBOTL1BO1lAjzyWl6LUi24gtST8Bh5yd/793patMZyO7Ym4Kg19p+VA=="
-      },
       "StyleCop.Analyzers": {
         "type": "Direct",
         "requested": "[1.2.0-beta.556, )",

@@ -8,19 +8,19 @@ namespace MarketBoardPlugin.GUI
   using System.Collections.Generic;
   using System.ComponentModel;
   using System.Globalization;
-  using System.IO;
   using System.Linq;
   using System.Numerics;
-  using System.Runtime.InteropServices;
   using System.Text.RegularExpressions;
   using System.Threading;
   using System.Threading.Tasks;
   using Dalamud.Game.Text;
   using Dalamud.Interface;
   using Dalamud.Interface.Internal;
+  using Dalamud.Interface.ManagedFontAtlas;
   using Dalamud.Interface.Windowing;
   using Dalamud.Plugin.Services;
   using ImGuiNET;
+  using ImPlotNET;
   using Lumina.Excel.GeneratedSheets;
   using MarketBoardPlugin.Extensions;
   using MarketBoardPlugin.Helpers;
@@ -46,6 +46,10 @@ namespace MarketBoardPlugin.GUI
     private readonly List<(string, string)> worldList = new List<(string, string)>();
 
     private readonly List<ClassJob> classJobs;
+
+    private readonly IFontHandle defaultFontHandle;
+
+    private readonly IFontHandle titleFontHandle;
 
     private Dictionary<ItemSearchCategory, List<Item>> sortedCategoriesAndItems;
 
@@ -95,8 +99,6 @@ namespace MarketBoardPlugin.GUI
 
     private int selectedHistory = -1;
 
-    private ImFontPtr fontPtr;
-
     private bool hasListingsHQColumnWidthBeenSet;
 
     private bool hasHistoryHQColumnWidthBeenSet;
@@ -140,9 +142,31 @@ namespace MarketBoardPlugin.GUI
 
       MBPlugin.Framework.Update += this.HandleFrameworkUpdateEvent;
       MBPlugin.GameGui.HoveredItemChanged += this.HandleHoveredItemChange;
-      MBPlugin.PluginInterface.UiBuilder.BuildFonts += this.HandleBuildFonts;
+
+      this.defaultFontHandle = MBPlugin.PluginInterface.UiBuilder.FontAtlas.NewDelegateFontHandle(e =>
+        e.OnPreBuild(toolkit =>
+          toolkit.AddFontFromStream(
+            this.GetType().Assembly.GetManifestResourceStream("MarketBoardPlugin.Resources.NotoSans-Medium-NNBSP.otf"),
+            new SafeFontConfig()
+            {
+              SizePx = UiBuilder.DefaultFontSizePx,
+              GlyphRanges = FontAtlasBuildToolkitUtilities.ToGlyphRange(char.ConvertFromUtf32(0x202F)),
+              MergeFont = toolkit.AddDalamudDefaultFont(-1),
+            },
+            false,
+            "NNBSP")));
+
+      this.titleFontHandle = MBPlugin.PluginInterface.UiBuilder.FontAtlas.NewDelegateFontHandle(e =>
+        e.OnPreBuild(toolkit =>
+          toolkit.AddDalamudDefaultFont(MBPlugin.PluginInterface.UiBuilder.DefaultFontSpec.SizePx * 1.5f)));
 
       MBPlugin.PluginInterface.UiBuilder.RebuildFonts();
+
+      var imPlotStylePtr = ImPlot.GetStyle();
+
+      imPlotStylePtr.Use24HourClock = DateTimeFormatInfo.CurrentInfo.ShortTimePattern.Contains('H', StringComparison.InvariantCulture);
+      imPlotStylePtr.UseISO8601 = DateTimeFormatInfo.CurrentInfo.ShortDatePattern != "M/d/yyyy";
+      imPlotStylePtr.UseLocalTime = true;
 
 #if DEBUG
       this.worldList.Add(("Chaos", "Chaos"));
@@ -198,6 +222,8 @@ namespace MarketBoardPlugin.GUI
       }
 
       var scale = ImGui.GetIO().FontGlobalScale;
+
+      using var fontDispose = this.defaultFontHandle.Push();
 
       // Item List Column Setup
       ImGui.BeginChild("itemListColumn", new Vector2(267, 0) * scale, true);
@@ -445,13 +471,13 @@ namespace MarketBoardPlugin.GUI
           ImGui.SetCursorPos(new Vector2(40, 40));
         }
 
-        ImGui.PushFont(this.fontPtr);
+        this.titleFontHandle.Push();
         ImGui.SameLine();
-        ImGui.SetCursorPosY(ImGui.GetCursorPosY() - (ImGui.GetFontSize() / 2.0f) + (19 * scale));
+        ImGui.SetCursorPosY(ImGui.GetCursorPosY() - (ImGui.GetFontSize() / 2.0f) + (20 * scale));
         ImGui.Text(this.selectedItem?.Name);
         ImGui.SameLine(ImGui.GetContentRegionAvail().X - (250 * scale));
         ImGui.SetCursorPosY(0);
-        ImGui.PopFont();
+        this.titleFontHandle.Pop();
         ImGui.BeginGroup();
         ImGui.SetNextItemWidth(250 * scale);
         if (ImGui.BeginCombo("##worldCombo", this.selectedWorld > -1 ? this.worldList[this.selectedWorld].Item2 : string.Empty))
@@ -500,18 +526,18 @@ namespace MarketBoardPlugin.GUI
         {
           if (ImGui.BeginTabItem("Market Data##marketDataTab"))
           {
-            ImGui.PushFont(this.fontPtr);
+            this.titleFontHandle.Push();
             int usedTile = this.plugin.Config.RecentHistoryDisabled ? 1 : 2;
             var tableHeight = (ImGui.GetContentRegionAvail().Y / usedTile) - (ImGui.GetTextLineHeightWithSpacing() * 2);
             ImGui.Text("Current listings (Includes 5%% GST)");
-            ImGui.PopFont();
+            this.titleFontHandle.Pop();
 
             ImGui.BeginChild("currentListings", new Vector2(0.0f, tableHeight));
             ImGui.Columns(5, "currentListingsColumns");
 
             if (!this.hasListingsHQColumnWidthBeenSet)
             {
-              ImGui.SetColumnWidth(0, 30.0f);
+              ImGui.SetColumnWidth(0, ImGui.GetTextLineHeightWithSpacing() * 1.5f);
               this.hasListingsHQColumnWidthBeenSet = true;
             }
 
@@ -585,16 +611,16 @@ namespace MarketBoardPlugin.GUI
             {
               ImGui.Separator();
 
-              ImGui.PushFont(this.fontPtr);
+              this.titleFontHandle.Push();
               ImGui.Text("Recent history");
-              ImGui.PopFont();
+              this.titleFontHandle.Pop();
 
               ImGui.BeginChild("recentHistory", new Vector2(0.0f, tableHeight));
               ImGui.Columns(6, "recentHistoryColumns");
 
               if (!this.hasHistoryHQColumnWidthBeenSet)
               {
-                ImGui.SetColumnWidth(0, 30.0f);
+                ImGui.SetColumnWidth(0, ImGui.GetTextLineHeightWithSpacing() * 1.5f);
                 this.hasHistoryHQColumnWidthBeenSet = true;
               }
 
@@ -669,66 +695,58 @@ namespace MarketBoardPlugin.GUI
           ImGui.Separator();
           if (ImGui.BeginTabItem("Charts##chartsTab"))
           {
+            this.titleFontHandle.Push();
             var tableHeight = (ImGui.GetContentRegionAvail().Y / 2) - (ImGui.GetTextLineHeightWithSpacing() * 2);
-            var marketDataRecentHistory = this.marketData?.RecentHistory
-              .GroupBy(h => DateTimeOffset.FromUnixTimeSeconds(h.Timestamp).LocalDateTime.Date)
-              .Select(g => (Date: g.Key, PriceAvg: (float)g.Average(h => h.PricePerUnit),
-                QtySum: (float)g.Sum(h => h.Quantity)))
-              .ToList();
+            this.titleFontHandle.Pop();
 
-            if (marketDataRecentHistory != null && marketDataRecentHistory.Count > 0)
+            if (this.marketData?.RecentHistory != null && this.marketData?.RecentHistory.Count > 0)
             {
-              for (var day = marketDataRecentHistory.Min(h => h.Date);
-                day <= marketDataRecentHistory.Max(h => h.Date);
-                day = day.AddDays(1))
-              {
-                if (!marketDataRecentHistory.Exists(h => h.Date == day))
-                {
-                  marketDataRecentHistory.Add((day, 0, 0));
-                }
-              }
-
-              marketDataRecentHistory = marketDataRecentHistory
-                .OrderBy(h => h.Date)
-                .ToList();
-
-              ImGui.PushFont(this.fontPtr);
+              this.titleFontHandle.Push();
               ImGui.Text("Price variations (per unit)");
-              ImGui.PopFont();
+              this.titleFontHandle.Pop();
 
-              var pricePlotValues = marketDataRecentHistory
-                .Select(h => h.PriceAvg)
-                .ToArray();
-              ImGui.SetNextItemWidth(-1);
-              ImGui.PlotLines(
-                "##pricePlot",
-                ref pricePlotValues[0],
-                pricePlotValues.Length,
-                0,
-                null,
-                float.MaxValue,
-                float.MaxValue,
-                new Vector2(0, tableHeight));
+              if (ImPlot.BeginPlot("##pricePlot", new Vector2(-1, tableHeight)))
+              {
+                var now = DateTimeOffset.Now;
+                var x = new List<long>();
+                var y = new List<long>();
+
+                foreach (var historyEntry in this.marketData?.RecentHistory)
+                {
+                  x.Add(historyEntry.Timestamp);
+                  y.Add(historyEntry.PricePerUnit);
+                }
+
+                ImPlot.SetupAxesLimits(now.AddDays(-7).ToUnixTimeSeconds(), now.ToUnixTimeSeconds(), 0, y.Max(), ImPlotCond.Always);
+                ImPlot.SetupAxisScale(ImAxis.X1, ImPlotScale.Time);
+                ImPlot.SetNextMarkerStyle(ImPlotMarker.Circle);
+                ImPlot.PlotLine("Price", ref x.ToArray()[0], ref y.ToArray()[0], x.Count);
+                ImPlot.EndPlot();
+              }
 
               ImGui.Separator();
 
-              ImGui.PushFont(this.fontPtr);
+              this.titleFontHandle.Push();
               ImGui.Text("Traded volumes");
-              ImGui.PopFont();
+              this.titleFontHandle.Pop();
 
-              var qtyPlotValues = marketDataRecentHistory
-                .Select(h => h.QtySum)
-                .ToArray();
-              ImGui.SetNextItemWidth(-1);
-              ImGui.PlotHistogram(
-                "##qtyPlot",
-                ref qtyPlotValues[0],
-                qtyPlotValues.Length,
-                0,
-                null,
-                float.MaxValue,
-                float.MaxValue,
-                new Vector2(0, tableHeight));
+              if (ImPlot.BeginPlot("##qtyPlot", new Vector2(-1, tableHeight)))
+              {
+                var now = DateTimeOffset.Now;
+                var x = new List<long>();
+                var y = new List<long>();
+
+                foreach (var historyEntry in this.marketData?.RecentHistory)
+                {
+                  x.Add(historyEntry.Timestamp);
+                  y.Add(historyEntry.Quantity);
+                }
+
+                ImPlot.SetupAxesLimits(now.AddDays(-7).ToUnixTimeSeconds(), now.ToUnixTimeSeconds(), 0, y.Max(), ImPlotCond.Always);
+                ImPlot.SetupAxisScale(ImAxis.X1, ImPlotScale.Time);
+                ImPlot.PlotBars("Quantities", ref x.ToArray()[0], ref y.ToArray()[0], x.Count, 3600);
+                ImPlot.EndPlot();
+              }
             }
 
             ImGui.EndTabItem();
@@ -814,8 +832,9 @@ namespace MarketBoardPlugin.GUI
       {
         MBPlugin.Framework.Update -= this.HandleFrameworkUpdateEvent;
         MBPlugin.GameGui.HoveredItemChanged -= this.HandleHoveredItemChange;
-        MBPlugin.PluginInterface.UiBuilder.BuildFonts -= this.HandleBuildFonts;
         this.selectedItemIcon?.Dispose();
+        this.defaultFontHandle?.Dispose();
+        this.titleFontHandle?.Dispose();
       }
 
       this.isDisposed = true;
@@ -928,31 +947,6 @@ namespace MarketBoardPlugin.GUI
         MBPlugin.Log.Error(ex, $"Error loading category list.");
         return null;
       }
-    }
-
-    private unsafe void HandleBuildFonts()
-    {
-      var fontPath = Path.Combine(MBPlugin.PluginInterface.DalamudAssetDirectory.FullName, "UIRes", "NotoSansCJKjp-Medium.otf");
-      this.fontPtr = ImGui.GetIO().Fonts.AddFontFromFileTTF(fontPath, 24.0f);
-
-      ImFontConfigPtr fontConfig = ImGuiNative.ImFontConfig_ImFontConfig();
-      fontConfig.MergeMode = true;
-      fontConfig.NativePtr->DstFont = UiBuilder.DefaultFont.NativePtr;
-
-      var fontRangeHandle = GCHandle.Alloc(
-        new ushort[]
-        {
-            0x202F,
-            0x202F,
-            0,
-        },
-        GCHandleType.Pinned);
-
-      var otherPath = Path.Combine(MBPlugin.PluginInterface.AssemblyLocation.DirectoryName, "Resources", "NotoSans-Medium.otf");
-      ImGui.GetIO().Fonts.AddFontFromFileTTF(otherPath, 17.0f, fontConfig, fontRangeHandle.AddrOfPinnedObject());
-
-      fontConfig.Destroy();
-      fontRangeHandle.Free();
     }
 
     private void HandleFrameworkUpdateEvent(IFramework framework)
@@ -1074,6 +1068,7 @@ namespace MarketBoardPlugin.GUI
 
             this.marketData = null;
           }
+
           this.marketData = await UniversalisClient
             .GetMarketData(
               this.selectedItem.RowId,

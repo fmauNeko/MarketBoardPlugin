@@ -521,7 +521,7 @@ namespace MarketBoardPlugin.GUI
 
             if (!this.hasListingsHQColumnWidthBeenSet)
             {
-              ImGui.SetColumnWidth(0, 30.0f);
+              ImGui.SetColumnWidth(0, ImGui.GetTextLineHeightWithSpacing() * 1.5f);
               this.hasListingsHQColumnWidthBeenSet = true;
             }
 
@@ -604,7 +604,7 @@ namespace MarketBoardPlugin.GUI
 
               if (!this.hasHistoryHQColumnWidthBeenSet)
               {
-                ImGui.SetColumnWidth(0, 30.0f);
+                ImGui.SetColumnWidth(0, ImGui.GetTextLineHeightWithSpacing() * 1.5f);
                 this.hasHistoryHQColumnWidthBeenSet = true;
               }
 

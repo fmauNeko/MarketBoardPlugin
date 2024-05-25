@@ -8,16 +8,15 @@ namespace MarketBoardPlugin.GUI
   using System.Collections.Generic;
   using System.ComponentModel;
   using System.Globalization;
-  using System.IO;
   using System.Linq;
   using System.Numerics;
-  using System.Runtime.InteropServices;
   using System.Text.RegularExpressions;
   using System.Threading;
   using System.Threading.Tasks;
   using Dalamud.Game.Text;
   using Dalamud.Interface;
   using Dalamud.Interface.Internal;
+  using Dalamud.Interface.ManagedFontAtlas;
   using Dalamud.Interface.Windowing;
   using Dalamud.Plugin.Services;
   using ImGuiNET;
@@ -46,6 +45,8 @@ namespace MarketBoardPlugin.GUI
     private readonly List<(string, string)> worldList = new List<(string, string)>();
 
     private readonly List<ClassJob> classJobs;
+
+    private readonly IFontHandle titleFontHandle;
 
     private Dictionary<ItemSearchCategory, List<Item>> sortedCategoriesAndItems;
 
@@ -95,8 +96,6 @@ namespace MarketBoardPlugin.GUI
 
     private int selectedHistory = -1;
 
-    private ImFontPtr fontPtr;
-
     private bool hasListingsHQColumnWidthBeenSet;
 
     private bool hasHistoryHQColumnWidthBeenSet;
@@ -140,7 +139,10 @@ namespace MarketBoardPlugin.GUI
 
       MBPlugin.Framework.Update += this.HandleFrameworkUpdateEvent;
       MBPlugin.GameGui.HoveredItemChanged += this.HandleHoveredItemChange;
-      MBPlugin.PluginInterface.UiBuilder.BuildFonts += this.HandleBuildFonts;
+
+      this.titleFontHandle = MBPlugin.PluginInterface.UiBuilder.FontAtlas.NewDelegateFontHandle(e =>
+        e.OnPreBuild(toolkit =>
+          toolkit.AddDalamudDefaultFont(MBPlugin.PluginInterface.UiBuilder.DefaultFontSpec.SizePx * 1.5f)));
 
       MBPlugin.PluginInterface.UiBuilder.RebuildFonts();
 
@@ -445,13 +447,13 @@ namespace MarketBoardPlugin.GUI
           ImGui.SetCursorPos(new Vector2(40, 40));
         }
 
-        ImGui.PushFont(this.fontPtr);
+        this.titleFontHandle.Push();
         ImGui.SameLine();
-        ImGui.SetCursorPosY(ImGui.GetCursorPosY() - (ImGui.GetFontSize() / 2.0f) + (19 * scale));
+        ImGui.SetCursorPosY(ImGui.GetCursorPosY() - (ImGui.GetFontSize() / 2.0f) + (20 * scale));
         ImGui.Text(this.selectedItem?.Name);
         ImGui.SameLine(ImGui.GetContentRegionAvail().X - (250 * scale));
         ImGui.SetCursorPosY(0);
-        ImGui.PopFont();
+        this.titleFontHandle.Pop();
         ImGui.BeginGroup();
         ImGui.SetNextItemWidth(250 * scale);
         if (ImGui.BeginCombo("##worldCombo", this.selectedWorld > -1 ? this.worldList[this.selectedWorld].Item2 : string.Empty))
@@ -500,11 +502,11 @@ namespace MarketBoardPlugin.GUI
         {
           if (ImGui.BeginTabItem("Market Data##marketDataTab"))
           {
-            ImGui.PushFont(this.fontPtr);
+            this.titleFontHandle.Push();
             int usedTile = this.plugin.Config.RecentHistoryDisabled ? 1 : 2;
             var tableHeight = (ImGui.GetContentRegionAvail().Y / usedTile) - (ImGui.GetTextLineHeightWithSpacing() * 2);
             ImGui.Text("Current listings (Includes 5%% GST)");
-            ImGui.PopFont();
+            this.titleFontHandle.Pop();
 
             ImGui.BeginChild("currentListings", new Vector2(0.0f, tableHeight));
             ImGui.Columns(5, "currentListingsColumns");
@@ -585,9 +587,9 @@ namespace MarketBoardPlugin.GUI
             {
               ImGui.Separator();
 
-              ImGui.PushFont(this.fontPtr);
+              this.titleFontHandle.Push();
               ImGui.Text("Recent history");
-              ImGui.PopFont();
+              this.titleFontHandle.Pop();
 
               ImGui.BeginChild("recentHistory", new Vector2(0.0f, tableHeight));
               ImGui.Columns(6, "recentHistoryColumns");
@@ -692,9 +694,9 @@ namespace MarketBoardPlugin.GUI
                 .OrderBy(h => h.Date)
                 .ToList();
 
-              ImGui.PushFont(this.fontPtr);
+              this.titleFontHandle.Push();
               ImGui.Text("Price variations (per unit)");
-              ImGui.PopFont();
+              this.titleFontHandle.Pop();
 
               var pricePlotValues = marketDataRecentHistory
                 .Select(h => h.PriceAvg)
@@ -712,9 +714,9 @@ namespace MarketBoardPlugin.GUI
 
               ImGui.Separator();
 
-              ImGui.PushFont(this.fontPtr);
+              this.titleFontHandle.Push();
               ImGui.Text("Traded volumes");
-              ImGui.PopFont();
+              this.titleFontHandle.Pop();
 
               var qtyPlotValues = marketDataRecentHistory
                 .Select(h => h.QtySum)
@@ -814,8 +816,8 @@ namespace MarketBoardPlugin.GUI
       {
         MBPlugin.Framework.Update -= this.HandleFrameworkUpdateEvent;
         MBPlugin.GameGui.HoveredItemChanged -= this.HandleHoveredItemChange;
-        MBPlugin.PluginInterface.UiBuilder.BuildFonts -= this.HandleBuildFonts;
         this.selectedItemIcon?.Dispose();
+        this.titleFontHandle?.Dispose();
       }
 
       this.isDisposed = true;
@@ -928,31 +930,6 @@ namespace MarketBoardPlugin.GUI
         MBPlugin.Log.Error(ex, $"Error loading category list.");
         return null;
       }
-    }
-
-    private unsafe void HandleBuildFonts()
-    {
-      var fontPath = Path.Combine(MBPlugin.PluginInterface.DalamudAssetDirectory.FullName, "UIRes", "NotoSansCJKjp-Medium.otf");
-      this.fontPtr = ImGui.GetIO().Fonts.AddFontFromFileTTF(fontPath, 24.0f);
-
-      ImFontConfigPtr fontConfig = ImGuiNative.ImFontConfig_ImFontConfig();
-      fontConfig.MergeMode = true;
-      fontConfig.NativePtr->DstFont = UiBuilder.DefaultFont.NativePtr;
-
-      var fontRangeHandle = GCHandle.Alloc(
-        new ushort[]
-        {
-            0x202F,
-            0x202F,
-            0,
-        },
-        GCHandleType.Pinned);
-
-      var otherPath = Path.Combine(MBPlugin.PluginInterface.AssemblyLocation.DirectoryName, "Resources", "NotoSans-Medium.otf");
-      ImGui.GetIO().Fonts.AddFontFromFileTTF(otherPath, 17.0f, fontConfig, fontRangeHandle.AddrOfPinnedObject());
-
-      fontConfig.Destroy();
-      fontRangeHandle.Free();
     }
 
     private void HandleFrameworkUpdateEvent(IFramework framework)
@@ -1074,6 +1051,7 @@ namespace MarketBoardPlugin.GUI
 
             this.marketData = null;
           }
+
           this.marketData = await UniversalisClient
             .GetMarketData(
               this.selectedItem.RowId,

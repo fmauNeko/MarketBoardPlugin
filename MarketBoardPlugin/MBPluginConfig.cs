@@ -77,6 +77,6 @@ namespace MarketBoardPlugin
     /// <summary>
     /// Gets the favorite items.
     /// </summary>
-    public IEnumerable<uint> Favorites { get; }
+    public ICollection<uint> Favorites { get; } = new List<uint>();
   }
 }

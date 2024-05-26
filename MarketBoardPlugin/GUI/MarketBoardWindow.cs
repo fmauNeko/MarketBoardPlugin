@@ -1117,13 +1117,21 @@ namespace MarketBoardPlugin.GUI
             this.marketData = null;
           }
 
-          this.marketData = await UniversalisClient
-            .GetMarketData(
-              this.selectedItem.RowId,
-              this.worldList[this.selectedWorld].Item1,
-              50,
-              CancellationToken.None)
-            .ConfigureAwait(false);
+          try
+          {
+            this.marketData = await UniversalisClient
+              .GetMarketData(
+                this.selectedItem.RowId,
+                this.worldList[this.selectedWorld].Item1,
+                50,
+                CancellationToken.None)
+              .ConfigureAwait(false);
+          }
+          catch (Exception)
+          {
+            MBPlugin.Log.Warning($"Failed to fetch market data for item {this.selectedItem.RowId} from Universalis.");
+            this.marketData = null;
+          }
 
           if (cachedItem != null)
           {

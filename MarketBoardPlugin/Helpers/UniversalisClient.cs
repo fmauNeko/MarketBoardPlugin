@@ -5,6 +5,7 @@
 namespace MarketBoardPlugin.Helpers
 {
   using System;
+  using System.IO;
   using System.Net.Http;
   using System.Text.Json;
   using System.Threading;
@@ -32,15 +33,37 @@ namespace MarketBoardPlugin.Helpers
       cancellationToken.ThrowIfCancellationRequested();
 
       using var client = new HttpClient();
-      var res = await client
-        .GetStreamAsync(uriBuilder.Uri, cancellationToken)
-        .ConfigureAwait(false);
+
+      Stream res;
+
+      try
+      {
+        res = await client
+          .GetStreamAsync(uriBuilder.Uri, cancellationToken)
+          .ConfigureAwait(false);
+      }
+      catch (HttpRequestException)
+      {
+        MBPlugin.Log.Warning($"Failed to fetch market data for item {itemId} on world {worldName}.");
+        return null;
+      }
 
       cancellationToken.ThrowIfCancellationRequested();
 
-      var parsedRes = await JsonSerializer
-        .DeserializeAsync<MarketDataResponse>(res, cancellationToken: cancellationToken)
-        .ConfigureAwait(false);
+      MarketDataResponse parsedRes;
+
+      try
+      {
+        parsedRes = await JsonSerializer
+          .DeserializeAsync<MarketDataResponse>(res, cancellationToken: cancellationToken)
+          .ConfigureAwait(false);
+      }
+      catch (JsonException)
+      {
+        MBPlugin.Log.Warning($"Failed to parse market data for item {itemId} on world {worldName}.");
+        return null;
+      }
+
       if (parsedRes != null)
       {
         parsedRes.FetchTimestamp = DateTimeOffset.Now.ToUnixTimeMilliseconds();

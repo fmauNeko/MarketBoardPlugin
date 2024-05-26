@@ -15,8 +15,10 @@ namespace MarketBoardPlugin.GUI
   using System.Threading.Tasks;
   using Dalamud.Game.Text;
   using Dalamud.Interface;
+  using Dalamud.Interface.Components;
   using Dalamud.Interface.Internal;
   using Dalamud.Interface.ManagedFontAtlas;
+  using Dalamud.Interface.Utility.Raii;
   using Dalamud.Interface.Windowing;
   using Dalamud.Plugin.Services;
   using ImGuiNET;
@@ -60,6 +62,8 @@ namespace MarketBoardPlugin.GUI
     private bool searchHistoryOpen;
 
     private bool advancedSearchMenuOpen;
+
+    private bool favoritesOpen;
 
     private float progressPosition;
 
@@ -221,6 +225,9 @@ namespace MarketBoardPlugin.GUI
         this.UpdateCategoriesAndItems();
       }
 
+      var defaultButtonColor = ImGui.GetColorU32(ImGuiCol.Button);
+      var defaultButtonHoveredColor = ImGui.GetColorU32(ImGuiCol.ButtonHovered);
+
       var scale = ImGui.GetIO().FontGlobalScale;
 
       using var fontDispose = this.defaultFontHandle.Push();
@@ -228,18 +235,35 @@ namespace MarketBoardPlugin.GUI
       // Item List Column Setup
       ImGui.BeginChild("itemListColumn", new Vector2(267, 0) * scale, true);
 
-      ImGui.SetNextItemWidth((-32 * ImGui.GetIO().FontGlobalScale) - ImGui.GetStyle().ItemSpacing.X);
+      ImGui.SetNextItemWidth((-64 * ImGui.GetIO().FontGlobalScale) - (ImGui.GetStyle().ItemSpacing.X * 2));
       ImGuiOverrides.InputTextWithHint("##searchString", "Search for item", ref this.searchString, 256);
 
-      ImGui.SameLine();
       ImGui.PushFont(UiBuilder.IconFont);
-      ImGui.PushStyleColor(ImGuiCol.Text, this.searchHistoryOpen ? 0xFF0000FF : 0xFFFFFFFF);
+      ImGui.PushStyleVar(ImGuiStyleVar.ButtonTextAlign, new Vector2(0.5f, 0.5f));
+
+      ImGui.SameLine();
+      ImGui.PushStyleColor(ImGuiCol.Button, this.searchHistoryOpen ? 0xFF5CB85C : defaultButtonColor);
+      ImGui.PushStyleColor(ImGuiCol.ButtonHovered, this.searchHistoryOpen ? 0x885CB85C : defaultButtonHoveredColor);
       if (ImGui.Button($"{(char)FontAwesomeIcon.History}", new Vector2(32 * ImGui.GetIO().FontGlobalScale, ImGui.GetItemRectSize().Y)))
       {
         this.searchHistoryOpen = !this.searchHistoryOpen;
       }
 
       ImGui.PopStyleColor();
+      ImGui.PopStyleColor();
+
+      ImGui.SameLine();
+      ImGui.PushStyleColor(ImGuiCol.Button, this.favoritesOpen ? 0xFF5CB85C : defaultButtonColor);
+      ImGui.PushStyleColor(ImGuiCol.ButtonHovered, this.favoritesOpen ? 0x885CB85C : defaultButtonHoveredColor);
+      if (ImGui.Button($"{(char)FontAwesomeIcon.Star}", new Vector2(32 * ImGui.GetIO().FontGlobalScale, ImGui.GetItemRectSize().Y)))
+      {
+        this.favoritesOpen = !this.favoritesOpen;
+      }
+
+      ImGui.PopStyleColor();
+      ImGui.PopStyleColor();
+
+      ImGui.PopStyleVar();
       ImGui.PopFont();
 
       var previousYCursor = ImGui.GetCursorPosY();
@@ -338,6 +362,25 @@ namespace MarketBoardPlugin.GUI
           }
         }
       }
+      else if (this.favoritesOpen)
+      {
+        ImGui.Text("Favorites");
+        ImGui.Separator();
+        var sheet = MBPlugin.Data.Excel.GetSheet<Item>();
+        foreach (var id in this.plugin.Config.Favorites.ToArray())
+        {
+          var item = sheet.GetRow(id);
+          if (item == null)
+          {
+            continue;
+          }
+
+          if (ImGui.Selectable($"{item.Name}", this.selectedItem == item))
+          {
+            this.ChangeSelectedItem(id, true);
+          }
+        }
+      }
       else
       {
         foreach (var category in this.enumerableCategoriesAndItems)
@@ -390,7 +433,7 @@ namespace MarketBoardPlugin.GUI
                 this.ChangeSelectedItem(item.RowId);
               }
 
-              if (ImGui.BeginPopupContextItem("shoplist" + category.Key.Name + i))
+              if (ImGui.BeginPopupContextItem("itemContextMenu" + category.Key.Name + i))
               {
                 if (this.selectedItem != null && item != null && this.selectedItem.RowId != item.RowId)
                 {
@@ -406,10 +449,15 @@ namespace MarketBoardPlugin.GUI
                   this.plugin.ShoppingList.Add(new SavedItem(item, price, itm.WorldName));
                 }
 
+                if (ImGui.Selectable("Add to the favorites"))
+                {
+                  this.plugin.Config.Favorites.Add(item.RowId);
+                }
+
                 ImGui.EndPopup();
               }
 
-              ImGui.OpenPopupOnItemClick("shoplist" + category.Key.Name + i, ImGuiPopupFlags.MouseButtonRight);
+              ImGui.OpenPopupOnItemClick("itemContextMenu" + category.Key.Name + i, ImGuiPopupFlags.MouseButtonRight);
             }
 
             ImGui.Indent(ImGui.GetTreeNodeToLabelSpacing());
@@ -1069,13 +1117,21 @@ namespace MarketBoardPlugin.GUI
             this.marketData = null;
           }
 
-          this.marketData = await UniversalisClient
-            .GetMarketData(
-              this.selectedItem.RowId,
-              this.worldList[this.selectedWorld].Item1,
-              50,
-              CancellationToken.None)
-            .ConfigureAwait(false);
+          try
+          {
+            this.marketData = await UniversalisClient
+              .GetMarketData(
+                this.selectedItem.RowId,
+                this.worldList[this.selectedWorld].Item1,
+                50,
+                CancellationToken.None)
+              .ConfigureAwait(false);
+          }
+          catch (Exception)
+          {
+            MBPlugin.Log.Warning($"Failed to fetch market data for item {this.selectedItem.RowId} from Universalis.");
+            this.marketData = null;
+          }
 
           if (cachedItem != null)
           {

@@ -73,5 +73,10 @@ namespace MarketBoardPlugin
     ///  Gets or sets a value indicating whether the recent history menu is disabled or not.
     /// </summary>
     public bool RecentHistoryDisabled { get; set; }
+
+    /// <summary>
+    /// Gets the favorite items.
+    /// </summary>
+    public ICollection<uint> Favorites { get; } = new List<uint>();
   }
 }

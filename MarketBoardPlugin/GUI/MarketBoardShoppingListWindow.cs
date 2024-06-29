@@ -101,7 +101,7 @@ namespace MarketBoardPlugin
     {
       if (ImGuiUtil.Checkbox(label, description, oldValue, setter))
       {
-        MBPlugin.PluginInterface.SavePluginConfig(this.Plugin.Config);
+        this.Plugin.PluginInterface.SavePluginConfig(this.Plugin.Config);
       }
     }
   }

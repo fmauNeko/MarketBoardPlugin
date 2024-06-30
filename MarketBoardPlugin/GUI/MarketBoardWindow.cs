@@ -15,10 +15,9 @@ namespace MarketBoardPlugin.GUI
   using System.Threading.Tasks;
   using Dalamud.Game.Text;
   using Dalamud.Interface;
-  using Dalamud.Interface.Components;
-  using Dalamud.Interface.Internal;
   using Dalamud.Interface.ManagedFontAtlas;
-  using Dalamud.Interface.Utility.Raii;
+  using Dalamud.Interface.Textures;
+  using Dalamud.Interface.Textures.TextureWraps;
   using Dalamud.Interface.Windowing;
   using Dalamud.Plugin.Services;
   using ImGuiNET;
@@ -83,8 +82,6 @@ namespace MarketBoardPlugin.GUI
 
     private ClassJob selectedClassJob;
 
-    private IDalamudTextureWrap selectedItemIcon;
-
     private bool hQOnly;
 
     private ulong playerId;
@@ -116,6 +113,7 @@ namespace MarketBoardPlugin.GUI
     public MarketBoardWindow(MBPlugin plugin)
       : base("Market Board")
     {
+      this.plugin = plugin ?? throw new ArgumentNullException(nameof(plugin));
       this.Flags = ImGuiWindowFlags.NoScrollbar;
       this.Size = new Vector2(800, 600);
       this.SizeCondition = ImGuiCond.FirstUseEver;
@@ -126,8 +124,8 @@ namespace MarketBoardPlugin.GUI
       };
 
       this.marketBuffer = new List<MarketDataResponse>();
-      this.items = MBPlugin.Data.GetExcelSheet<Item>();
-      this.classJobs = MBPlugin.Data.GetExcelSheet<ClassJob>()?
+      this.items = plugin.DataManager.GetExcelSheet<Item>();
+      this.classJobs = plugin.DataManager.GetExcelSheet<ClassJob>()?
         .Where(cj => cj.RowId != 0)
         .OrderBy(cj =>
         {
@@ -141,13 +139,12 @@ namespace MarketBoardPlugin.GUI
             _ => 4,
           };
         }).ToList();
-      this.plugin = plugin ?? throw new ArgumentNullException(nameof(plugin));
       this.sortedCategoriesAndItems = this.SortCategoriesAndItems();
 
-      MBPlugin.Framework.Update += this.HandleFrameworkUpdateEvent;
-      MBPlugin.GameGui.HoveredItemChanged += this.HandleHoveredItemChange;
+      this.plugin.Framework.Update += this.HandleFrameworkUpdateEvent;
+      this.plugin.GameGui.HoveredItemChanged += this.HandleHoveredItemChange;
 
-      this.defaultFontHandle = MBPlugin.PluginInterface.UiBuilder.FontAtlas.NewDelegateFontHandle(e =>
+      this.defaultFontHandle = this.plugin.PluginInterface.UiBuilder.FontAtlas.NewDelegateFontHandle(e =>
         e.OnPreBuild(toolkit =>
           toolkit.AddFontFromStream(
             this.GetType().Assembly.GetManifestResourceStream("MarketBoardPlugin.Resources.NotoSans-Medium-NNBSP.otf"),
@@ -160,11 +157,9 @@ namespace MarketBoardPlugin.GUI
             false,
             "NNBSP")));
 
-      this.titleFontHandle = MBPlugin.PluginInterface.UiBuilder.FontAtlas.NewDelegateFontHandle(e =>
+      this.titleFontHandle = this.plugin.PluginInterface.UiBuilder.FontAtlas.NewDelegateFontHandle(e =>
         e.OnPreBuild(toolkit =>
-          toolkit.AddDalamudDefaultFont(MBPlugin.PluginInterface.UiBuilder.DefaultFontSpec.SizePx * 1.5f)));
-
-      MBPlugin.PluginInterface.UiBuilder.RebuildFonts();
+          toolkit.AddDalamudDefaultFont(this.plugin.PluginInterface.UiBuilder.DefaultFontSpec.SizePx * 1.5f)));
 
       var imPlotStylePtr = ImPlot.GetStyle();
 
@@ -347,7 +342,7 @@ namespace MarketBoardPlugin.GUI
       {
         ImGui.Text("History");
         ImGui.Separator();
-        var sheet = MBPlugin.Data.Excel.GetSheet<Item>();
+        var sheet = this.plugin.DataManager.Excel.GetSheet<Item>();
         foreach (var id in this.plugin.Config.History.ToArray())
         {
           var item = sheet.GetRow(id);
@@ -366,7 +361,7 @@ namespace MarketBoardPlugin.GUI
       {
         ImGui.Text("Favorites");
         ImGui.Separator();
-        var sheet = MBPlugin.Data.Excel.GetSheet<Item>();
+        var sheet = this.plugin.DataManager.Excel.GetSheet<Item>();
         foreach (var id in this.plugin.Config.Favorites.ToArray())
         {
           var item = sheet.GetRow(id);
@@ -477,7 +472,7 @@ namespace MarketBoardPlugin.GUI
         else
         {
           this.progressPosition = 0;
-          var itemId = MBPlugin.GameGui.HoveredItem;
+          var itemId = this.plugin.GameGui.HoveredItem;
           this.ChangeSelectedItem(Convert.ToUInt32(itemId % 500000));
           this.itemBeingHovered = 0;
         }
@@ -505,18 +500,26 @@ namespace MarketBoardPlugin.GUI
 
       if (this.selectedItem?.RowId > 0)
       {
-        if (this.selectedItemIcon != null)
+        var couldGetIcon = this.plugin.TextureProvider.GetFromGameIcon(new GameIconLookup
         {
-          if (ImGui.ImageButton(this.selectedItemIcon.ImGuiHandle, new Vector2(40, 40)))
+          IconId = this.selectedItem.Icon,
+        }).TryGetWrap(out var selectedItemIcon, out _);
+
+        using (selectedItemIcon)
+        {
+          if (couldGetIcon)
           {
-            ImGui.LogToClipboard();
-            ImGui.LogText(this.selectedItem.Name);
-            ImGui.LogFinish();
+            if (ImGui.ImageButton(selectedItemIcon.ImGuiHandle, new Vector2(40, 40)))
+            {
+              ImGui.LogToClipboard();
+              ImGui.LogText(this.selectedItem.Name);
+              ImGui.LogFinish();
+            }
           }
-        }
-        else
-        {
-          ImGui.SetCursorPos(new Vector2(40, 40));
+          else
+          {
+            ImGui.SetCursorPos(new Vector2(40, 40));
+          }
         }
 
         this.titleFontHandle.Push();
@@ -848,8 +851,7 @@ namespace MarketBoardPlugin.GUI
       this.selectedItem = this.items.Single(i => i.RowId == itemId);
 
       var iconId = this.selectedItem.Icon;
-      this.selectedItemIcon?.Dispose();
-      this.selectedItemIcon = MBPlugin.TextureProvider.GetIcon(iconId);
+      this.plugin.Log.Verbose("Selected item: {0} ({1}), icon: {2}", this.selectedItem.Name, this.selectedItem.RowId, iconId);
 
       this.RefreshMarketData();
       if (!noHistory)
@@ -861,7 +863,7 @@ namespace MarketBoardPlugin.GUI
           this.plugin.Config.History.RemoveRange(100, this.plugin.Config.History.Count - 100);
         }
 
-        MBPlugin.PluginInterface.SavePluginConfig(this.plugin.Config);
+        this.plugin.PluginInterface.SavePluginConfig(this.plugin.Config);
       }
     }
 
@@ -878,9 +880,8 @@ namespace MarketBoardPlugin.GUI
 
       if (disposing)
       {
-        MBPlugin.Framework.Update -= this.HandleFrameworkUpdateEvent;
-        MBPlugin.GameGui.HoveredItemChanged -= this.HandleHoveredItemChange;
-        this.selectedItemIcon?.Dispose();
+        this.plugin.Framework.Update -= this.HandleFrameworkUpdateEvent;
+        this.plugin.GameGui.HoveredItemChanged -= this.HandleHoveredItemChange;
         this.defaultFontHandle?.Dispose();
         this.titleFontHandle?.Dispose();
       }
@@ -919,13 +920,13 @@ namespace MarketBoardPlugin.GUI
     ///  Function used for debug purposes : Log every attributes of an Item.
     /// </summary>
     /// <param name="itm"> Item class to show in logs.</param>
-    private static void LogItemInfo(Item itm)
+    private void LogItemInfo(Item itm)
     {
       foreach (PropertyDescriptor descriptor in TypeDescriptor.GetProperties(itm))
       {
         string name = descriptor.Name;
         object value = descriptor.GetValue(itm);
-        MBPlugin.Log.Information("{0}={1}", name, value);
+        this.plugin.Log.Information("{0}={1}", name, value);
       }
     }
 
@@ -972,7 +973,7 @@ namespace MarketBoardPlugin.GUI
     {
       try
       {
-        var itemSearchCategories = MBPlugin.Data.GetExcelSheet<ItemSearchCategory>();
+        var itemSearchCategories = this.plugin.DataManager.GetExcelSheet<ItemSearchCategory>();
 
         var sortedCategories = itemSearchCategories.Where(c => c.Category > 0).OrderBy(c => c.Category).ThenBy(c => c.Order);
 
@@ -992,23 +993,23 @@ namespace MarketBoardPlugin.GUI
       }
       catch (Exception ex)
       {
-        MBPlugin.Log.Error(ex, $"Error loading category list.");
+        this.plugin.Log.Error(ex, $"Error loading category list.");
         return null;
       }
     }
 
     private void HandleFrameworkUpdateEvent(IFramework framework)
     {
-      if (MBPlugin.ClientState.LocalContentId != 0 && this.playerId != MBPlugin.ClientState.LocalContentId)
+      if (this.plugin.ClientState.LocalContentId != 0 && this.playerId != this.plugin.ClientState.LocalContentId)
       {
-        var localPlayer = MBPlugin.ClientState.LocalPlayer;
+        var localPlayer = this.plugin.ClientState.LocalPlayer;
         if (localPlayer == null)
         {
           return;
         }
 
         var currentDc = localPlayer.CurrentWorld.GameData.DataCenter;
-        var dcWorlds = MBPlugin.Data.GetExcelSheet<World>()
+        var dcWorlds = this.plugin.DataManager.GetExcelSheet<World>()
           .Where(w => w.DataCenter.Row == currentDc.Row && w.IsPublic)
           .OrderBy(w => w.Name.ToString())
           .Select(w =>
@@ -1052,11 +1053,11 @@ namespace MarketBoardPlugin.GUI
 
         if (this.worldList.Count > 1)
         {
-          this.playerId = MBPlugin.ClientState.LocalContentId;
+          this.playerId = this.plugin.ClientState.LocalContentId;
         }
       }
 
-      if (MBPlugin.ClientState.LocalContentId == 0)
+      if (this.plugin.ClientState.LocalContentId == 0)
       {
         this.playerId = 0;
       }
@@ -1077,7 +1078,7 @@ namespace MarketBoardPlugin.GUI
         return;
       }
 
-      var item = MBPlugin.Data.Excel.GetSheet<Item>().GetRow((uint)itemId % 500000);
+      var item = this.plugin.DataManager.Excel.GetSheet<Item>().GetRow((uint)itemId % 500000);
 
       if (item != null && this.enumerableCategoriesAndItems != null && this.sortedCategoriesAndItems.Any(i => i.Value != null && i.Value.Any(k => k.ToString() == item.ToString())))
       {
@@ -1119,7 +1120,7 @@ namespace MarketBoardPlugin.GUI
 
           try
           {
-            this.marketData = await UniversalisClient
+            this.marketData = await this.plugin.UniversalisClient
               .GetMarketData(
                 this.selectedItem.RowId,
                 this.worldList[this.selectedWorld].Item1,
@@ -1129,7 +1130,7 @@ namespace MarketBoardPlugin.GUI
           }
           catch (Exception)
           {
-            MBPlugin.Log.Warning($"Failed to fetch market data for item {this.selectedItem.RowId} from Universalis.");
+            this.plugin.Log.Warning($"Failed to fetch market data for item {this.selectedItem.RowId} from Universalis.");
             this.marketData = null;
           }
 

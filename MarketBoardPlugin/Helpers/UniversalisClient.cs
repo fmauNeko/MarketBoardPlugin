@@ -16,17 +16,23 @@ namespace MarketBoardPlugin.Helpers
   /// <summary>
   /// Universalis API Client.
   /// </summary>
-  public static class UniversalisClient
+  /// <remarks>
+  /// Initializes a new instance of the <see cref="UniversalisClient"/> class.
+  /// </remarks>
+  /// <param name="plugin">The plugin instance.</param>
+  public class UniversalisClient(MBPlugin plugin)
   {
+    private readonly MBPlugin plugin = plugin ?? throw new ArgumentNullException(nameof(plugin));
+
     /// <summary>
-    /// Gets market data of an item for a specific world.
+    /// Retrieves market data for a specific item from the Universalis API.
     /// </summary>
-    /// <param name="itemId">The item ID.</param>
-    /// <param name="worldName">The world's name.</param>
-    /// <param name="historyCount">Number of entries to fetch from the history.</param>
-    /// <param name="cancellationToken">A <see cref="CancellationToken"/>.</param>
-    /// <returns>The market data.</returns>
-    public static async Task<MarketDataResponse> GetMarketData(uint itemId, string worldName, int historyCount, CancellationToken cancellationToken)
+    /// <param name="itemId">The ID of the item to retrieve market data for.</param>
+    /// <param name="worldName">The name of the world to retrieve market data from.</param>
+    /// <param name="historyCount">The number of historical entries to retrieve.</param>
+    /// <param name="cancellationToken">A cancellation token to cancel the operation.</param>
+    /// <returns>A <see cref="MarketDataResponse"/> object containing the retrieved market data, or null if the operation fails.</returns>
+    public async Task<MarketDataResponse> GetMarketData(uint itemId, string worldName, int historyCount, CancellationToken cancellationToken)
     {
       var uriBuilder = new UriBuilder($"https://universalis.app/api/{worldName}/{itemId}?entries={historyCount}");
 
@@ -44,7 +50,7 @@ namespace MarketBoardPlugin.Helpers
       }
       catch (HttpRequestException)
       {
-        MBPlugin.Log.Warning($"Failed to fetch market data for item {itemId} on world {worldName}.");
+        this.plugin.Log.Warning($"Fai    /// to fetch market data for item {itemId} on world {worldName}.");
         return null;
       }
 
@@ -60,7 +66,7 @@ namespace MarketBoardPlugin.Helpers
       }
       catch (JsonException)
       {
-        MBPlugin.Log.Warning($"Failed to parse market data for item {itemId} on world {worldName}.");
+        this.plugin.Log.Warning($"Failed to parse market data for item {itemId} on world {worldName}.");
         return null;
       }
 

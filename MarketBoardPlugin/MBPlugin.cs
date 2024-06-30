@@ -8,18 +8,16 @@ namespace MarketBoardPlugin
   using System.Collections.Generic;
   using System.Diagnostics.CodeAnalysis;
   using System.Globalization;
-  using Dalamud.ContextMenu;
   using Dalamud.Game.Command;
+  using Dalamud.Game.Gui.ContextMenu;
   using Dalamud.Game.Text;
-  using Dalamud.Game.Text.SeStringHandling;
-  using Dalamud.Game.Text.SeStringHandling.Payloads;
   using Dalamud.Interface.Windowing;
-  using Dalamud.IoC;
   using Dalamud.Plugin;
   using Dalamud.Plugin.Services;
   using Lumina.Excel.GeneratedSheets;
 
   using MarketBoardPlugin.GUI;
+  using MarketBoardPlugin.Helpers;
   using MarketBoardPlugin.Models.ShoppingList;
 
   /// <summary>
@@ -28,15 +26,13 @@ namespace MarketBoardPlugin
   [SuppressMessage("ReSharper", "UnusedMember.Global", Justification = "Plugin entry point")]
   public class MBPlugin : IDalamudPlugin
   {
-    private readonly DalamudContextMenu contextMenuBase;
-
-    private readonly InventoryContextMenuItem inventoryContextMenuItem;
-
     private readonly MarketBoardWindow marketBoardWindow;
 
     private readonly MarketBoardConfigWindow marketBoardConfigWindow;
 
     private readonly MarketBoardShoppingListWindow marketBoardShoppingListWindow;
+
+    private readonly MenuItem inventoryContextMenuItem;
 
     /// <summary>
     /// Gets the window system.
@@ -49,9 +45,39 @@ namespace MarketBoardPlugin
     /// Initializes a new instance of the <see cref="MBPlugin"/> class.
     /// This is the plugin's entry point.
     /// </summary>
-    public MBPlugin()
+    /// <param name="pluginInterface">The Dalamud plugin interface.</param>
+    /// <param name="dataManager">The data manager.</param>
+    /// <param name="commandManager">The command manager.</param>
+    /// <param name="framework">The framework.</param>
+    /// <param name="clientState">The client state.</param>
+    /// <param name="gameGui">The game GUI.</param>
+    /// <param name="textureProvider">The texture provider.</param>
+    /// <param name="log">The plugin log.</param>
+    /// <param name="contextMenu">The context menu.</param>
+    public MBPlugin(
+      IDalamudPluginInterface pluginInterface,
+      IDataManager dataManager,
+      ICommandManager commandManager,
+      IFramework framework,
+      IClientState clientState,
+      IGameGui gameGui,
+      ITextureProvider textureProvider,
+      IPluginLog log,
+      IContextMenu contextMenu)
     {
-      this.Config = PluginInterface.GetPluginConfig() as MBPluginConfig ?? new MBPluginConfig();
+      this.PluginInterface = pluginInterface;
+      this.DataManager = dataManager;
+      this.CommandManager = commandManager;
+      this.Framework = framework;
+      this.ClientState = clientState;
+      this.GameGui = gameGui;
+      this.TextureProvider = textureProvider;
+      this.Log = log;
+      this.ContextMenu = contextMenu;
+
+      this.UniversalisClient = new UniversalisClient(this);
+
+      this.Config = this.PluginInterface.GetPluginConfig() as MBPluginConfig ?? new MBPluginConfig();
 
       this.marketBoardWindow = new MarketBoardWindow(this);
       this.marketBoardConfigWindow = new MarketBoardConfigWindow(this);
@@ -62,20 +88,24 @@ namespace MarketBoardPlugin
       this.windowSystem.AddWindow(this.marketBoardShoppingListWindow);
 
       // Set up command handlers
-      CommandManager.AddHandler("/pmb", new CommandInfo(this.OnOpenMarketBoardCommand)
+      this.CommandManager.AddHandler("/pmb", new CommandInfo(this.OnOpenMarketBoardCommand)
       {
         HelpMessage = "Open the market board window.",
       });
 
-      PluginInterface.UiBuilder.Draw += this.DrawUi;
-      PluginInterface.UiBuilder.OpenConfigUi += this.OpenConfigUi;
-      PluginInterface.UiBuilder.OpenMainUi += this.OpenMainUi;
+      this.PluginInterface.UiBuilder.Draw += this.DrawUi;
+      this.PluginInterface.UiBuilder.OpenConfigUi += this.OpenConfigUi;
+      this.PluginInterface.UiBuilder.OpenMainUi += this.OpenMainUi;
 
       // Set up context menu
-      this.contextMenuBase = new DalamudContextMenu(PluginInterface);
-      this.inventoryContextMenuItem = new InventoryContextMenuItem(
-        new SeString(new TextPayload("Search with Market Board Plugin")), this.OnSelectContextMenuItem, true);
-      this.contextMenuBase.OnOpenInventoryContextMenu += this.OnContextMenuOpened;
+      this.inventoryContextMenuItem = new MenuItem
+      {
+        Name = "Search with Market Board Plugin",
+        OnClicked = this.OnSelectContextMenuItem,
+        Prefix = SeIconChar.Gil,
+        PrefixColor = 48,
+      };
+      this.ContextMenu.OnMenuOpened += this.OnContextMenuOpened;
 
       // Set up number format
       this.NumberFormatInfo.CurrencySymbol = SeIconChar.Gil.ToIconString();
@@ -106,29 +136,52 @@ namespace MarketBoardPlugin
     /// </summary>
     public NumberFormatInfo NumberFormatInfo { get; init; } = CultureInfo.CurrentCulture.NumberFormat.Clone() as NumberFormatInfo;
 
-    [PluginService]
-    internal static DalamudPluginInterface PluginInterface { get; private set; } = null!;
+    /// <summary>
+    /// Gets the Dalamud plugin interface.
+    /// </summary>
+    public IDalamudPluginInterface PluginInterface { get; init; }
 
-    [PluginService]
-    internal static IDataManager Data { get; private set; } = null!;
+    /// <summary>
+    /// Gets the data manager.
+    /// </summary>
+    public IDataManager DataManager { get; init; }
 
-    [PluginService]
-    internal static ICommandManager CommandManager { get; private set; } = null!;
+    /// <summary>
+    /// Gets the command manager.
+    /// </summary>
+    public ICommandManager CommandManager { get; init; }
 
-    [PluginService]
-    internal static IFramework Framework { get; private set; } = null!;
+    /// <summary>
+    /// Gets the framework.
+    /// </summary>
+    public IFramework Framework { get; init; }
 
-    [PluginService]
-    internal static IClientState ClientState { get; private set; } = null!;
+    /// <summary>
+    /// Gets the client state.
+    /// </summary>
+    public IClientState ClientState { get; init; }
 
-    [PluginService]
-    internal static IGameGui GameGui { get; private set; } = null!;
+    /// <summary>
+    /// Gets the game GUI.
+    /// </summary>
+    public IGameGui GameGui { get; init; }
 
-    [PluginService]
-    internal static ITextureProvider TextureProvider { get; private set; } = null!;
+    /// <summary>
+    /// Gets the texture provider.
+    /// </summary>
+    public ITextureProvider TextureProvider { get; init; }
 
-    [PluginService]
-    internal static IPluginLog Log { get; private set; } = null!;
+    /// <summary>
+    /// Gets the plugin log.
+    /// </summary>
+    public IPluginLog Log { get; init; }
+
+    /// <summary>
+    /// Gets the context menu.
+    /// </summary>
+    public IContextMenu ContextMenu { get; init; }
+
+    public UniversalisClient UniversalisClient { get; init; }
 
     /// <inheritdoc/>
     public void Dispose()
@@ -138,7 +191,7 @@ namespace MarketBoardPlugin
     }
 
     /// <summary>
-    /// Reset the market data.
+    /// Resets the market data.
     /// </summary>
     public void ResetMarketData()
     {
@@ -146,7 +199,7 @@ namespace MarketBoardPlugin
     }
 
     /// <summary>
-    /// Open the main UI.
+    /// Opens the main UI.
     /// </summary>
     public void OpenMainUi()
     {
@@ -154,7 +207,7 @@ namespace MarketBoardPlugin
     }
 
     /// <summary>
-    /// Open the config UI.
+    /// Opens the config UI.
     /// </summary>
     public void OpenConfigUi()
     {
@@ -175,61 +228,75 @@ namespace MarketBoardPlugin
       if (disposing)
       {
         // Save config
-        PluginInterface.SavePluginConfig(this.Config);
+        this.PluginInterface.SavePluginConfig(this.Config);
 
         // Remove windows
         this.windowSystem.RemoveAllWindows();
         this.marketBoardWindow.Dispose();
 
         // Remove command handlers
-        CommandManager.RemoveHandler("/pmb");
+        this.CommandManager.RemoveHandler("/pmb");
 
         // Remove context menu handler
-        this.contextMenuBase.OnOpenInventoryContextMenu -= this.OnContextMenuOpened;
-        this.contextMenuBase.Dispose();
+        this.ContextMenu.OnMenuOpened -= this.OnContextMenuOpened;
       }
 
       this.isDisposed = true;
     }
 
-    private void OnContextMenuOpened(InventoryContextMenuOpenArgs args)
+    private void OnContextMenuOpened(IMenuOpenedArgs args)
     {
+      if (args.MenuType != ContextMenuType.Inventory)
+      {
+        return;
+      }
+
       if (!this.Config.ContextMenuIntegration)
       {
         return;
       }
 
-      var i = (uint)(GameGui.HoveredItem % 500000);
+      this.inventoryContextMenuItem.IsEnabled = true;
 
-      var item = Data.Excel.GetSheet<Item>()?.GetRow(i);
-      if (item == null)
+      var target = args.Target as MenuTargetInventory;
+
+      if (!target.TargetItem.HasValue || target.TargetItem.Value.ItemId == 0)
       {
-        return;
+        this.inventoryContextMenuItem.IsEnabled = false;
       }
+
+      var item = this.DataManager.Excel.GetSheet<Item>().GetRow(target.TargetItem.Value.ItemId);
 
       if (item.IsUntradable)
       {
-        return;
+        this.inventoryContextMenuItem.IsEnabled = false;
       }
 
-      if (args.ItemId == 0)
+      args.AddMenuItem(this.inventoryContextMenuItem);
+    }
+
+    private void OnSelectContextMenuItem(IMenuItemClickedArgs args)
+    {
+      if (args.MenuType != ContextMenuType.Inventory)
       {
         return;
       }
 
-      args.AddCustomItem(this.inventoryContextMenuItem);
-    }
+      var target = args.Target as MenuTargetInventory;
 
-    private void OnSelectContextMenuItem(InventoryContextMenuItemSelectedArgs args)
-    {
+      if (!target.TargetItem.HasValue || target.TargetItem.Value.ItemId == 0)
+      {
+        return;
+      }
+
       try
       {
         this.marketBoardWindow.IsOpen = true;
-        this.marketBoardWindow.ChangeSelectedItem(args.ItemId);
+        this.marketBoardWindow.ChangeSelectedItem(target.TargetItem.Value.ItemId);
       }
       catch (Exception ex)
       {
-        Log.Error(ex, "Failed on context menu for itemId" + args.ItemId);
+        this.Log.Error(ex, "Failed on context menu for itemId" + target.TargetItem.Value.ItemId);
       }
     }
 

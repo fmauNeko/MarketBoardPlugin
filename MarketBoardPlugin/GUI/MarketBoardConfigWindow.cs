@@ -40,7 +40,7 @@ namespace MarketBoardPlugin
       this.Checkbox("No Gil Sales Tax", "Toggles whether the Gil Sales Tax is included", this.Plugin.Config.NoGilSalesTax, (v) =>
       {
         this.Plugin.Config.NoGilSalesTax = v;
-        MBPlugin.PluginInterface.SavePluginConfig(this.Plugin.Config);
+        this.Plugin.PluginInterface.SavePluginConfig(this.Plugin.Config);
         this.Plugin.ResetMarketData();
       });
 
@@ -56,7 +56,7 @@ namespace MarketBoardPlugin
       if (this.Plugin.Config.MarketBufferSize != marketBufferSize)
       {
         this.Plugin.Config.MarketBufferSize = marketBufferSize;
-        MBPlugin.PluginInterface.SavePluginConfig(this.Plugin.Config);
+        this.Plugin.PluginInterface.SavePluginConfig(this.Plugin.Config);
       }
 
       var itemRefreshTimeout = this.Plugin.Config.ItemRefreshTimeout;
@@ -65,7 +65,7 @@ namespace MarketBoardPlugin
       if (this.Plugin.Config.ItemRefreshTimeout != itemRefreshTimeout)
       {
         this.Plugin.Config.ItemRefreshTimeout = itemRefreshTimeout;
-        MBPlugin.PluginInterface.SavePluginConfig(this.Plugin.Config);
+        this.Plugin.PluginInterface.SavePluginConfig(this.Plugin.Config);
       }
     }
 
@@ -73,7 +73,7 @@ namespace MarketBoardPlugin
     {
       if (ImGuiUtil.Checkbox(label, description, oldValue, setter))
       {
-        MBPlugin.PluginInterface.SavePluginConfig(this.Plugin.Config);
+        this.Plugin.PluginInterface.SavePluginConfig(this.Plugin.Config);
       }
     }
   }

@@ -2,17 +2,11 @@
   "version": 1,
   "dependencies": {
     "net8.0-windows7.0": {
-      "Dalamud.ContextMenu": {
-        "type": "Direct",
-        "requested": "[1.3.1, )",
-        "resolved": "1.3.1",
-        "contentHash": "ptAxut5PiLnzZ4G/KQdHJVcyklC/BF3otHJ7zYVUPiKBjsOCoF0n/6h2jK7e+8ev2Y1yAY3Wtx2GuXLFQgt9Uw=="
-      },
       "Dalamud.DrunkenToad": {
         "type": "Direct",
-        "requested": "[1.8.15, )",
-        "resolved": "1.8.15",
-        "contentHash": "biuHkQR0qmIMWEsa14CcWtUH4f6G7sOTQMDZZKws2MhzTYl/3sw2lDS3z6bBOPd17I1UPtmkFBBn0QbQEpO4PA==",
+        "requested": "[1.9.2, )",
+        "resolved": "1.9.2",
+        "contentHash": "fT7ntQ1swV+U9H9I1TI6hJVXVSKxifzXex9D5EOdxqk3ZoHDwTLaKjKxWBrGOI+NI12UjgYWC7DPW39oJfqIfg==",
         "dependencies": {
           "Dalamud.Loc": "1.1.2",
           "Microsoft.Extensions.DependencyInjection": "7.0.0"
@@ -20,9 +14,15 @@
       },
       "DalamudPackager": {
         "type": "Direct",
-        "requested": "[2.1.12, )",
-        "resolved": "2.1.12",
-        "contentHash": "Sc0PVxvgg4NQjcI8n10/VfUQBAS4O+Fw2pZrAqBdRMbthYGeogzu5+xmIGCGmsEZ/ukMOBuAqiNiB5qA3MRalg=="
+        "requested": "[2.1.13, )",
+        "resolved": "2.1.13",
+        "contentHash": "rMN1omGe8536f4xLMvx9NwfvpAc9YFFfeXJ1t4P4PE6Gu8WCIoFliR1sh07hM+bfODmesk/dvMbji7vNI+B/pQ=="
+      },
+      "MSBuildGitHash": {
+        "type": "Direct",
+        "requested": "[2.0.2, )",
+        "resolved": "2.0.2",
+        "contentHash": "1gA7vw5Wc4w6/H2IDVFx69LGQndIyTSsBOTL1BO1lAjzyWl6LUi24gtST8Bh5yd/793patMZyO7Ym4Kg19p+VA=="
       },
       "StyleCop.Analyzers": {
         "type": "Direct",

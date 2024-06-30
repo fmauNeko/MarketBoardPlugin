@@ -851,7 +851,6 @@ namespace MarketBoardPlugin.GUI
       this.selectedItem = this.items.Single(i => i.RowId == itemId);
 
       var iconId = this.selectedItem.Icon;
-      this.plugin.Log.Verbose("Selected item: {0} ({1}), icon: {2}", this.selectedItem.Name, this.selectedItem.RowId, iconId);
 
       this.RefreshMarketData();
       if (!noHistory)

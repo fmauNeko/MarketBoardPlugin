@@ -50,7 +50,7 @@ namespace MarketBoardPlugin.Helpers
       }
       catch (HttpRequestException)
       {
-        this.plugin.Log.Warning($"Fai    /// to fetch market data for item {itemId} on world {worldName}.");
+        this.plugin.Log.Warning($"Failed to fetch market data for item {itemId} on world {worldName}.");
         return null;
       }
 

@@ -102,7 +102,7 @@ namespace MarketBoardPlugin
       {
         Name = "Search with Market Board Plugin",
         OnClicked = this.OnSelectContextMenuItem,
-        Prefix = SeIconChar.Gil,
+        Prefix = SeIconChar.BoxedLetterM,
         PrefixColor = 48,
       };
       this.ContextMenu.OnMenuOpened += this.OnContextMenuOpened;
@@ -181,6 +181,9 @@ namespace MarketBoardPlugin
     /// </summary>
     public IContextMenu ContextMenu { get; init; }
 
+    /// <summary>
+    /// Gets the Universalis client used for accessing market board data.
+    /// </summary>
     public UniversalisClient UniversalisClient { get; init; }
 
     /// <inheritdoc/>

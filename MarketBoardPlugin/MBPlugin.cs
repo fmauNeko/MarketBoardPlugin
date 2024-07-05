@@ -102,7 +102,7 @@ namespace MarketBoardPlugin
       {
         Name = "Search with Market Board Plugin",
         OnClicked = this.OnSelectContextMenuItem,
-        Prefix = SeIconChar.Gil,
+        Prefix = SeIconChar.BoxedLetterM,
         PrefixColor = 48,
       };
       this.ContextMenu.OnMenuOpened += this.OnContextMenuOpened;

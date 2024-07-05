@@ -181,6 +181,9 @@ namespace MarketBoardPlugin
     /// </summary>
     public IContextMenu ContextMenu { get; init; }
 
+    /// <summary>
+    /// Gets the Universalis client used for accessing market board data.
+    /// </summary>
     public UniversalisClient UniversalisClient { get; init; }
 
     /// <inheritdoc/>

@@ -3,5 +3,6 @@
   "Name": "Market board",
   "Punchline": "Browse the market board from anywhere.",
   "Description": "Browse the market board. /pmb to open.",
-  "RepoUrl": "https://github.com/fmauNeko/MarketBoardPlugin"
+  "RepoUrl": "https://github.com/fmauNeko/MarketBoardPlugin",
+  "Tags": ["market", "board", "marketboard", "market board"]
 }

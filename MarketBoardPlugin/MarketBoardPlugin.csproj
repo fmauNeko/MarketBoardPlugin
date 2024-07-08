@@ -1,12 +1,9 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
+  <Import Project="Dalamud.Plugin.Bootstrap.targets" />
 
   <PropertyGroup>
-    <TargetFramework>net8.0-windows</TargetFramework>
     <AssemblyName>MarketBoardPlugin</AssemblyName>
     <Authors>Florian "fmauNeko" Maunier</Authors>
-    <OutputType>Library</OutputType>
-    <LangVersion>Latest</LangVersion>
-    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <DocumentationFile>bin/$(Configuration)/$(TargetFramework)/$(AssemblyName).xml</DocumentationFile>
     <DebugType>PdbOnly</DebugType>
     <GenerateFullPaths>true</GenerateFullPaths>
@@ -21,21 +18,14 @@
     <PackageProjectUrl>https://github.com/fmauNeko/MarketBoardPlugin</PackageProjectUrl>
     <RepositoryUrl>https://github.com/fmauNeko/MarketBoardPlugin.git</RepositoryUrl>
     <RepositoryType>Git</RepositoryType>
-    <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
-    <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
     <AnalysisLevel>latest</AnalysisLevel>
     <AnalysisMode>AllEnabledByDefault</AnalysisMode>
-    <ProduceReferenceAssembly>False</ProduceReferenceAssembly>
-    <Platform>x64</Platform>
-    <Platforms>x64</Platforms>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <DefineConstants>DEBUG</DefineConstants>
   </PropertyGroup>
-  <PropertyGroup>
-    <DalamudLibPath>$(appdata)\XIVLauncher\addon\Hooks\dev\</DalamudLibPath>
-  </PropertyGroup>
+
   <ItemGroup>
     <None Remove="../stylecop.json" />
     <AdditionalFiles Include="../stylecop.json" />
@@ -52,7 +42,6 @@
 
   <ItemGroup>
     <PackageReference Include="Dalamud.DrunkenToad" Version="1.9.2" />
-    <PackageReference Include="DalamudPackager" Version="2.1.13" />
     <PackageReference Include="MSBuildGitHash" Version="2.0.2"
       Condition="'$(Configuration)'!='Release'">
       <PrivateAssets>all</PrivateAssets>
@@ -62,34 +51,6 @@
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
-  </ItemGroup>
-
-  <ItemGroup>
-    <Reference Include="Dalamud">
-      <Private>false</Private>
-      <HintPath>..\..\Dalamud\bin\Dalamud.dll</HintPath>
-      <HintPath>$(DalamudLibPath)Dalamud.dll</HintPath>
-    </Reference>
-    <Reference Include="ImGui.NET">
-      <Private>false</Private>
-      <HintPath>..\..\Dalamud\bin\ImGui.NET.dll</HintPath>
-      <HintPath>$(DalamudLibPath)ImGui.NET.dll</HintPath>
-    </Reference>
-    <Reference Include="ImGuiScene">
-      <Private>false</Private>
-      <HintPath>..\..\Dalamud\bin\ImGuiScene.dll</HintPath>
-      <HintPath>$(DalamudLibPath)ImGuiScene.dll</HintPath>
-    </Reference>
-    <Reference Include="Lumina">
-      <Private>false</Private>
-      <HintPath>..\..\Dalamud\bin\Lumina.dll</HintPath>
-      <HintPath>$(DalamudLibPath)Lumina.dll</HintPath>
-    </Reference>
-    <Reference Include="Lumina.Excel">
-      <Private>false</Private>
-      <HintPath>..\..\Dalamud\bin\Lumina.Excel.dll</HintPath>
-      <HintPath>$(DalamudLibPath)Lumina.Excel.dll</HintPath>
-    </Reference>
   </ItemGroup>
 
   <ItemGroup>

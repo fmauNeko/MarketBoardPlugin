@@ -1127,9 +1127,15 @@ namespace MarketBoardPlugin.GUI
                 CancellationToken.None)
               .ConfigureAwait(false);
           }
-          catch (Exception)
+          catch (AggregateException ae)
           {
-            this.plugin.Log.Warning($"Failed to fetch market data for item {this.selectedItem.RowId} from Universalis.");
+            this.plugin.Log.Warning(ae, $"Failed to fetch market data for item {this.selectedItem.RowId} from Universalis.");
+
+            foreach (var ex in ae.InnerExceptions)
+            {
+              this.plugin.Log.Warning(ex, "Inner exception");
+            }
+
             this.marketData = null;
           }
 
@@ -1139,7 +1145,21 @@ namespace MarketBoardPlugin.GUI
             this.marketBuffer.Add(this.marketData);
           }
         }
-      });
+      })
+      .ContinueWith(
+        t =>
+        {
+          if (t.IsFaulted)
+          {
+            this.plugin.Log.Warning(t.Exception, "Failed to fetch market data.");
+
+            foreach (var ex in t.Exception.InnerExceptions)
+            {
+              this.plugin.Log.Warning(ex, "Inner exception");
+            }
+          }
+        },
+        TaskScheduler.Current);
     }
   }
 }

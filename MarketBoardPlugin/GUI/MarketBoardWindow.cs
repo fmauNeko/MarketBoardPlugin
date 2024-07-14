@@ -73,8 +73,8 @@ namespace MarketBoardPlugin.GUI
 
     private int lvlmin;
     private int lastlvlmin;
-    private int lvlmax = 90;
-    private int lastlvlmax = 90;
+    private int lvlmax = 100;
+    private int lastlvlmax = 100;
     private int itemCategory;
     private int lastItemCategory;
     private string[] categoryLabels = new[] { "All", "Weapons", "Equipments", "Others", "Furniture" };
@@ -330,7 +330,7 @@ namespace MarketBoardPlugin.GUI
         {
           // If the category selected doesn't need an equip level -> reset to default
           this.lvlmin = 0;
-          this.lvlmax = 90;
+          this.lvlmax = 100;
         }
       }
 

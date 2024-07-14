@@ -52,6 +52,10 @@ namespace MarketBoardPlugin.GUI
 
     private readonly IFontHandle titleFontHandle;
 
+    private readonly Dictionary<uint, MarketDataResponse> marketDataCache;
+
+    private readonly string[] categoryLabels = new[] { "All", "Weapons", "Equipments", "Others", "Furniture" };
+
     private Dictionary<ItemSearchCategory, List<Item>> sortedCategoriesAndItems;
 
     private bool isDisposed;
@@ -77,7 +81,6 @@ namespace MarketBoardPlugin.GUI
     private int lastlvlmax = 100;
     private int itemCategory;
     private int lastItemCategory;
-    private string[] categoryLabels = new[] { "All", "Weapons", "Equipments", "Others", "Furniture" };
     private Item selectedItem;
 
     private ClassJob selectedClassJob;
@@ -90,11 +93,7 @@ namespace MarketBoardPlugin.GUI
 
     private int selectedWorld = -1;
 
-    private int previousSelectedWorld = -1;
-
     private MarketDataResponse? marketData;
-
-    private readonly List<MarketDataResponse?> marketBuffer;
 
     private int selectedListing = -1;
 
@@ -127,7 +126,7 @@ namespace MarketBoardPlugin.GUI
         MaximumSize = new Vector2(float.MaxValue, float.MaxValue),
       };
 
-      this.marketBuffer = new List<MarketDataResponse>();
+      this.marketDataCache = [];
       this.items = plugin.DataManager.GetExcelSheet<Item>();
       this.classJobs = plugin.DataManager.GetExcelSheet<ClassJob>()?
         .Where(cj => cj.RowId != 0)
@@ -198,7 +197,7 @@ namespace MarketBoardPlugin.GUI
     /// </summary>
     public void ResetMarketData()
     {
-      this.marketBuffer.Clear();
+      this.marketDataCache.Clear();
       this.RefreshMarketData();
     }
 
@@ -554,11 +553,10 @@ namespace MarketBoardPlugin.GUI
             var isSelected = this.selectedWorld == this.worldList.IndexOf(world);
             if (ImGui.Selectable(world.Item2, isSelected))
             {
-              this.previousSelectedWorld = this.selectedWorld;
               this.selectedWorld = this.worldList.IndexOf(world);
               this.plugin.Config.CrossDataCenter = this.selectedWorld == 0;
               this.plugin.Config.CrossWorld = this.selectedWorld == 1;
-              this.RefreshMarketData();
+              this.ResetMarketData();
             }
 
             if (isSelected)
@@ -1107,92 +1105,59 @@ namespace MarketBoardPlugin.GUI
 
     private void RefreshMarketData()
     {
+      this.marketData = null;
+
       if (this.currentRefreshTask?.Status != TaskStatus.RanToCompletion)
       {
         this.plugin.Log.Debug("Cancelling previous refresh task.");
         this.currentRefreshCancellationTokenSource?.Cancel();
       }
 
+      this.currentRefreshCancellationTokenSource?.Dispose();
       this.currentRefreshCancellationTokenSource = new CancellationTokenSource();
 
       this.currentRefreshTask = Task.Run(
         async () =>
         {
-          var cachedItem = this.marketBuffer.FirstOrDefault(data => data?.ItemId == this.selectedItem.RowId, null);
-          if (cachedItem != null)
+          var cachedItem = this.marketDataCache.GetValueOrDefault(this.selectedItem.RowId);
+          if (
+            cachedItem != default(MarketDataResponse)
+            && DateTimeOffset.Now.ToUnixTimeMilliseconds() - cachedItem.FetchTimestamp < this.plugin.Config.ItemRefreshTimeout)
           {
             this.marketData = cachedItem;
+            return;
           }
 
-          if (cachedItem == null || this.selectedWorld != this.previousSelectedWorld || DateTimeOffset.Now.ToUnixTimeMilliseconds() - cachedItem.FetchTimestamp > this.plugin.Config.ItemRefreshTimeout)
+          this.marketDataCache.Remove(this.selectedItem.RowId);
+
+          try
           {
-            this.previousSelectedWorld = this.selectedWorld;
-            if (cachedItem == null)
-            {
-              if (this.marketData != null)
-              {
-                this.marketBuffer.Add(this.marketData);
-              }
-
-              if (this.marketBuffer.Count > this.plugin.Config.MarketBufferSize)
-              {
-                this.marketBuffer.RemoveAt(0);
-              }
-
-              this.marketData = null;
-            }
-
-            try
-            {
-              this.marketData = await this.plugin.UniversalisClient
-                .GetMarketData(
-                  this.selectedItem.RowId,
-                  this.worldList[this.selectedWorld].Item1,
-                  50,
-                  this.currentRefreshCancellationTokenSource.Token)
-                .ConfigureAwait(false);
-            }
-            catch (AggregateException ae)
-            {
-              this.plugin.Log.Warning(ae, $"Failed to fetch market data for item {this.selectedItem.RowId} from Universalis.");
-
-              foreach (var ex in ae.InnerExceptions)
-              {
-                this.plugin.Log.Warning(ex, "Inner exception");
-              }
-
-              this.marketData = null;
-            }
-
-            if (cachedItem != null)
-            {
-              this.marketBuffer.Remove(cachedItem);
-              this.marketBuffer.Add(this.marketData);
-            }
+            this.marketData = await this.plugin.UniversalisClient
+              .GetMarketData(
+                this.selectedItem.RowId,
+                this.worldList[this.selectedWorld].Item1,
+                50,
+                this.currentRefreshCancellationTokenSource.Token)
+              .ConfigureAwait(false);
           }
-        },
-        this.currentRefreshCancellationTokenSource.Token);
-
-      this.currentRefreshTask.ContinueWith(
-        t =>
-        {
-          if (t.IsFaulted)
+          catch (AggregateException ae)
           {
-            this.plugin.Log.Warning(t.Exception, "Failed to fetch market data.");
+            this.plugin.Log.Warning(ae, $"Failed to fetch market data for item {this.selectedItem.RowId} from Universalis.");
 
-            foreach (var ex in t.Exception.InnerExceptions)
+            foreach (var ex in ae.InnerExceptions)
             {
               this.plugin.Log.Warning(ex, "Inner exception");
             }
-          }
-          else if (t.IsCanceled)
-          {
-            this.plugin.Log.Debug("Market data refresh task was cancelled.");
+
+            this.marketData = null;
           }
 
-          this.currentRefreshCancellationTokenSource.Dispose();
+          if (this.marketData != null)
+          {
+            this.marketDataCache.Add(this.selectedItem.RowId, this.marketData);
+          }
         },
-        TaskScheduler.Current);
+        this.currentRefreshCancellationTokenSource.Token);
     }
   }
 }

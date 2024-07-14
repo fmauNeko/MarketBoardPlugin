@@ -73,8 +73,8 @@ namespace MarketBoardPlugin.GUI
 
     private int lvlmin;
     private int lastlvlmin;
-    private int lvlmax = 90;
-    private int lastlvlmax = 90;
+    private int lvlmax = 100;
+    private int lastlvlmax = 100;
     private int itemCategory;
     private int lastItemCategory;
     private string[] categoryLabels = new[] { "All", "Weapons", "Equipments", "Others", "Furniture" };
@@ -92,9 +92,9 @@ namespace MarketBoardPlugin.GUI
 
     private int previousSelectedWorld = -1;
 
-    private MarketDataResponse marketData;
+    private MarketDataResponse? marketData;
 
-    private List<MarketDataResponse> marketBuffer;
+    private readonly List<MarketDataResponse?> marketBuffer;
 
     private int selectedListing = -1;
 
@@ -105,6 +105,10 @@ namespace MarketBoardPlugin.GUI
     private bool hasHistoryHQColumnWidthBeenSet;
 
     private List<KeyValuePair<ItemSearchCategory, List<Item>>> enumerableCategoriesAndItems;
+
+    private Task? currentRefreshTask;
+
+    private CancellationTokenSource? currentRefreshCancellationTokenSource;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="MarketBoardWindow"/> class.
@@ -330,7 +334,7 @@ namespace MarketBoardPlugin.GUI
         {
           // If the category selected doesn't need an equip level -> reset to default
           this.lvlmin = 0;
-          this.lvlmax = 90;
+          this.lvlmax = 100;
         }
       }
 
@@ -374,6 +378,18 @@ namespace MarketBoardPlugin.GUI
           {
             this.ChangeSelectedItem(id, true);
           }
+
+          if (ImGui.BeginPopupContextItem($"itemContextMenu{item.Name}"))
+          {
+            if (ImGui.Selectable("Remove from the favorites"))
+            {
+              this.plugin.Config.Favorites.Remove(item.RowId);
+            }
+
+            ImGui.EndPopup();
+          }
+
+          ImGui.OpenPopupOnItemClick($"itemContextMenu{item.Name}", ImGuiPopupFlags.MouseButtonRight);
         }
       }
       else
@@ -807,7 +823,7 @@ namespace MarketBoardPlugin.GUI
         }
       }
 
-      ImGui.SetCursorPosY(ImGui.GetWindowContentRegionMax().Y - ImGui.GetTextLineHeightWithSpacing());
+      ImGui.SetCursorPosY(ImGui.GetWindowContentRegionMax().Y - ImGui.GetFrameHeight());
       if (ImGui.Button("Data provided by Universalis"))
       {
         var universalisUrl = "https://universalis.app";
@@ -829,7 +845,7 @@ namespace MarketBoardPlugin.GUI
         ImGui.PushStyleColor(ImGuiCol.ButtonActive, 0xDD000000 | buttonColor);
         ImGui.PushStyleColor(ImGuiCol.ButtonHovered, 0xAA000000 | buttonColor);
 
-        if (ImGui.Button(buttonText, new Vector2(120, 24)))
+        if (ImGui.Button(buttonText, new Vector2(120, 0)))
         {
           Utilities.OpenBrowser("https://ko-fi.com/fmauneko");
         }
@@ -1091,62 +1107,73 @@ namespace MarketBoardPlugin.GUI
 
     private void RefreshMarketData()
     {
-      Task.Run(async () =>
+      if (this.currentRefreshTask?.Status != TaskStatus.RanToCompletion)
       {
-        var cachedItem = this.marketBuffer.FirstOrDefault(data => data.ItemId == this.selectedItem.RowId, null);
-        if (cachedItem != null)
+        this.plugin.Log.Debug("Cancelling previous refresh task.");
+        this.currentRefreshCancellationTokenSource?.Cancel();
+      }
+
+      this.currentRefreshCancellationTokenSource = new CancellationTokenSource();
+
+      this.currentRefreshTask = Task.Run(
+        async () =>
         {
-          this.marketData = cachedItem;
-        }
-
-        if (cachedItem == null || this.selectedWorld != this.previousSelectedWorld || DateTimeOffset.Now.ToUnixTimeMilliseconds() - cachedItem.FetchTimestamp > this.plugin.Config.ItemRefreshTimeout)
-        {
-          this.previousSelectedWorld = this.selectedWorld;
-          if (cachedItem == null)
-          {
-            if (this.marketData != null)
-            {
-              this.marketBuffer.Add(this.marketData);
-            }
-
-            if (this.marketBuffer.Count > this.plugin.Config.MarketBufferSize)
-            {
-              this.marketBuffer.RemoveAt(0);
-            }
-
-            this.marketData = null;
-          }
-
-          try
-          {
-            this.marketData = await this.plugin.UniversalisClient
-              .GetMarketData(
-                this.selectedItem.RowId,
-                this.worldList[this.selectedWorld].Item1,
-                50,
-                CancellationToken.None)
-              .ConfigureAwait(false);
-          }
-          catch (AggregateException ae)
-          {
-            this.plugin.Log.Warning(ae, $"Failed to fetch market data for item {this.selectedItem.RowId} from Universalis.");
-
-            foreach (var ex in ae.InnerExceptions)
-            {
-              this.plugin.Log.Warning(ex, "Inner exception");
-            }
-
-            this.marketData = null;
-          }
-
+          var cachedItem = this.marketBuffer.FirstOrDefault(data => data?.ItemId == this.selectedItem.RowId, null);
           if (cachedItem != null)
           {
-            this.marketBuffer.Remove(cachedItem);
-            this.marketBuffer.Add(this.marketData);
+            this.marketData = cachedItem;
           }
-        }
-      })
-      .ContinueWith(
+
+          if (cachedItem == null || this.selectedWorld != this.previousSelectedWorld || DateTimeOffset.Now.ToUnixTimeMilliseconds() - cachedItem.FetchTimestamp > this.plugin.Config.ItemRefreshTimeout)
+          {
+            this.previousSelectedWorld = this.selectedWorld;
+            if (cachedItem == null)
+            {
+              if (this.marketData != null)
+              {
+                this.marketBuffer.Add(this.marketData);
+              }
+
+              if (this.marketBuffer.Count > this.plugin.Config.MarketBufferSize)
+              {
+                this.marketBuffer.RemoveAt(0);
+              }
+
+              this.marketData = null;
+            }
+
+            try
+            {
+              this.marketData = await this.plugin.UniversalisClient
+                .GetMarketData(
+                  this.selectedItem.RowId,
+                  this.worldList[this.selectedWorld].Item1,
+                  50,
+                  this.currentRefreshCancellationTokenSource.Token)
+                .ConfigureAwait(false);
+            }
+            catch (AggregateException ae)
+            {
+              this.plugin.Log.Warning(ae, $"Failed to fetch market data for item {this.selectedItem.RowId} from Universalis.");
+
+              foreach (var ex in ae.InnerExceptions)
+              {
+                this.plugin.Log.Warning(ex, "Inner exception");
+              }
+
+              this.marketData = null;
+            }
+
+            if (cachedItem != null)
+            {
+              this.marketBuffer.Remove(cachedItem);
+              this.marketBuffer.Add(this.marketData);
+            }
+          }
+        },
+        this.currentRefreshCancellationTokenSource.Token);
+
+      this.currentRefreshTask.ContinueWith(
         t =>
         {
           if (t.IsFaulted)
@@ -1158,6 +1185,12 @@ namespace MarketBoardPlugin.GUI
               this.plugin.Log.Warning(ex, "Inner exception");
             }
           }
+          else if (t.IsCanceled)
+          {
+            this.plugin.Log.Debug("Market data refresh task was cancelled.");
+          }
+
+          this.currentRefreshCancellationTokenSource.Dispose();
         },
         TaskScheduler.Current);
     }

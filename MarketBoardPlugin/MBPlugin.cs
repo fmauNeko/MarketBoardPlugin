@@ -6,14 +6,17 @@ namespace MarketBoardPlugin
 {
   using System;
   using System.Collections.Generic;
+  using System.ComponentModel;
   using System.Diagnostics.CodeAnalysis;
   using System.Globalization;
+  using Dalamud.Game.ClientState.Objects.Enums;
   using Dalamud.Game.Command;
   using Dalamud.Game.Gui.ContextMenu;
   using Dalamud.Game.Text;
   using Dalamud.Interface.Windowing;
   using Dalamud.Plugin;
   using Dalamud.Plugin.Services;
+  using FFXIVClientStructs.FFXIV.Client.UI.Agent;
   using Lumina.Excel.GeneratedSheets;
 
   using MarketBoardPlugin.GUI;
@@ -31,8 +34,6 @@ namespace MarketBoardPlugin
     private readonly MarketBoardConfigWindow marketBoardConfigWindow;
 
     private readonly MarketBoardShoppingListWindow marketBoardShoppingListWindow;
-
-    private readonly MenuItem inventoryContextMenuItem;
 
     /// <summary>
     /// Gets the window system.
@@ -98,13 +99,6 @@ namespace MarketBoardPlugin
       this.PluginInterface.UiBuilder.OpenMainUi += this.OpenMainUi;
 
       // Set up context menu
-      this.inventoryContextMenuItem = new MenuItem
-      {
-        Name = "Search with Market Board Plugin",
-        OnClicked = this.OnSelectContextMenuItem,
-        Prefix = SeIconChar.BoxedLetterM,
-        PrefixColor = 48,
-      };
       this.ContextMenu.OnMenuOpened += this.OnContextMenuOpened;
 
       // Set up number format
@@ -249,58 +243,75 @@ namespace MarketBoardPlugin
 
     private void OnContextMenuOpened(IMenuOpenedArgs args)
     {
-      if (args.MenuType != ContextMenuType.Inventory)
-      {
-        return;
-      }
-
       if (!this.Config.ContextMenuIntegration)
       {
         return;
       }
 
-      this.inventoryContextMenuItem.IsEnabled = true;
+      uint itemId;
 
-      var target = args.Target as MenuTargetInventory;
-
-      if (!target.TargetItem.HasValue || target.TargetItem.Value.ItemId == 0)
+      if (args.MenuType == ContextMenuType.Inventory)
       {
-        this.inventoryContextMenuItem.IsEnabled = false;
+        itemId = (args.Target as MenuTargetInventory)?.TargetItem?.ItemId ?? 0u;
+      }
+      else
+      {
+        itemId = this.GetItemIdFromAgent(args.AddonName);
+
+        if (itemId == 0u)
+        {
+          this.Log.Warning("Failed to get item ID from agent {0}. Attempting hovered item.", args.AddonName ?? "null");
+          itemId = (uint)this.GameGui.HoveredItem % 500000;
+        }
       }
 
-      var item = this.DataManager.Excel.GetSheet<Item>().GetRow(target.TargetItem.Value.ItemId);
-
-      if (item.IsUntradable)
+      if (itemId == 0u)
       {
-        this.inventoryContextMenuItem.IsEnabled = false;
+        this.Log.Warning("Failed to get item ID");
+        return;
       }
 
-      args.AddMenuItem(this.inventoryContextMenuItem);
+      var item = this.DataManager.Excel.GetSheet<Item>()?.GetRow(itemId);
+
+      args.AddMenuItem(new MenuItem
+      {
+        Name = "Search in Market Board",
+        OnClicked = this.GetMenuItemClickedHandler(itemId),
+        Prefix = SeIconChar.BoxedLetterM,
+        PrefixColor = 48,
+        IsEnabled = !(item?.IsUntradable ?? true),
+      });
     }
 
-    private void OnSelectContextMenuItem(IMenuItemClickedArgs args)
+    private unsafe uint GetItemIdFromAgent(string? addonName)
     {
-      if (args.MenuType != ContextMenuType.Inventory)
+      var itemId = addonName switch
       {
-        return;
-      }
+        "ChatLog" => AgentChatLog.Instance()->ContextItemId,
+        "GatheringNote" => *(uint*)((IntPtr)AgentGatheringNote.Instance() + 0xA0),
+        "GrandCompanySupplyList" => *(uint*)((IntPtr)AgentGrandCompanySupply.Instance() + 0x54),
+        "ItemSearch" => (uint)AgentContext.Instance()->UpdateCheckerParam,
+        "RecipeNote" => AgentRecipeNote.Instance()->ContextMenuResultItemId,
+        _ => 0u,
+      };
 
-      var target = args.Target as MenuTargetInventory;
+      return itemId % 500000;
+    }
 
-      if (!target.TargetItem.HasValue || target.TargetItem.Value.ItemId == 0)
+    private Action<IMenuItemClickedArgs> GetMenuItemClickedHandler(uint itemId)
+    {
+      return (IMenuItemClickedArgs args) =>
       {
-        return;
-      }
-
-      try
-      {
-        this.marketBoardWindow.IsOpen = true;
-        this.marketBoardWindow.ChangeSelectedItem(target.TargetItem.Value.ItemId);
-      }
-      catch (Exception ex)
-      {
-        this.Log.Error(ex, "Failed on context menu for itemId" + target.TargetItem.Value.ItemId);
-      }
+        try
+        {
+          this.marketBoardWindow.IsOpen = true;
+          this.marketBoardWindow.ChangeSelectedItem(itemId);
+        }
+        catch (Exception ex)
+        {
+          this.Log.Error(ex, "Failed on context menu for itemId" + itemId);
+        }
+      };
     }
 
     private void OnOpenMarketBoardCommand(string command, string arguments)

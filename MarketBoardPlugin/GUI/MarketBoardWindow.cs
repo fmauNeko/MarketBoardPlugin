@@ -819,7 +819,7 @@ namespace MarketBoardPlugin.GUI
         }
       }
 
-      ImGui.SetCursorPosY(ImGui.GetWindowContentRegionMax().Y - ImGui.GetTextLineHeightWithSpacing());
+      ImGui.SetCursorPosY(ImGui.GetWindowContentRegionMax().Y - ImGui.GetFrameHeight());
       if (ImGui.Button("Data provided by Universalis"))
       {
         var universalisUrl = "https://universalis.app";
@@ -841,7 +841,7 @@ namespace MarketBoardPlugin.GUI
         ImGui.PushStyleColor(ImGuiCol.ButtonActive, 0xDD000000 | buttonColor);
         ImGui.PushStyleColor(ImGuiCol.ButtonHovered, 0xAA000000 | buttonColor);
 
-        if (ImGui.Button(buttonText, new Vector2(120, 24)))
+        if (ImGui.Button(buttonText, new Vector2(120, 0)))
         {
           Utilities.OpenBrowser("https://ko-fi.com/fmauneko");
         }

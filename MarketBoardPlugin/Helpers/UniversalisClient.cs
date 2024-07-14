@@ -7,6 +7,7 @@ namespace MarketBoardPlugin.Helpers
   using System;
   using System.IO;
   using System.Net.Http;
+  using System.Net.Http.Json;
   using System.Text.Json;
   using System.Threading;
   using System.Threading.Tasks;
@@ -32,7 +33,7 @@ namespace MarketBoardPlugin.Helpers
     /// <param name="historyCount">The number of historical entries to retrieve.</param>
     /// <param name="cancellationToken">A cancellation token to cancel the operation.</param>
     /// <returns>A <see cref="MarketDataResponse"/> object containing the retrieved market data, or null if the operation fails.</returns>
-    public async Task<MarketDataResponse> GetMarketData(uint itemId, string worldName, int historyCount, CancellationToken cancellationToken)
+    public async Task<MarketDataResponse?> GetMarketData(uint itemId, string worldName, int historyCount, CancellationToken cancellationToken)
     {
       var uriBuilder = new UriBuilder($"https://universalis.app/api/{worldName}/{itemId}?entries={historyCount}");
 
@@ -40,42 +41,26 @@ namespace MarketBoardPlugin.Helpers
 
       using var client = new HttpClient();
 
-      Stream res;
+      MarketDataResponse? res;
 
       try
       {
         res = await client
-          .GetStreamAsync(uriBuilder.Uri, cancellationToken)
+          .GetFromJsonAsync<MarketDataResponse>(uriBuilder.Uri, cancellationToken)
           .ConfigureAwait(false);
       }
-      catch (HttpRequestException)
+      catch (HttpRequestException ex)
       {
-        this.plugin.Log.Warning($"Failed to fetch market data for item {itemId} on world {worldName}.");
+        this.plugin.Log.Warning(ex, $"Failed to fetch market data for item {itemId} on world {worldName}.");
         return null;
       }
 
-      cancellationToken.ThrowIfCancellationRequested();
-
-      MarketDataResponse parsedRes;
-
-      try
+      if (res != null)
       {
-        parsedRes = await JsonSerializer
-          .DeserializeAsync<MarketDataResponse>(res, cancellationToken: cancellationToken)
-          .ConfigureAwait(false);
-      }
-      catch (JsonException)
-      {
-        this.plugin.Log.Warning($"Failed to parse market data for item {itemId} on world {worldName}.");
-        return null;
+        res.FetchTimestamp = DateTimeOffset.Now.ToUnixTimeMilliseconds();
       }
 
-      if (parsedRes != null)
-      {
-        parsedRes.FetchTimestamp = DateTimeOffset.Now.ToUnixTimeMilliseconds();
-      }
-
-      return parsedRes;
+      return res;
     }
   }
 }

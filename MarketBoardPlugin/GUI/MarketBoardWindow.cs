@@ -1105,7 +1105,7 @@ namespace MarketBoardPlugin.GUI
     {
       Task.Run(async () =>
       {
-        var cachedItem = this.marketBuffer.FirstOrDefault(data => data.ItemId == this.selectedItem.RowId, null);
+        var cachedItem = this.marketBuffer.FirstOrDefault(data => data?.ItemId == this.selectedItem.RowId, null);
         if (cachedItem != null)
         {
           this.marketData = cachedItem;

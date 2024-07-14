@@ -374,6 +374,18 @@ namespace MarketBoardPlugin.GUI
           {
             this.ChangeSelectedItem(id, true);
           }
+
+          if (ImGui.BeginPopupContextItem($"itemContextMenu{item.Name}"))
+          {
+            if (ImGui.Selectable("Remove from the favorites"))
+            {
+              this.plugin.Config.Favorites.Remove(item.RowId);
+            }
+
+            ImGui.EndPopup();
+          }
+
+          ImGui.OpenPopupOnItemClick($"itemContextMenu{item.Name}", ImGuiPopupFlags.MouseButtonRight);
         }
       }
       else

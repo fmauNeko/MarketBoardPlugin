@@ -8,9 +8,9 @@
     <DebugType>PdbOnly</DebugType>
     <GenerateFullPaths>true</GenerateFullPaths>
     <MSBuildGitHashCommand>git rev-parse --short HEAD</MSBuildGitHashCommand>
-    <AssemblyVersion>1.6.2</AssemblyVersion>
-    <FileVersion>1.6.2</FileVersion>
-    <Version>1.6.2</Version>
+    <AssemblyVersion>1.7.0</AssemblyVersion>
+    <FileVersion>1.7.0</FileVersion>
+    <Version>1.7.0</Version>
     <Company>Florian Maunier</Company>
     <Description>Market board plugin for Dalamud.</Description>
     <Copyright>Copyright (c) Florian Maunier. All rights reserved.</Copyright>

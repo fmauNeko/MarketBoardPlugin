@@ -50,15 +50,6 @@ namespace MarketBoardPlugin
 
       this.Checkbox("Hide Ko-Fi button", "Toggles whether the Ko-Fi button should be hidden", this.Plugin.Config.KofiHidden, (v) => this.Plugin.Config.KofiHidden = v);
 
-      var marketBufferSize = this.Plugin.Config.MarketBufferSize;
-      ImGui.Text("Number of buffered item : ");
-      ImGui.InputInt("###marketBufferSize", ref marketBufferSize);
-      if (this.Plugin.Config.MarketBufferSize != marketBufferSize)
-      {
-        this.Plugin.Config.MarketBufferSize = marketBufferSize;
-        this.Plugin.PluginInterface.SavePluginConfig(this.Plugin.Config);
-      }
-
       var itemRefreshTimeout = this.Plugin.Config.ItemRefreshTimeout;
       ImGui.Text("Item buffer Timeout (ms) :");
       ImGui.InputInt("###refreshTimeout", ref itemRefreshTimeout);

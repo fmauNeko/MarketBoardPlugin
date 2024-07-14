@@ -1,6 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
-  <Import Project="Dalamud.Plugin.Bootstrap.targets" />
-
+<Project Sdk="Dalamud.NET.Sdk/9.0.2">
   <PropertyGroup>
     <AssemblyName>MarketBoardPlugin</AssemblyName>
     <Authors>Florian "fmauNeko" Maunier</Authors>

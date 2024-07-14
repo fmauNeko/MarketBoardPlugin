@@ -5,13 +5,12 @@
 namespace MarketBoardPlugin.Helpers
 {
   using System;
-  using System.IO;
   using System.Net.Http;
   using System.Text.Json;
   using System.Threading;
   using System.Threading.Tasks;
-
   using MarketBoardPlugin.Models.Universalis;
+  using Polly;
 
   /// <summary>
   /// Universalis API Client.
@@ -24,6 +23,8 @@ namespace MarketBoardPlugin.Helpers
     private readonly MBPlugin plugin;
 
     private readonly HttpClient client;
+
+    private readonly ResiliencePipeline resiliencePipeline;
 
     private bool disposedValue;
 
@@ -42,6 +43,16 @@ namespace MarketBoardPlugin.Helpers
       {
         BaseAddress = new Uri("https://universalis.app/api/"),
       };
+
+      this.resiliencePipeline = new ResiliencePipelineBuilder()
+        .AddRetry(new()
+        {
+          BackoffType = DelayBackoffType.Exponential,
+          MaxRetryAttempts = 3,
+          ShouldHandle = new PredicateBuilder().Handle<HttpRequestException>(),
+          UseJitter = true,
+        })
+        .Build();
     }
 
     /// <summary>
@@ -56,15 +67,11 @@ namespace MarketBoardPlugin.Helpers
     {
       try
       {
-        using var response = await this.client
-          .GetAsync(new Uri($"{worldName}/{itemId}?entries={historyCount}", UriKind.Relative), HttpCompletionOption.ResponseHeadersRead, cancellationToken)
+        using var content = await this.resiliencePipeline.ExecuteAsync(
+            async (ct) =>
+              await this.client.GetStreamAsync(new Uri($"{worldName}/{itemId}?entries={historyCount}", UriKind.Relative), ct).ConfigureAwait(false),
+            cancellationToken)
           .ConfigureAwait(false);
-
-        response.EnsureSuccessStatusCode();
-
-        cancellationToken.ThrowIfCancellationRequested();
-
-        using var content = await response.Content.ReadAsStreamAsync(cancellationToken).ConfigureAwait(false);
 
         cancellationToken.ThrowIfCancellationRequested();
 

@@ -20,6 +20,12 @@
           "Microsoft.SourceLink.GitLab": "1.1.1"
         }
       },
+      "Polly.Core": {
+        "type": "Direct",
+        "requested": "[8.4.1, )",
+        "resolved": "8.4.1",
+        "contentHash": "bg4kE7mFwXc6FJ8NLknTgVgLAMlbToWC7vpdqAITv8lPzKpp9v7aWJPc04GRoZQaJhVY/tdr8K2/VW2aTmaA1Q=="
+      },
       "StyleCop.Analyzers": {
         "type": "Direct",
         "requested": "[1.2.0-beta.556, )",

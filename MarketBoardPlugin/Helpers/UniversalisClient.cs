@@ -5,14 +5,12 @@
 namespace MarketBoardPlugin.Helpers
 {
   using System;
-  using System.IO;
   using System.Net.Http;
-  using System.Net.Http.Json;
   using System.Text.Json;
   using System.Threading;
   using System.Threading.Tasks;
-
   using MarketBoardPlugin.Models.Universalis;
+  using Polly;
 
   /// <summary>
   /// Universalis API Client.
@@ -20,10 +18,42 @@ namespace MarketBoardPlugin.Helpers
   /// <remarks>
   /// Initializes a new instance of the <see cref="UniversalisClient"/> class.
   /// </remarks>
-  /// <param name="plugin">The plugin instance.</param>
-  public class UniversalisClient(MBPlugin plugin)
+  public class UniversalisClient : IDisposable
   {
-    private readonly MBPlugin plugin = plugin ?? throw new ArgumentNullException(nameof(plugin));
+    private readonly MBPlugin plugin;
+
+    private readonly HttpClient client;
+
+    private readonly ResiliencePipeline resiliencePipeline;
+
+    private bool disposedValue;
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="UniversalisClient"/> class.
+    /// </summary>
+    /// <param name="plugin">The <see cref="MBPlugin"/> instance.</param>
+    /// <exception cref="ArgumentNullException">One of the required arguments is null.</exception>
+    public UniversalisClient(MBPlugin plugin)
+    {
+      ArgumentNullException.ThrowIfNull(plugin);
+
+      this.plugin = plugin;
+
+      this.client = new HttpClient
+      {
+        BaseAddress = new Uri("https://universalis.app/api/"),
+      };
+
+      this.resiliencePipeline = new ResiliencePipelineBuilder()
+        .AddRetry(new()
+        {
+          BackoffType = DelayBackoffType.Exponential,
+          MaxRetryAttempts = 3,
+          ShouldHandle = new PredicateBuilder().Handle<HttpRequestException>(),
+          UseJitter = true,
+        })
+        .Build();
+    }
 
     /// <summary>
     /// Retrieves market data for a specific item from the Universalis API.
@@ -33,34 +63,56 @@ namespace MarketBoardPlugin.Helpers
     /// <param name="historyCount">The number of historical entries to retrieve.</param>
     /// <param name="cancellationToken">A cancellation token to cancel the operation.</param>
     /// <returns>A <see cref="MarketDataResponse"/> object containing the retrieved market data, or null if the operation fails.</returns>
-    public async Task<MarketDataResponse?> GetMarketData(uint itemId, string worldName, int historyCount, CancellationToken cancellationToken)
+    public async Task<MarketDataResponse> GetMarketData(uint itemId, string worldName, int historyCount, CancellationToken cancellationToken)
     {
-      var uriBuilder = new UriBuilder($"https://universalis.app/api/{worldName}/{itemId}?entries={historyCount}");
-
-      cancellationToken.ThrowIfCancellationRequested();
-
-      using var client = new HttpClient();
-
-      MarketDataResponse? res;
-
       try
       {
-        res = await client
-          .GetFromJsonAsync<MarketDataResponse>(uriBuilder.Uri, cancellationToken)
+        using var content = await this.resiliencePipeline.ExecuteAsync(
+            async (ct) =>
+              await this.client.GetStreamAsync(new Uri($"{worldName}/{itemId}?entries={historyCount}", UriKind.Relative), ct).ConfigureAwait(false),
+            cancellationToken)
           .ConfigureAwait(false);
+
+        cancellationToken.ThrowIfCancellationRequested();
+
+        var parsedRes = await JsonSerializer
+          .DeserializeAsync<MarketDataResponse>(content, cancellationToken: cancellationToken)
+          .ConfigureAwait(false) ?? throw new InvalidOperationException($"Failed to parse market data for item {itemId} on world {worldName}.");
+
+        parsedRes.FetchTimestamp = DateTimeOffset.Now.ToUnixTimeMilliseconds();
+        return parsedRes;
       }
       catch (HttpRequestException ex)
       {
         this.plugin.Log.Warning(ex, $"Failed to fetch market data for item {itemId} on world {worldName}.");
-        return null;
+        throw;
       }
-
-      if (res != null)
+      catch (JsonException ex)
       {
-        res.FetchTimestamp = DateTimeOffset.Now.ToUnixTimeMilliseconds();
+        this.plugin.Log.Warning(ex, $"Failed to parse market data for item {itemId} on world {worldName}.");
+        throw;
       }
+    }
 
-      return res;
+    /// <inheritdoc/>
+    public void Dispose()
+    {
+      this.Dispose(disposing: true);
+      GC.SuppressFinalize(this);
+    }
+
+    /// <inheritdoc/>
+    protected virtual void Dispose(bool disposing)
+    {
+      if (!this.disposedValue)
+      {
+        if (disposing)
+        {
+          this.client.Dispose();
+        }
+
+        this.disposedValue = true;
+      }
     }
   }
 }

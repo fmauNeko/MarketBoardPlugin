@@ -60,11 +60,6 @@ namespace MarketBoardPlugin
     public bool KofiHidden { get; set; }
 
     /// <summary>
-    /// Gets or sets a value indicating the maximum size of the Market item buffer.
-    /// </summary>
-    public int MarketBufferSize { get; set; } = 10;
-
-    /// <summary>
     ///  Gets or sets a value indicating the number of ms an item can be cached.
     /// </summary>
     public int ItemRefreshTimeout { get; set; } = 30000;

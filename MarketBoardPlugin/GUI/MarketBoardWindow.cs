@@ -15,7 +15,9 @@ namespace MarketBoardPlugin.GUI
   using System.Threading.Tasks;
   using Dalamud.Game.Text;
   using Dalamud.Interface;
+  using Dalamud.Interface.Colors;
   using Dalamud.Interface.ManagedFontAtlas;
+  using Dalamud.Interface.Style;
   using Dalamud.Interface.Textures;
   using Dalamud.Interface.Textures.TextureWraps;
   using Dalamud.Interface.Windowing;
@@ -109,6 +111,10 @@ namespace MarketBoardPlugin.GUI
 
     private CancellationTokenSource? currentRefreshCancellationTokenSource;
 
+    private bool isUniversalisUp = false;
+
+    private readonly CancellationTokenSource statusCheckCancellationTokenSource = new CancellationTokenSource();
+
     /// <summary>
     /// Initializes a new instance of the <see cref="MarketBoardWindow"/> class.
     /// </summary>
@@ -174,6 +180,8 @@ namespace MarketBoardPlugin.GUI
       this.worldList.Add(("Chaos", "Chaos"));
       this.worldList.Add(("Moogle", "Moogle"));
 #endif
+
+      this.StartUniversalisStatusCheckTask(this.statusCheckCancellationTokenSource.Token);
     }
 
     /// <summary>
@@ -822,15 +830,42 @@ namespace MarketBoardPlugin.GUI
       }
 
       ImGui.SetCursorPosY(ImGui.GetWindowContentRegionMax().Y - ImGui.GetFrameHeight());
-      if (ImGui.Button("Data provided by Universalis"))
+
+      if (this.isUniversalisUp)
       {
-        var universalisUrl = "https://universalis.app";
-        if (this.selectedItem != null)
+        var buttonColor = 0x002ba040u;
+
+        ImGui.PushStyleColor(ImGuiCol.Button, 0xFF000000 | buttonColor);
+        ImGui.PushStyleColor(ImGuiCol.ButtonActive, 0xDD000000 | buttonColor);
+        ImGui.PushStyleColor(ImGuiCol.ButtonHovered, 0xAA000000 | buttonColor);
+
+        if (ImGui.Button("Data provided by Universalis"))
         {
-          universalisUrl += $"/market/{this.selectedItem.RowId}";
+          var universalisUrl = "https://universalis.app";
+          if (this.selectedItem != null)
+          {
+            universalisUrl += $"/market/{this.selectedItem.RowId}";
+          }
+
+          Utilities.OpenBrowser(universalisUrl);
         }
 
-        Utilities.OpenBrowser(universalisUrl);
+        ImGui.PopStyleColor(3);
+      }
+      else
+      {
+        var buttonColor = 0x005345e6u;
+
+        ImGui.PushStyleColor(ImGuiCol.Button, 0xFF000000 | buttonColor);
+        ImGui.PushStyleColor(ImGuiCol.ButtonActive, 0xDD000000 | buttonColor);
+        ImGui.PushStyleColor(ImGuiCol.ButtonHovered, 0xAA000000 | buttonColor);
+
+        if (ImGui.Button("Universalis API seems down"))
+        {
+          Utilities.OpenBrowser("https://status.universalis.app");
+        }
+
+        ImGui.PopStyleColor(3);
       }
 
       ImGui.SameLine(ImGui.GetContentRegionAvail().X - (120 * scale));
@@ -897,6 +932,8 @@ namespace MarketBoardPlugin.GUI
         this.plugin.GameGui.HoveredItemChanged -= this.HandleHoveredItemChange;
         this.defaultFontHandle?.Dispose();
         this.titleFontHandle?.Dispose();
+        this.statusCheckCancellationTokenSource.Cancel();
+        this.statusCheckCancellationTokenSource.Dispose();
       }
 
       this.isDisposed = true;
@@ -1158,6 +1195,20 @@ namespace MarketBoardPlugin.GUI
           }
         },
         this.currentRefreshCancellationTokenSource.Token);
+    }
+
+    private void StartUniversalisStatusCheckTask(CancellationToken cancellationToken)
+    {
+      Task.Run(
+        async () =>
+        {
+          while (!cancellationToken.IsCancellationRequested)
+          {
+            this.isUniversalisUp = await this.plugin.UniversalisClient.CheckStatus(cancellationToken).ConfigureAwait(false);
+            await Task.Delay(TimeSpan.FromMinutes(10), cancellationToken).ConfigureAwait(false);
+          }
+        },
+        cancellationToken);
     }
   }
 }

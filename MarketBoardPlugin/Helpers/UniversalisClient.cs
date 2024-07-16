@@ -5,6 +5,7 @@
 namespace MarketBoardPlugin.Helpers
 {
   using System;
+  using System.Collections.Generic;
   using System.Net.Http;
   using System.Text.Json;
   using System.Threading;
@@ -92,6 +93,65 @@ namespace MarketBoardPlugin.Helpers
         this.plugin.Log.Warning(ex, $"Failed to parse market data for item {itemId} on world {worldName}.");
         throw;
       }
+    }
+
+    /// <summary>
+    /// Retrieves the collection of data centers.
+    /// </summary>
+    /// <param name="cancellationToken">A cancellation token to cancel the operation.</param>
+    /// <returns>A collection of <see cref="DataCenter"/> objects containing the data centers.</returns>
+    public async Task<ICollection<DataCenter>> GetDataCenters(CancellationToken cancellationToken)
+    {
+      try
+      {
+        using var content = await this.resiliencePipeline.ExecuteAsync(
+            async (ct) =>
+              await this.client.GetStreamAsync(new Uri("data-centers", UriKind.Relative), ct).ConfigureAwait(false),
+            cancellationToken)
+          .ConfigureAwait(false);
+
+        cancellationToken.ThrowIfCancellationRequested();
+
+        return await JsonSerializer
+          .DeserializeAsync<ICollection<DataCenter>>(content, cancellationToken: cancellationToken)
+          .ConfigureAwait(false) ?? throw new InvalidOperationException("Failed to parse data centers.");
+      }
+      catch (HttpRequestException ex)
+      {
+        this.plugin.Log.Warning(ex, "Failed to fetch data centers.");
+        throw;
+      }
+      catch (JsonException ex)
+      {
+        this.plugin.Log.Warning(ex, "Failed to parse data centers.");
+        throw;
+      }
+    }
+
+    /// <summary>
+    /// Checks if the Universalis API is up and running.
+    /// </summary>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns><c>true</c> if the Universalis API is up; otherwise, <c>false</c>.</returns>
+    public async Task<bool> CheckStatus(CancellationToken cancellationToken)
+    {
+      try
+      {
+        await this.GetDataCenters(cancellationToken).ConfigureAwait(false);
+      }
+      catch (HttpRequestException ex)
+      {
+        this.plugin.Log.Warning(ex, "Universalis seems down.");
+        return false;
+      }
+      catch (JsonException ex)
+      {
+        this.plugin.Log.Warning(ex, "Universalis seems down.");
+        return false;
+      }
+
+      this.plugin.Log.Verbose("Universalis seems up.");
+      return true;
     }
 
     /// <inheritdoc/>

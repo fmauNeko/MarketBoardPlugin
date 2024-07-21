@@ -44,6 +44,7 @@ namespace MarketBoardPlugin.Helpers
       {
         BaseAddress = new Uri("https://universalis.app/api/"),
       };
+      this.client.DefaultRequestHeaders.UserAgent.ParseAdd($"MarketBoardPlugin/{this.plugin.PluginInterface.Manifest.AssemblyVersion}");
 
       this.resiliencePipeline = new ResiliencePipelineBuilder()
         .AddRetry(new()

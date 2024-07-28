@@ -1173,8 +1173,8 @@ namespace MarketBoardPlugin.GUI
               .GetMarketData(
                 this.selectedItem.RowId,
                 this.worldList[this.selectedWorld].Item1,
-                50,
-                50,
+                this.plugin.Config.ListingCount,
+                this.plugin.Config.HistoryCount,
                 this.currentRefreshCancellationTokenSource.Token)
               .ConfigureAwait(false);
           }

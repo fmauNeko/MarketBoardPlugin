@@ -73,5 +73,15 @@ namespace MarketBoardPlugin
     /// Gets the favorite items.
     /// </summary>
     public ICollection<uint> Favorites { get; } = new List<uint>();
+
+    /// <summary>
+    /// Gets or sets the number of listings to retrieve.
+    /// </summary>
+    public int ListingCount { get; set; } = 50;
+
+    /// <summary>
+    /// Gets or sets the number of historical entries to retrieve.
+    /// </summary>
+    public int HistoryCount { get; set; } = 50;
   }
 }

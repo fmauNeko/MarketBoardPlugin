@@ -42,7 +42,7 @@ namespace MarketBoardPlugin.Helpers
 
       this.client = new HttpClient
       {
-        BaseAddress = new Uri("https://universalis.app/api/"),
+        BaseAddress = new Uri("https://universalis.app/api/v2/"),
       };
       this.client.DefaultRequestHeaders.UserAgent.ParseAdd($"MarketBoardPlugin/{this.plugin.PluginInterface.Manifest.AssemblyVersion}");
 

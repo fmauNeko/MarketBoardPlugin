@@ -58,6 +58,24 @@ namespace MarketBoardPlugin
         this.Plugin.Config.ItemRefreshTimeout = itemRefreshTimeout;
         this.Plugin.PluginInterface.SavePluginConfig(this.Plugin.Config);
       }
+
+      var listingCount = this.Plugin.Config.ListingCount;
+      ImGui.Text("Listing count :");
+      ImGui.InputInt("###listingCount", ref listingCount);
+      if (this.Plugin.Config.ListingCount != listingCount)
+      {
+        this.Plugin.Config.ListingCount = listingCount;
+        this.Plugin.PluginInterface.SavePluginConfig(this.Plugin.Config);
+      }
+
+      var historyCount = this.Plugin.Config.HistoryCount;
+      ImGui.Text("History count :");
+      ImGui.InputInt("###historyCount", ref historyCount);
+      if (this.Plugin.Config.HistoryCount != historyCount)
+      {
+        this.Plugin.Config.HistoryCount = historyCount;
+        this.Plugin.PluginInterface.SavePluginConfig(this.Plugin.Config);
+      }
     }
 
     private void Checkbox(string label, string description, bool oldValue, Action<bool> setter)

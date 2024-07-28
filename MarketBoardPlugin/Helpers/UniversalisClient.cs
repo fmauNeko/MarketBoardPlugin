@@ -42,7 +42,7 @@ namespace MarketBoardPlugin.Helpers
 
       this.client = new HttpClient
       {
-        BaseAddress = new Uri("https://universalis.app/api/"),
+        BaseAddress = new Uri("https://universalis.app/api/v2/"),
       };
       this.client.DefaultRequestHeaders.UserAgent.ParseAdd($"MarketBoardPlugin/{this.plugin.PluginInterface.Manifest.AssemblyVersion}");
 
@@ -62,16 +62,17 @@ namespace MarketBoardPlugin.Helpers
     /// </summary>
     /// <param name="itemId">The ID of the item to retrieve market data for.</param>
     /// <param name="worldName">The name of the world to retrieve market data from.</param>
+    /// <param name="listingCount">The number of current listings to retrieve.</param>
     /// <param name="historyCount">The number of historical entries to retrieve.</param>
     /// <param name="cancellationToken">A cancellation token to cancel the operation.</param>
     /// <returns>A <see cref="MarketDataResponse"/> object containing the retrieved market data, or null if the operation fails.</returns>
-    public async Task<MarketDataResponse> GetMarketData(uint itemId, string worldName, int historyCount, CancellationToken cancellationToken)
+    public async Task<MarketDataResponse> GetMarketData(uint itemId, string worldName, int listingCount, int historyCount, CancellationToken cancellationToken)
     {
       try
       {
         using var content = await this.resiliencePipeline.ExecuteAsync(
             async (ct) =>
-              await this.client.GetStreamAsync(new Uri($"{worldName}/{itemId}?entries={historyCount}", UriKind.Relative), ct).ConfigureAwait(false),
+              await this.client.GetStreamAsync(new Uri($"{worldName}/{itemId}?listings={listingCount}&entries={historyCount}", UriKind.Relative), ct).ConfigureAwait(false),
             cancellationToken)
           .ConfigureAwait(false);
 

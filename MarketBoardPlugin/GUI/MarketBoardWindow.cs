@@ -1174,6 +1174,7 @@ namespace MarketBoardPlugin.GUI
                 this.selectedItem.RowId,
                 this.worldList[this.selectedWorld].Item1,
                 50,
+                50,
                 this.currentRefreshCancellationTokenSource.Token)
               .ConfigureAwait(false);
           }

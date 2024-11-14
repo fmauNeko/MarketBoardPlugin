@@ -4,7 +4,7 @@
 
 namespace MarketBoardPlugin.Models.ShoppingList
 {
-  using Lumina.Excel.GeneratedSheets;
+  using Lumina.Excel.Sheets;
 
   /// <summary>
   /// A model representing an Item saved into the shopping list.

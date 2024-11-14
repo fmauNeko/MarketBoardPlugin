@@ -4,7 +4,7 @@
 
 namespace MarketBoardPlugin.Extensions
 {
-  using Lumina.Excel.GeneratedSheets;
+  using Lumina.Excel.Sheets;
 
   /// <summary>
   /// <see cref="ClassJobCategory"/> and <see cref="ClassJob"/> extensions.
@@ -18,21 +18,16 @@ namespace MarketBoardPlugin.Extensions
     /// <param name="classJob">A <see cref="ClassJob"/>.</param>
     /// <returns>
     /// True if contained or classJob is null.
-    /// False if not contained or classJobCategory is null.
+    /// False if not contained.
     /// </returns>
-    public static bool HasClass(this ClassJobCategory classJobCategory, ClassJob classJob)
+    public static bool HasClass(this ClassJobCategory classJobCategory, ClassJob? classJob)
     {
-      if (classJobCategory == null)
-      {
-        return false;
-      }
-
-      if (classJob == null)
+      if (!classJob.HasValue)
       {
         return true;
       }
 
-      return classJob.RowId switch
+      return classJob.Value.RowId switch
       {
         0 => classJobCategory.ADV,
         1 => classJobCategory.GLA,

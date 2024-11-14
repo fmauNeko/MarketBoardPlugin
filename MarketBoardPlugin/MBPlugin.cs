@@ -17,7 +17,7 @@ namespace MarketBoardPlugin
   using Dalamud.Plugin;
   using Dalamud.Plugin.Services;
   using FFXIVClientStructs.FFXIV.Client.UI.Agent;
-  using Lumina.Excel.GeneratedSheets;
+  using Lumina.Excel.Sheets;
 
   using MarketBoardPlugin.GUI;
   using MarketBoardPlugin.Helpers;

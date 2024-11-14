@@ -22,9 +22,10 @@ namespace MarketBoardPlugin.GUI
   using Dalamud.Interface.Textures.TextureWraps;
   using Dalamud.Interface.Windowing;
   using Dalamud.Plugin.Services;
+  using Dalamud.Utility;
   using ImGuiNET;
   using ImPlotNET;
-  using Lumina.Excel.GeneratedSheets;
+  using Lumina.Excel.Sheets;
   using MarketBoardPlugin.Extensions;
   using MarketBoardPlugin.Helpers;
   using MarketBoardPlugin.Models.ShoppingList;
@@ -75,7 +76,7 @@ namespace MarketBoardPlugin.GUI
     private string searchString = string.Empty;
     private string lastSearchString = string.Empty;
 
-    private ClassJob lastSelectedClassJob;
+    private ClassJob? lastSelectedClassJob;
 
     private int lvlmin;
     private int lastlvlmin;
@@ -83,9 +84,9 @@ namespace MarketBoardPlugin.GUI
     private int lastlvlmax = 100;
     private int itemCategory;
     private int lastItemCategory;
-    private Item selectedItem;
+    private Item? selectedItem;
 
-    private ClassJob selectedClassJob;
+    private ClassJob? selectedClassJob;
 
     private bool hQOnly;
 
@@ -226,7 +227,7 @@ namespace MarketBoardPlugin.GUI
       if (this.searchString != this.lastSearchString || this.itemCategory != this.lastItemCategory
                                                      || this.lastlvlmin != this.lvlmin
                                                      || this.lastlvlmax != this.lvlmax
-                                                     || this.lastSelectedClassJob != this.selectedClassJob)
+                                                     || this.lastSelectedClassJob?.RowId != this.selectedClassJob?.RowId)
       {
         this.UpdateCategoriesAndItems();
       }
@@ -302,12 +303,12 @@ namespace MarketBoardPlugin.GUI
         ImGui.SameLine();
         if (ImGui.BeginCombo(
           "###ClassJobCombo",
-          this.selectedClassJob == null ? "All Classes" : this.selectedClassJob.Abbreviation))
+          this.selectedClassJob == null ? "All Classes" : this.selectedClassJob?.Abbreviation.ExtractText()))
         {
-          void SelectClassJob(ClassJob classJob)
+          void SelectClassJob(ClassJob? classJob)
           {
-            var selected = this.selectedClassJob == classJob;
-            if (ImGui.Selectable(classJob == null ? "All Classes" : classJob.Abbreviation, selected))
+            var selected = this.selectedClassJob?.RowId == classJob?.RowId;
+            if (ImGui.Selectable(classJob == null ? "All Classes" : classJob?.Abbreviation.ExtractText(), selected))
             {
               this.selectedClassJob = classJob;
             }
@@ -356,13 +357,13 @@ namespace MarketBoardPlugin.GUI
         var sheet = this.plugin.DataManager.Excel.GetSheet<Item>();
         foreach (var id in this.plugin.Config.History.ToArray())
         {
-          var item = sheet.GetRow(id);
-          if (item == null)
+          var item = sheet.GetRowOrDefault(id);
+          if (!item.HasValue)
           {
             continue;
           }
 
-          if (ImGui.Selectable($"{item.Name}", this.selectedItem == item))
+          if (ImGui.Selectable($"{item.Value.Name.ExtractText()}", this.selectedItem?.RowId == id))
           {
             this.ChangeSelectedItem(id, true);
           }
@@ -375,35 +376,37 @@ namespace MarketBoardPlugin.GUI
         var sheet = this.plugin.DataManager.Excel.GetSheet<Item>();
         foreach (var id in this.plugin.Config.Favorites.ToArray())
         {
-          var item = sheet.GetRow(id);
-          if (item == null)
+          var item = sheet.GetRowOrDefault(id);
+          if (!item.HasValue)
           {
             continue;
           }
 
-          if (ImGui.Selectable($"{item.Name}", this.selectedItem == item))
+          var itemName = item.Value.Name.ExtractText();
+
+          if (ImGui.Selectable($"{itemName}", this.selectedItem?.RowId == id))
           {
             this.ChangeSelectedItem(id, true);
           }
 
-          if (ImGui.BeginPopupContextItem($"itemContextMenu{item.Name}"))
+          if (ImGui.BeginPopupContextItem($"itemContextMenu{itemName}"))
           {
             if (ImGui.Selectable("Remove from the favorites"))
             {
-              this.plugin.Config.Favorites.Remove(item.RowId);
+              this.plugin.Config.Favorites.Remove(item.Value.RowId);
             }
 
             ImGui.EndPopup();
           }
 
-          ImGui.OpenPopupOnItemClick($"itemContextMenu{item.Name}", ImGuiPopupFlags.MouseButtonRight);
+          ImGui.OpenPopupOnItemClick($"itemContextMenu{itemName}", ImGuiPopupFlags.MouseButtonRight);
         }
       }
       else
       {
         foreach (var category in this.enumerableCategoriesAndItems)
         {
-          if (ImGui.TreeNode(category.Key.Name + "##cat" + category.Key.RowId))
+          if (ImGui.TreeNode(category.Key.Name.ExtractText() + "##cat" + category.Key.RowId))
           {
             ImGui.Unindent(ImGui.GetTreeNodeToLabelSpacing());
 
@@ -444,16 +447,16 @@ namespace MarketBoardPlugin.GUI
                 nodeFlags |= ImGuiTreeNodeFlags.Selected;
               }
 
-              ImGui.TreeNodeEx(item.Name + "##item" + item.RowId, nodeFlags);
+              ImGui.TreeNodeEx(item.Name.ExtractText() + "##item" + item.RowId, nodeFlags);
 
               if (ImGui.IsItemClicked())
               {
                 this.ChangeSelectedItem(item.RowId);
               }
 
-              if (ImGui.BeginPopupContextItem("itemContextMenu" + category.Key.Name + i))
+              if (ImGui.BeginPopupContextItem("itemContextMenu" + category.Key.Name.ExtractText() + i))
               {
-                if (this.selectedItem != null && item != null && this.selectedItem.RowId != item.RowId)
+                if (this.selectedItem != null && this.selectedItem?.RowId != item.RowId)
                 {
                   this.ChangeSelectedItem(item.RowId);
                 }
@@ -475,7 +478,7 @@ namespace MarketBoardPlugin.GUI
                 ImGui.EndPopup();
               }
 
-              ImGui.OpenPopupOnItemClick("itemContextMenu" + category.Key.Name + i, ImGuiPopupFlags.MouseButtonRight);
+              ImGui.OpenPopupOnItemClick("itemContextMenu" + category.Key.Name.ExtractText() + i, ImGuiPopupFlags.MouseButtonRight);
             }
 
             ImGui.Indent(ImGui.GetTreeNodeToLabelSpacing());
@@ -525,7 +528,7 @@ namespace MarketBoardPlugin.GUI
       {
         var couldGetIcon = this.plugin.TextureProvider.GetFromGameIcon(new GameIconLookup
         {
-          IconId = this.selectedItem.Icon,
+          IconId = this.selectedItem.Value.Icon,
         }).TryGetWrap(out var selectedItemIcon, out _);
 
         using (selectedItemIcon)
@@ -535,7 +538,7 @@ namespace MarketBoardPlugin.GUI
             if (ImGui.ImageButton(selectedItemIcon.ImGuiHandle, new Vector2(40, 40)))
             {
               ImGui.LogToClipboard();
-              ImGui.LogText(this.selectedItem.Name);
+              ImGui.LogText(this.selectedItem?.Name.ExtractText());
               ImGui.LogFinish();
             }
           }
@@ -548,7 +551,7 @@ namespace MarketBoardPlugin.GUI
         this.titleFontHandle.Push();
         ImGui.SameLine();
         ImGui.SetCursorPosY(ImGui.GetCursorPosY() - (ImGui.GetFontSize() / 2.0f) + (20 * scale));
-        ImGui.Text(this.selectedItem?.Name);
+        ImGui.Text(this.selectedItem?.Name.ExtractText());
         ImGui.SameLine(ImGui.GetContentRegionAvail().X - (250 * scale));
         ImGui.SetCursorPosY(0);
         this.titleFontHandle.Pop();
@@ -844,7 +847,7 @@ namespace MarketBoardPlugin.GUI
           var universalisUrl = "https://universalis.app";
           if (this.selectedItem != null)
           {
-            universalisUrl += $"/market/{this.selectedItem.RowId}";
+            universalisUrl += $"/market/{this.selectedItem.Value.RowId}";
           }
 
           Utilities.OpenBrowser(universalisUrl);
@@ -899,7 +902,7 @@ namespace MarketBoardPlugin.GUI
     {
       this.selectedItem = this.items.Single(i => i.RowId == itemId);
 
-      var iconId = this.selectedItem.Icon;
+      var iconId = this.selectedItem.Value.Icon;
 
       this.RefreshMarketData();
       if (!noHistory)
@@ -992,7 +995,7 @@ namespace MarketBoardPlugin.GUI
             kv.Key,
             kv.Value
               .Where(i =>
-                i.Name.ToString().ToUpperInvariant().Contains(this.searchString.ToUpperInvariant(), StringComparison.InvariantCulture))
+                i.Name.ExtractText().ToUpperInvariant().Contains(this.searchString.ToUpperInvariant(), StringComparison.InvariantCulture))
               .Where(i => i.LevelEquip >= this.lvlmin && i.LevelEquip <= this.lvlmax)
               .Where(i => i.ClassJobCategory.Value.HasClass(this.selectedClassJob))
               .ToList()))
@@ -1036,7 +1039,7 @@ namespace MarketBoardPlugin.GUI
             continue;
           }
 
-          sortedCategoriesDict.Add(c, this.items.Where(i => i.ItemSearchCategory.Row == c.RowId).OrderBy(i => ConvertItemNameToSortableFormat(i.Name.ToString())).ToList());
+          sortedCategoriesDict.Add(c, this.items.Where(i => i.ItemSearchCategory.RowId == c.RowId).OrderBy(i => ConvertItemNameToSortableFormat(i.Name.ExtractText())).ToList());
         }
 
         return sortedCategoriesDict;
@@ -1058,23 +1061,23 @@ namespace MarketBoardPlugin.GUI
           return;
         }
 
-        var currentDc = localPlayer.CurrentWorld.GameData.DataCenter;
+        var currentDc = localPlayer.CurrentWorld.Value.DataCenter;
         var dcWorlds = this.plugin.DataManager.GetExcelSheet<World>()
-          .Where(w => w.DataCenter.Row == currentDc.Row && w.IsPublic)
-          .OrderBy(w => w.Name.ToString())
+          .Where(w => w.DataCenter.RowId == currentDc.RowId && w.IsPublic)
+          .OrderBy(w => w.Name.ExtractText())
           .Select(w =>
           {
-            string displayName = w.Name;
+            string displayName = w.Name.ExtractText();
 
-            if (localPlayer.CurrentWorld.Id == w.RowId)
+            if (localPlayer.CurrentWorld.Value.RowId == w.RowId)
             {
               displayName += $" {SeIconChar.Hyadelyn.ToChar()}";
             }
 
-            return (w.Name.ToString(), displayName);
+            return (w.Name.ExtractText(), displayName);
           });
 
-        var regionName = localPlayer.CurrentWorld.GameData.DataCenter.Value.Region switch
+        var regionName = localPlayer.CurrentWorld.Value.DataCenter.Value.Region switch
         {
           1 => "Japan",
           2 => "North-America",
@@ -1085,7 +1088,7 @@ namespace MarketBoardPlugin.GUI
 
         this.worldList.Clear();
         this.worldList.Add((regionName, $"Cross-DC {SeIconChar.CrossWorld.ToChar()}"));
-        this.worldList.Add((currentDc.Value?.Name, $"Cross-World {SeIconChar.CrossWorld.ToChar()}"));
+        this.worldList.Add((currentDc.Value.Name.ExtractText(), $"Cross-World {SeIconChar.CrossWorld.ToChar()}"));
         this.worldList.AddRange(dcWorlds);
 
         if (this.plugin.Config.CrossDataCenter)
@@ -1098,7 +1101,7 @@ namespace MarketBoardPlugin.GUI
         }
         else
         {
-          this.selectedWorld = this.worldList.FindIndex(w => w.Item1 == localPlayer.CurrentWorld.GameData.Name);
+          this.selectedWorld = this.worldList.FindIndex(w => w.Item1 == localPlayer.CurrentWorld.Value.Name);
         }
 
         if (this.worldList.Count > 1)
@@ -1128,9 +1131,9 @@ namespace MarketBoardPlugin.GUI
         return;
       }
 
-      var item = this.plugin.DataManager.Excel.GetSheet<Item>().GetRow((uint)itemId % 500000);
+      var item = this.plugin.DataManager.Excel.GetSheet<Item>().GetRowOrDefault((uint)itemId % 500000);
 
-      if (item != null && this.enumerableCategoriesAndItems != null && this.sortedCategoriesAndItems.Any(i => i.Value != null && i.Value.Any(k => k.ToString() == item.ToString())))
+      if (item != null && this.enumerableCategoriesAndItems != null && this.sortedCategoriesAndItems.Any(i => i.Value != null && i.Value.Any(k => k.RowId == item.Value.RowId)))
       {
         this.itemBeingHovered = itemId;
       }
@@ -1142,6 +1145,11 @@ namespace MarketBoardPlugin.GUI
 
     private void RefreshMarketData()
     {
+      if (!this.selectedItem.HasValue)
+      {
+        return;
+      }
+
       this.marketData = null;
 
       if (this.currentRefreshTask?.Status != TaskStatus.RanToCompletion)
@@ -1156,7 +1164,7 @@ namespace MarketBoardPlugin.GUI
       this.currentRefreshTask = Task.Run(
         async () =>
         {
-          var cachedItem = this.marketDataCache.GetValueOrDefault(this.selectedItem.RowId);
+          var cachedItem = this.marketDataCache.GetValueOrDefault(this.selectedItem.Value.RowId);
           if (
             cachedItem != default(MarketDataResponse)
             && DateTimeOffset.Now.ToUnixTimeMilliseconds() - cachedItem.FetchTimestamp < this.plugin.Config.ItemRefreshTimeout)
@@ -1165,13 +1173,13 @@ namespace MarketBoardPlugin.GUI
             return;
           }
 
-          this.marketDataCache.Remove(this.selectedItem.RowId);
+          this.marketDataCache.Remove(this.selectedItem.Value.RowId);
 
           try
           {
             this.marketData = await this.plugin.UniversalisClient
               .GetMarketData(
-                this.selectedItem.RowId,
+                this.selectedItem.Value.RowId,
                 this.worldList[this.selectedWorld].Item1,
                 this.plugin.Config.ListingCount,
                 this.plugin.Config.HistoryCount,
@@ -1180,7 +1188,7 @@ namespace MarketBoardPlugin.GUI
           }
           catch (AggregateException ae)
           {
-            this.plugin.Log.Warning(ae, $"Failed to fetch market data for item {this.selectedItem.RowId} from Universalis.");
+            this.plugin.Log.Warning(ae, $"Failed to fetch market data for item {this.selectedItem.Value.RowId} from Universalis.");
 
             foreach (var ex in ae.InnerExceptions)
             {
@@ -1192,7 +1200,7 @@ namespace MarketBoardPlugin.GUI
 
           if (this.marketData != null)
           {
-            this.marketDataCache.Add(this.selectedItem.RowId, this.marketData);
+            this.marketDataCache.Add(this.selectedItem.Value.RowId, this.marketData);
           }
         },
         this.currentRefreshCancellationTokenSource.Token);

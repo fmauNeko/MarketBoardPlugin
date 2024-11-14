@@ -65,7 +65,7 @@ namespace MarketBoardPlugin
       int k = 0;
       foreach (var item in this.Plugin.ShoppingList)
       {
-        ImGui.Text(item.SourceItem.Name);
+        ImGui.Text(item.SourceItem.Name.ExtractText());
         ImGui.NextColumn();
         if (this.Plugin.Config.PriceIconShown)
         {

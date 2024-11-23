@@ -13,7 +13,7 @@ namespace MarketBoardPlugin.Helpers
   {
     internal static void OpenBrowser(string url)
     {
-      Process.Start(new ProcessStartInfo { FileName = url, UseShellExecute = true });
+      _ = Process.Start(new ProcessStartInfo { FileName = url, UseShellExecute = true });
     }
   }
 }

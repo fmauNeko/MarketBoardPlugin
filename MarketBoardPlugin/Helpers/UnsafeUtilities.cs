@@ -14,7 +14,7 @@ namespace MarketBoardPlugin.Helpers
 
     public static string StringFromPtr(byte* ptr)
     {
-      var characters = 0;
+      int characters = 0;
       while (ptr[characters] != 0)
       {
         characters++;
@@ -25,7 +25,7 @@ namespace MarketBoardPlugin.Helpers
 
     internal static bool AreStringsEqual(byte* a, int aLength, byte* b)
     {
-      for (var i = 0; i < aLength; i++)
+      for (int i = 0; i < aLength; i++)
       {
         if (a[i] != b[i])
         {

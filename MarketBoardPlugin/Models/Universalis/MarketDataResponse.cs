@@ -36,14 +36,14 @@ namespace MarketBoardPlugin.Models.Universalis
     /// </summary>
     [JsonPropertyName("listings")]
     [SuppressMessage("Usage", "CA2227:Collection properties should be read only", Justification = "Setter required for JSON deserialization")]
-    public IList<MarketDataListing> Listings { get; set; } = new List<MarketDataListing>();
+    public IList<MarketDataListing> Listings { get; set; } = [];
 
     /// <summary>
     /// Gets or sets the recent history.
     /// </summary>
     [JsonPropertyName("recentHistory")]
     [SuppressMessage("Usage", "CA2227:Collection properties should be read only", Justification = "Setter required for JSON deserialization")]
-    public IList<MarketDataRecentHistory> RecentHistory { get; set; } = new List<MarketDataRecentHistory>();
+    public IList<MarketDataRecentHistory> RecentHistory { get; set; } = [];
 
     /// <summary>
     /// Gets or sets the average price.
@@ -90,18 +90,18 @@ namespace MarketBoardPlugin.Models.Universalis
     /// Gets the stack size histogram.
     /// </summary>
     [JsonPropertyName("stackSizeHistogram")]
-    public Dictionary<string, long> StackSizeHistogram { get; } = new Dictionary<string, long>();
+    public Dictionary<string, long> StackSizeHistogram { get; } = [];
 
     /// <summary>
     /// Gets the stack size histogram of the NQ items.
     /// </summary>
     [JsonPropertyName("stackSizeHistogramNQ")]
-    public Dictionary<string, long> StackSizeHistogramNq { get; } = new Dictionary<string, long>();
+    public Dictionary<string, long> StackSizeHistogramNq { get; } = [];
 
     /// <summary>
     /// Gets the stack size histogram of the HQ items.
     /// </summary>
     [JsonPropertyName("stackSizeHistogramHQ")]
-    public Dictionary<string, long> StackSizeHistogramHq { get; } = new Dictionary<string, long>();
+    public Dictionary<string, long> StackSizeHistogramHq { get; } = [];
   }
 }

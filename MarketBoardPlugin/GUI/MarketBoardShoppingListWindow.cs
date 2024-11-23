@@ -2,7 +2,7 @@
 // Copyright (c) Florian Maunier. All rights reserved.
 // </copyright>
 
-namespace MarketBoardPlugin
+namespace MarketBoardPlugin.GUI
 {
   using System;
   using System.Collections.Generic;
@@ -11,8 +11,8 @@ namespace MarketBoardPlugin
   using Dalamud.Interface;
   using Dalamud.Interface.Windowing;
   using ImGuiNET;
+  using MarketBoardPlugin;
   using MarketBoardPlugin.Models.ShoppingList;
-  using OtterGui;
 
   /// <summary>
   /// The market board config window.
@@ -44,7 +44,10 @@ namespace MarketBoardPlugin
     private MBPlugin Plugin { get; init; }
 
     /// <inheritdoc/>
-    public override bool DrawConditions() => this.Plugin.ShoppingList.Count > 0;
+    public override bool DrawConditions()
+    {
+      return this.Plugin.ShoppingList.Count > 0;
+    }
 
     /// <inheritdoc/>
     public override void Draw()
@@ -60,10 +63,10 @@ namespace MarketBoardPlugin
       ImGui.NextColumn();
       ImGui.Separator();
 
-      List<SavedItem> todel = new List<SavedItem>();
+      List<SavedItem> todel = [];
 
       int k = 0;
-      foreach (var item in this.Plugin.ShoppingList)
+      foreach (SavedItem item in this.Plugin.ShoppingList)
       {
         ImGui.Text(item.SourceItem.Name.ExtractText());
         ImGui.NextColumn();
@@ -91,17 +94,9 @@ namespace MarketBoardPlugin
         k += 1;
       }
 
-      foreach (var item in todel)
+      foreach (SavedItem item in todel)
       {
-        this.Plugin.ShoppingList.Remove(item);
-      }
-    }
-
-    private void Checkbox(string label, string description, bool oldValue, Action<bool> setter)
-    {
-      if (ImGuiUtil.Checkbox(label, description, oldValue, setter))
-      {
-        this.Plugin.PluginInterface.SavePluginConfig(this.Plugin.Config);
+        _ = this.Plugin.ShoppingList.Remove(item);
       }
     }
   }

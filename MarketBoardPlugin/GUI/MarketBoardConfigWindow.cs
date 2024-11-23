@@ -50,27 +50,27 @@ namespace MarketBoardPlugin
 
       this.Checkbox("Hide Ko-Fi button", "Toggles whether the Ko-Fi button should be hidden", this.Plugin.Config.KofiHidden, (v) => this.Plugin.Config.KofiHidden = v);
 
-      var itemRefreshTimeout = this.Plugin.Config.ItemRefreshTimeout;
+      int itemRefreshTimeout = this.Plugin.Config.ItemRefreshTimeout;
       ImGui.Text("Item buffer Timeout (ms) :");
-      ImGui.InputInt("###refreshTimeout", ref itemRefreshTimeout);
+      _ = ImGui.InputInt("###refreshTimeout", ref itemRefreshTimeout);
       if (this.Plugin.Config.ItemRefreshTimeout != itemRefreshTimeout)
       {
         this.Plugin.Config.ItemRefreshTimeout = itemRefreshTimeout;
         this.Plugin.PluginInterface.SavePluginConfig(this.Plugin.Config);
       }
 
-      var listingCount = this.Plugin.Config.ListingCount;
+      int listingCount = this.Plugin.Config.ListingCount;
       ImGui.Text("Listing count :");
-      ImGui.InputInt("###listingCount", ref listingCount);
+      _ = ImGui.InputInt("###listingCount", ref listingCount);
       if (this.Plugin.Config.ListingCount != listingCount)
       {
         this.Plugin.Config.ListingCount = listingCount;
         this.Plugin.PluginInterface.SavePluginConfig(this.Plugin.Config);
       }
 
-      var historyCount = this.Plugin.Config.HistoryCount;
+      int historyCount = this.Plugin.Config.HistoryCount;
       ImGui.Text("History count :");
-      ImGui.InputInt("###historyCount", ref historyCount);
+      _ = ImGui.InputInt("###historyCount", ref historyCount);
       if (this.Plugin.Config.HistoryCount != historyCount)
       {
         this.Plugin.Config.HistoryCount = historyCount;

@@ -6,10 +6,8 @@ namespace MarketBoardPlugin
 {
   using System;
   using System.Collections.Generic;
-  using System.ComponentModel;
   using System.Diagnostics.CodeAnalysis;
   using System.Globalization;
-  using Dalamud.Game.ClientState.Objects.Enums;
   using Dalamud.Game.Command;
   using Dalamud.Game.Gui.ContextMenu;
   using Dalamud.Game.Text;
@@ -123,7 +121,7 @@ namespace MarketBoardPlugin
     /// <summary>
     /// Gets the shopping list.
     /// </summary>
-    public IList<SavedItem> ShoppingList { get; init; } = new List<SavedItem>();
+    public IList<SavedItem> ShoppingList { get; init; } = [];
 
     /// <summary>
     /// Gets the number format info.
@@ -232,7 +230,7 @@ namespace MarketBoardPlugin
         this.marketBoardWindow.Dispose();
 
         // Remove command handlers
-        this.CommandManager.RemoveHandler("/pmb");
+        _ = this.CommandManager.RemoveHandler("/pmb");
 
         // Remove context menu handler
         this.ContextMenu.OnMenuOpened -= this.OnContextMenuOpened;
@@ -271,7 +269,7 @@ namespace MarketBoardPlugin
         return;
       }
 
-      var item = this.DataManager.Excel.GetSheet<Item>()?.GetRow(itemId);
+      Item? item = this.DataManager.Excel.GetSheet<Item>()?.GetRow(itemId);
 
       args.AddMenuItem(new MenuItem
       {
@@ -285,7 +283,7 @@ namespace MarketBoardPlugin
 
     private unsafe uint GetItemIdFromAgent(string? addonName)
     {
-      var itemId = addonName switch
+      uint itemId = addonName switch
       {
         "ChatLog" => AgentChatLog.Instance()->ContextItemId,
         "GatheringNote" => *(uint*)((IntPtr)AgentGatheringNote.Instance() + 0xA0),
@@ -318,7 +316,7 @@ namespace MarketBoardPlugin
     {
       if (!string.IsNullOrEmpty(arguments))
       {
-        if (uint.TryParse(arguments, out var itemId))
+        if (uint.TryParse(arguments, out uint itemId))
         {
           this.marketBoardWindow.ChangeSelectedItem(itemId);
           this.marketBoardWindow.IsOpen = true;

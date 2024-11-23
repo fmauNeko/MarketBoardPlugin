@@ -70,7 +70,7 @@ namespace MarketBoardPlugin.Helpers
     {
       try
       {
-        using var content = await this.resiliencePipeline.ExecuteAsync(
+        using System.IO.Stream content = await this.resiliencePipeline.ExecuteAsync(
             async (ct) =>
               await this.client.GetStreamAsync(new Uri($"{worldName}/{itemId}?listings={listingCount}&entries={historyCount}", UriKind.Relative), ct).ConfigureAwait(false),
             cancellationToken)
@@ -78,7 +78,7 @@ namespace MarketBoardPlugin.Helpers
 
         cancellationToken.ThrowIfCancellationRequested();
 
-        var parsedRes = await JsonSerializer
+        MarketDataResponse parsedRes = await JsonSerializer
           .DeserializeAsync<MarketDataResponse>(content, cancellationToken: cancellationToken)
           .ConfigureAwait(false) ?? throw new InvalidOperationException($"Failed to parse market data for item {itemId} on world {worldName}.");
 
@@ -106,7 +106,7 @@ namespace MarketBoardPlugin.Helpers
     {
       try
       {
-        using var content = await this.resiliencePipeline.ExecuteAsync(
+        using System.IO.Stream content = await this.resiliencePipeline.ExecuteAsync(
             async (ct) =>
               await this.client.GetStreamAsync(new Uri("data-centers", UriKind.Relative), ct).ConfigureAwait(false),
             cancellationToken)
@@ -139,7 +139,7 @@ namespace MarketBoardPlugin.Helpers
     {
       try
       {
-        await this.GetDataCenters(cancellationToken).ConfigureAwait(false);
+        _ = await this.GetDataCenters(cancellationToken).ConfigureAwait(false);
       }
       catch (HttpRequestException ex)
       {
@@ -163,7 +163,10 @@ namespace MarketBoardPlugin.Helpers
       GC.SuppressFinalize(this);
     }
 
-    /// <inheritdoc/>
+    /// <summary>
+    /// Protected implementation of Dispose pattern.
+    /// </summary>
+    /// <param name="disposing">Indicates if disposing.</param>
     protected virtual void Dispose(bool disposing)
     {
       if (!this.disposedValue)

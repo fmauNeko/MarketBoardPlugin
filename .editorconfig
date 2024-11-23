@@ -14,3 +14,6 @@ trim_trailing_whitespace = false
 [*.{yml,yaml}]
 indent_style = space
 indent_size = 2
+
+[*.{cs,vb}]
+dotnet_diagnostic.IDE0065.severity = none

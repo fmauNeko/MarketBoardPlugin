@@ -49,7 +49,7 @@ namespace MarketBoardPlugin.Helpers
       ref string input,
       uint maxLength,
       ImGuiInputTextFlags flags,
-      ImGuiInputTextCallback callback,
+      ImGuiInputTextCallback? callback,
       IntPtr userData)
     {
       ArgumentNullException.ThrowIfNull(label);
@@ -58,7 +58,7 @@ namespace MarketBoardPlugin.Helpers
 
       ArgumentNullException.ThrowIfNull(input);
 
-      var utf8LabelByteCount = Encoding.UTF8.GetByteCount(label);
+      int utf8LabelByteCount = Encoding.UTF8.GetByteCount(label);
       byte* utf8LabelBytes;
       if (utf8LabelByteCount > UnsafeUtilities.StackAllocationSizeLimit)
       {
@@ -66,13 +66,13 @@ namespace MarketBoardPlugin.Helpers
       }
       else
       {
-        var stackPtr = stackalloc byte[utf8LabelByteCount + 1];
+        byte* stackPtr = stackalloc byte[utf8LabelByteCount + 1];
         utf8LabelBytes = stackPtr;
       }
 
-      UnsafeUtilities.GetUtf8(label, utf8LabelBytes, utf8LabelByteCount);
+      _ = UnsafeUtilities.GetUtf8(label, utf8LabelBytes, utf8LabelByteCount);
 
-      var utf8HintByteCount = Encoding.UTF8.GetByteCount(hint);
+      int utf8HintByteCount = Encoding.UTF8.GetByteCount(hint);
       byte* utf8HintBytes;
       if (utf8HintByteCount > UnsafeUtilities.StackAllocationSizeLimit)
       {
@@ -80,14 +80,14 @@ namespace MarketBoardPlugin.Helpers
       }
       else
       {
-        var stackPtr = stackalloc byte[utf8HintByteCount + 1];
+        byte* stackPtr = stackalloc byte[utf8HintByteCount + 1];
         utf8HintBytes = stackPtr;
       }
 
-      UnsafeUtilities.GetUtf8(hint, utf8HintBytes, utf8HintByteCount);
+      _ = UnsafeUtilities.GetUtf8(hint, utf8HintBytes, utf8HintByteCount);
 
-      var utf8InputByteCount = Encoding.UTF8.GetByteCount(input);
-      var inputBufSize = Math.Max((int)maxLength + 1, utf8InputByteCount + 1);
+      int utf8InputByteCount = Encoding.UTF8.GetByteCount(input);
+      int inputBufSize = Math.Max((int)maxLength + 1, utf8InputByteCount + 1);
 
       byte* utf8InputBytes;
       byte* originalUtf8InputBytes;
@@ -98,18 +98,18 @@ namespace MarketBoardPlugin.Helpers
       }
       else
       {
-        var inputStackBytes = stackalloc byte[inputBufSize];
+        byte* inputStackBytes = stackalloc byte[inputBufSize];
         utf8InputBytes = inputStackBytes;
-        var originalInputStackBytes = stackalloc byte[inputBufSize];
+        byte* originalInputStackBytes = stackalloc byte[inputBufSize];
         originalUtf8InputBytes = originalInputStackBytes;
       }
 
-      UnsafeUtilities.GetUtf8(input, utf8InputBytes, inputBufSize);
-      var clearBytesCount = (uint)(inputBufSize - utf8InputByteCount);
+      _ = UnsafeUtilities.GetUtf8(input, utf8InputBytes, inputBufSize);
+      uint clearBytesCount = (uint)(inputBufSize - utf8InputByteCount);
       Unsafe.InitBlockUnaligned(utf8InputBytes + utf8InputByteCount, 0, clearBytesCount);
       Unsafe.CopyBlock(originalUtf8InputBytes, utf8InputBytes, (uint)inputBufSize);
 
-      var result = ImGuiNative.igInputTextWithHint(
+      byte result = ImGuiNative.igInputTextWithHint(
         utf8LabelBytes,
         utf8HintBytes,
         utf8InputBytes,

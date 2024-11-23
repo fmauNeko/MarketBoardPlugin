@@ -37,7 +37,7 @@ namespace MarketBoardPlugin
     /// Gets the list of previously viewed items.
     /// </summary>
     [SuppressMessage("Design", "CA1002:Do not expose generic lists", Justification = "RemoveAll and RemoveRange required")]
-    public List<uint> History { get; } = new List<uint>();
+    public List<uint> History { get; } = [];
 
     /// <summary>
     /// Gets or sets a value indicating whether the 'Search with Market Board Plugin' is added to game context menus.
@@ -72,7 +72,7 @@ namespace MarketBoardPlugin
     /// <summary>
     /// Gets the favorite items.
     /// </summary>
-    public ICollection<uint> Favorites { get; } = new List<uint>();
+    public ICollection<uint> Favorites { get; } = [];
 
     /// <summary>
     /// Gets or sets the number of listings to retrieve.

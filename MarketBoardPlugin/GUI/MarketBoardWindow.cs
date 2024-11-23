@@ -15,14 +15,11 @@ namespace MarketBoardPlugin.GUI
   using System.Threading.Tasks;
   using Dalamud.Game.Text;
   using Dalamud.Interface;
-  using Dalamud.Interface.Colors;
   using Dalamud.Interface.ManagedFontAtlas;
-  using Dalamud.Interface.Style;
   using Dalamud.Interface.Textures;
   using Dalamud.Interface.Textures.TextureWraps;
   using Dalamud.Interface.Windowing;
   using Dalamud.Plugin.Services;
-  using Dalamud.Utility;
   using ImGuiNET;
   using ImPlotNET;
   using Lumina.Excel.Sheets;
@@ -36,7 +33,7 @@ namespace MarketBoardPlugin.GUI
   /// </summary>
   public class MarketBoardWindow : Window, IDisposable
   {
-    private static Dictionary<char, int> romanNumberMap = new Dictionary<char, int>
+    private static readonly Dictionary<char, int> RomanNumberMap = new()
     {
       { 'I', 1 },
       { 'V', 5 },
@@ -47,7 +44,7 @@ namespace MarketBoardPlugin.GUI
 
     private readonly MBPlugin plugin;
 
-    private readonly List<(string, string)> worldList = new List<(string, string)>();
+    private readonly List<(string, string)> worldList = [];
 
     private readonly List<ClassJob> classJobs;
 
@@ -57,7 +54,9 @@ namespace MarketBoardPlugin.GUI
 
     private readonly Dictionary<uint, MarketDataResponse> marketDataCache;
 
-    private readonly string[] categoryLabels = new[] { "All", "Weapons", "Equipments", "Others", "Furniture" };
+    private readonly string[] categoryLabels = ["All", "Weapons", "Equipments", "Others", "Furniture"];
+
+    private readonly CancellationTokenSource statusCheckCancellationTokenSource = new();
 
     private Dictionary<ItemSearchCategory, List<Item>> sortedCategoriesAndItems;
 
@@ -106,15 +105,13 @@ namespace MarketBoardPlugin.GUI
 
     private bool hasHistoryHQColumnWidthBeenSet;
 
-    private List<KeyValuePair<ItemSearchCategory, List<Item>>> enumerableCategoriesAndItems;
+    private List<KeyValuePair<ItemSearchCategory, List<Item>>> enumerableCategoriesAndItems = [];
 
     private Task? currentRefreshTask;
 
     private CancellationTokenSource? currentRefreshCancellationTokenSource;
 
-    private bool isUniversalisUp = false;
-
-    private readonly CancellationTokenSource statusCheckCancellationTokenSource = new CancellationTokenSource();
+    private bool isUniversalisUp;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="MarketBoardWindow"/> class.
@@ -135,7 +132,7 @@ namespace MarketBoardPlugin.GUI
 
       this.marketDataCache = [];
       this.items = plugin.DataManager.GetExcelSheet<Item>();
-      this.classJobs = plugin.DataManager.GetExcelSheet<ClassJob>()?
+      this.classJobs = [.. plugin.DataManager.GetExcelSheet<ClassJob>()
         .Where(cj => cj.RowId != 0)
         .OrderBy(cj =>
         {
@@ -148,7 +145,7 @@ namespace MarketBoardPlugin.GUI
             4 => 1,
             _ => 4,
           };
-        }).ToList();
+        })];
       this.sortedCategoriesAndItems = this.SortCategoriesAndItems();
 
       this.plugin.Framework.Update += this.HandleFrameworkUpdateEvent;
@@ -156,8 +153,16 @@ namespace MarketBoardPlugin.GUI
 
       this.defaultFontHandle = this.plugin.PluginInterface.UiBuilder.FontAtlas.NewDelegateFontHandle(e =>
         e.OnPreBuild(toolkit =>
+        {
+          using System.IO.Stream? stream = this.GetType().Assembly.GetManifestResourceStream("MarketBoardPlugin.Resources.NotoSans-Medium-NNBSP.otf");
+
+          if (stream == null)
+          {
+            return;
+          }
+
           toolkit.AddFontFromStream(
-            this.GetType().Assembly.GetManifestResourceStream("MarketBoardPlugin.Resources.NotoSans-Medium-NNBSP.otf"),
+            stream,
             new SafeFontConfig()
             {
               SizePx = UiBuilder.DefaultFontSizePx,
@@ -165,13 +170,14 @@ namespace MarketBoardPlugin.GUI
               MergeFont = toolkit.AddDalamudDefaultFont(-1),
             },
             false,
-            "NNBSP")));
+            "NNBSP");
+        }));
 
       this.titleFontHandle = this.plugin.PluginInterface.UiBuilder.FontAtlas.NewDelegateFontHandle(e =>
         e.OnPreBuild(toolkit =>
           toolkit.AddDalamudDefaultFont(this.plugin.PluginInterface.UiBuilder.DefaultFontSpec.SizePx * 1.5f)));
 
-      var imPlotStylePtr = ImPlot.GetStyle();
+      ImPlotStylePtr imPlotStylePtr = ImPlot.GetStyle();
 
       imPlotStylePtr.Use24HourClock = DateTimeFormatInfo.CurrentInfo.ShortTimePattern.Contains('H', StringComparison.InvariantCulture);
       imPlotStylePtr.UseISO8601 = DateTimeFormatInfo.CurrentInfo.ShortDatePattern != "M/d/yyyy";
@@ -221,7 +227,7 @@ namespace MarketBoardPlugin.GUI
         return;
       }
 
-      this.enumerableCategoriesAndItems ??= this.sortedCategoriesAndItems.ToList();
+      this.enumerableCategoriesAndItems ??= [.. this.sortedCategoriesAndItems];
 
       // Update Categories And Items if needed
       if (this.searchString != this.lastSearchString || this.itemCategory != this.lastItemCategory
@@ -232,18 +238,18 @@ namespace MarketBoardPlugin.GUI
         this.UpdateCategoriesAndItems();
       }
 
-      var defaultButtonColor = ImGui.GetColorU32(ImGuiCol.Button);
-      var defaultButtonHoveredColor = ImGui.GetColorU32(ImGuiCol.ButtonHovered);
+      uint defaultButtonColor = ImGui.GetColorU32(ImGuiCol.Button);
+      uint defaultButtonHoveredColor = ImGui.GetColorU32(ImGuiCol.ButtonHovered);
 
-      var scale = ImGui.GetIO().FontGlobalScale;
+      float scale = ImGui.GetIO().FontGlobalScale;
 
-      using var fontDispose = this.defaultFontHandle.Push();
+      using IDisposable fontDispose = this.defaultFontHandle.Push();
 
       // Item List Column Setup
-      ImGui.BeginChild("itemListColumn", new Vector2(267, 0) * scale, true);
+      _ = ImGui.BeginChild("itemListColumn", new Vector2(267, 0) * scale, true);
 
       ImGui.SetNextItemWidth((-64 * ImGui.GetIO().FontGlobalScale) - (ImGui.GetStyle().ItemSpacing.X * 2));
-      ImGuiOverrides.InputTextWithHint("##searchString", "Search for item", ref this.searchString, 256);
+      _ = ImGuiOverrides.InputTextWithHint("##searchString", "Search for item", ref this.searchString, 256);
 
       ImGui.PushFont(UiBuilder.IconFont);
       ImGui.PushStyleVar(ImGuiStyleVar.ButtonTextAlign, new Vector2(0.5f, 0.5f));
@@ -273,7 +279,7 @@ namespace MarketBoardPlugin.GUI
       ImGui.PopStyleVar();
       ImGui.PopFont();
 
-      var previousYCursor = ImGui.GetCursorPosY();
+      float previousYCursor = ImGui.GetCursorPosY();
       ImGui.SetCursorPosY(previousYCursor - (ImGui.GetFontSize() / 2.0f) + (13 * scale));
       ImGui.Text("Advanced Search");
       ImGui.SameLine();
@@ -292,23 +298,23 @@ namespace MarketBoardPlugin.GUI
       {
         ImGui.Text("Category: ");
         ImGui.SameLine();
-        ImGui.Combo("###ListBox", ref this.itemCategory, this.categoryLabels, this.categoryLabels.Length);
+        _ = ImGui.Combo("###ListBox", ref this.itemCategory, this.categoryLabels, this.categoryLabels.Length);
         ImGui.Text("HQ Only : ");
         ImGui.SameLine();
-        ImGui.Checkbox("###Checkbox", ref this.hQOnly);
+        _ = ImGui.Checkbox("###Checkbox", ref this.hQOnly);
         ImGui.Text("Min Qty : ");
         ImGui.SameLine();
-        ImGui.InputInt("###MinQuantity", ref this.minQuantityFilter);
+        _ = ImGui.InputInt("###MinQuantity", ref this.minQuantityFilter);
         ImGui.Text("Class: ");
         ImGui.SameLine();
         if (ImGui.BeginCombo(
           "###ClassJobCombo",
-          this.selectedClassJob == null ? "All Classes" : this.selectedClassJob?.Abbreviation.ExtractText()))
+          this.selectedClassJob == null ? "All Classes" : this.selectedClassJob.Value.Abbreviation.ExtractText()))
         {
           void SelectClassJob(ClassJob? classJob)
           {
-            var selected = this.selectedClassJob?.RowId == classJob?.RowId;
-            if (ImGui.Selectable(classJob == null ? "All Classes" : classJob?.Abbreviation.ExtractText(), selected))
+            bool selected = this.selectedClassJob?.RowId == classJob?.RowId;
+            if (ImGui.Selectable(classJob == null ? "All Classes" : classJob.Value.Abbreviation.ExtractText(), selected))
             {
               this.selectedClassJob = classJob;
             }
@@ -321,7 +327,7 @@ namespace MarketBoardPlugin.GUI
 
           SelectClassJob(null);
 
-          foreach (var classJob in this.classJobs)
+          foreach (ClassJob classJob in this.classJobs)
           {
             SelectClassJob(classJob);
           }
@@ -333,10 +339,10 @@ namespace MarketBoardPlugin.GUI
         {
           ImGui.Text("Min level : ");
           ImGui.SameLine();
-          ImGui.InputInt("##lvlmin", ref this.lvlmin);
+          _ = ImGui.InputInt("##lvlmin", ref this.lvlmin);
           ImGui.Text("Max level : ");
           ImGui.SameLine();
-          ImGui.InputInt("##lvlmax", ref this.lvlmax);
+          _ = ImGui.InputInt("##lvlmax", ref this.lvlmax);
         }
         else
         {
@@ -347,17 +353,17 @@ namespace MarketBoardPlugin.GUI
       }
 
       ImGui.Separator();
-      ImGui.BeginChild("itemTree", new Vector2(0, -2.0f * ImGui.GetFrameHeightWithSpacing()), false, ImGuiWindowFlags.HorizontalScrollbar | ImGuiWindowFlags.AlwaysHorizontalScrollbar);
-      var itemTextSize = ImGui.CalcTextSize(string.Empty);
+      _ = ImGui.BeginChild("itemTree", new Vector2(0, -2.0f * ImGui.GetFrameHeightWithSpacing()), false, ImGuiWindowFlags.HorizontalScrollbar | ImGuiWindowFlags.AlwaysHorizontalScrollbar);
+      Vector2 itemTextSize = ImGui.CalcTextSize(string.Empty);
 
       if (this.searchHistoryOpen)
       {
         ImGui.Text("History");
         ImGui.Separator();
-        var sheet = this.plugin.DataManager.Excel.GetSheet<Item>();
-        foreach (var id in this.plugin.Config.History.ToArray())
+        Lumina.Excel.ExcelSheet<Item> sheet = this.plugin.DataManager.Excel.GetSheet<Item>();
+        foreach (uint id in this.plugin.Config.History.ToArray())
         {
-          var item = sheet.GetRowOrDefault(id);
+          Item? item = sheet.GetRowOrDefault(id);
           if (!item.HasValue)
           {
             continue;
@@ -373,16 +379,16 @@ namespace MarketBoardPlugin.GUI
       {
         ImGui.Text("Favorites");
         ImGui.Separator();
-        var sheet = this.plugin.DataManager.Excel.GetSheet<Item>();
-        foreach (var id in this.plugin.Config.Favorites.ToArray())
+        Lumina.Excel.ExcelSheet<Item> sheet = this.plugin.DataManager.Excel.GetSheet<Item>();
+        foreach (uint id in this.plugin.Config.Favorites.ToArray())
         {
-          var item = sheet.GetRowOrDefault(id);
+          Item? item = sheet.GetRowOrDefault(id);
           if (!item.HasValue)
           {
             continue;
           }
 
-          var itemName = item.Value.Name.ExtractText();
+          string itemName = item.Value.Name.ExtractText();
 
           if (ImGui.Selectable($"{itemName}", this.selectedItem?.RowId == id))
           {
@@ -393,7 +399,7 @@ namespace MarketBoardPlugin.GUI
           {
             if (ImGui.Selectable("Remove from the favorites"))
             {
-              this.plugin.Config.Favorites.Remove(item.Value.RowId);
+              _ = this.plugin.Config.Favorites.Remove(item.Value.RowId);
             }
 
             ImGui.EndPopup();
@@ -404,86 +410,82 @@ namespace MarketBoardPlugin.GUI
       }
       else
       {
-        foreach (var category in this.enumerableCategoriesAndItems)
+        foreach (KeyValuePair<ItemSearchCategory, List<Item>> category in this.enumerableCategoriesAndItems.Where(category => ImGui.TreeNode(category.Key.Name.ExtractText() + "##cat" + category.Key.RowId)))
         {
-          if (ImGui.TreeNode(category.Key.Name.ExtractText() + "##cat" + category.Key.RowId))
+          ImGui.Unindent(ImGui.GetTreeNodeToLabelSpacing());
+          for (int i = 0; i < category.Value.Count; i++)
           {
-            ImGui.Unindent(ImGui.GetTreeNodeToLabelSpacing());
-
-            for (var i = 0; i < category.Value.Count; i++)
+            if (ImGui.GetCursorPosY() < ImGui.GetScrollY() - itemTextSize.Y)
             {
-              if (ImGui.GetCursorPosY() < ImGui.GetScrollY() - itemTextSize.Y)
+              // Don't draw items above the scroll region.
+              float y = ImGui.GetCursorPosY();
+              float sy = ImGui.GetScrollY() - itemTextSize.Y;
+              float spacing = itemTextSize.Y + ImGui.GetStyle().ItemSpacing.Y;
+              int c = category.Value.Count;
+              while (i < c && y < sy)
               {
-                // Don't draw items above the scroll region.
-                var y = ImGui.GetCursorPosY();
-                var sy = ImGui.GetScrollY() - itemTextSize.Y;
-                var spacing = itemTextSize.Y + ImGui.GetStyle().ItemSpacing.Y;
-                var c = category.Value.Count;
-                while (i < c && y < sy)
-                {
-                  y += spacing;
-                  i++;
-                }
-
-                ImGui.SetCursorPosY(y);
-                continue;
+                y += spacing;
+                i++;
               }
 
-              if (ImGui.GetCursorPosY() > ImGui.GetScrollY() + ImGui.GetWindowHeight())
-              {
-                // Don't draw item names below the scroll region
-                var remainingItems = category.Value.Count - i;
-                var remainingItemsHeight = itemTextSize.Y * remainingItems;
-                var remainingGapHeight = ImGui.GetStyle().ItemSpacing.Y * (remainingItems - 1);
-                ImGui.Dummy(new Vector2(1, remainingItemsHeight + remainingGapHeight));
-                break;
-              }
+              ImGui.SetCursorPosY(y);
+              continue;
+            }
 
-              var item = category.Value[i];
-              var nodeFlags = ImGuiTreeNodeFlags.Leaf | ImGuiTreeNodeFlags.NoTreePushOnOpen;
+            if (ImGui.GetCursorPosY() > ImGui.GetScrollY() + ImGui.GetWindowHeight())
+            {
+              // Don't draw item names below the scroll region
+              int remainingItems = category.Value.Count - i;
+              float remainingItemsHeight = itemTextSize.Y * remainingItems;
+              float remainingGapHeight = ImGui.GetStyle().ItemSpacing.Y * (remainingItems - 1);
+              ImGui.Dummy(new Vector2(1, remainingItemsHeight + remainingGapHeight));
+              break;
+            }
 
-              if (item.RowId == this.selectedItem?.RowId)
-              {
-                nodeFlags |= ImGuiTreeNodeFlags.Selected;
-              }
+            Item item = category.Value[i];
+            ImGuiTreeNodeFlags nodeFlags = ImGuiTreeNodeFlags.Leaf | ImGuiTreeNodeFlags.NoTreePushOnOpen;
 
-              ImGui.TreeNodeEx(item.Name.ExtractText() + "##item" + item.RowId, nodeFlags);
+            if (item.RowId == this.selectedItem?.RowId)
+            {
+              nodeFlags |= ImGuiTreeNodeFlags.Selected;
+            }
 
-              if (ImGui.IsItemClicked())
+            _ = ImGui.TreeNodeEx(item.Name.ExtractText() + "##item" + item.RowId, nodeFlags);
+
+            if (ImGui.IsItemClicked())
+            {
+              this.ChangeSelectedItem(item.RowId);
+            }
+
+            if (ImGui.BeginPopupContextItem("itemContextMenu" + category.Key.Name.ExtractText() + i))
+            {
+              if (this.selectedItem?.RowId != item.RowId)
               {
                 this.ChangeSelectedItem(item.RowId);
               }
 
-              if (ImGui.BeginPopupContextItem("itemContextMenu" + category.Key.Name.ExtractText() + i))
+              if (ImGui.Selectable("Add to the shopping list") && this.marketData != null && this.selectedWorld >= 0)
               {
-                if (this.selectedItem != null && this.selectedItem?.RowId != item.RowId)
-                {
-                  this.ChangeSelectedItem(item.RowId);
-                }
-
-                if (ImGui.Selectable("Add to the shopping list") && this.marketData != null && this.selectedWorld >= 0)
-                {
-                  MarketDataListing itm = this.marketData.Listings.OrderBy(l => l.PricePerUnit).ToList()[0];
-                  double price = this.plugin.Config.NoGilSalesTax
-                    ? itm.PricePerUnit
-                    : itm.PricePerUnit + (itm.Tax / itm.Quantity);
-                  this.plugin.ShoppingList.Add(new SavedItem(item, price, itm.WorldName));
-                }
-
-                if (ImGui.Selectable("Add to the favorites"))
-                {
-                  this.plugin.Config.Favorites.Add(item.RowId);
-                }
-
-                ImGui.EndPopup();
+                MarketDataListing itm = this.marketData.Listings.OrderBy(l => l.PricePerUnit).ToList()[0];
+                double price = this.plugin.Config.NoGilSalesTax
+                  ? itm.PricePerUnit
+                  : itm.PricePerUnit + (itm.Tax / itm.Quantity);
+                this.plugin.ShoppingList.Add(new SavedItem(item, price, itm.WorldName));
               }
 
-              ImGui.OpenPopupOnItemClick("itemContextMenu" + category.Key.Name.ExtractText() + i, ImGuiPopupFlags.MouseButtonRight);
+              if (ImGui.Selectable("Add to the favorites"))
+              {
+                this.plugin.Config.Favorites.Add(item.RowId);
+              }
+
+              ImGui.EndPopup();
             }
 
-            ImGui.Indent(ImGui.GetTreeNodeToLabelSpacing());
-            ImGui.TreePop();
+            ImGui.OpenPopupOnItemClick("itemContextMenu" + category.Key.Name.ExtractText() + i, ImGuiPopupFlags.MouseButtonRight);
           }
+
+          ImGui.Indent(ImGui.GetTreeNodeToLabelSpacing());
+          ImGui.TreePop();
         }
       }
 
@@ -498,7 +500,7 @@ namespace MarketBoardPlugin.GUI
         else
         {
           this.progressPosition = 0;
-          var itemId = this.plugin.GameGui.HoveredItem;
+          ulong itemId = this.plugin.GameGui.HoveredItem;
           this.ChangeSelectedItem(Convert.ToUInt32(itemId % 500000));
           this.itemBeingHovered = 0;
         }
@@ -522,33 +524,30 @@ namespace MarketBoardPlugin.GUI
 
       ImGui.EndChild();
       ImGui.SameLine();
-      ImGui.BeginChild("tabColumn", new Vector2(0, 0), false, ImGuiWindowFlags.NoScrollbar);
+      _ = ImGui.BeginChild("tabColumn", new Vector2(0, 0), false, ImGuiWindowFlags.NoScrollbar);
 
       if (this.selectedItem?.RowId > 0)
       {
-        var couldGetIcon = this.plugin.TextureProvider.GetFromGameIcon(new GameIconLookup
+        using IDalamudTextureWrap? selectedItemIcon = this.plugin.TextureProvider.GetFromGameIcon(new GameIconLookup
         {
           IconId = this.selectedItem.Value.Icon,
-        }).TryGetWrap(out var selectedItemIcon, out _);
+        }).GetWrapOrDefault();
 
-        using (selectedItemIcon)
+        if (selectedItemIcon != null)
         {
-          if (couldGetIcon)
+          if (ImGui.ImageButton(selectedItemIcon.ImGuiHandle, new Vector2(40, 40)))
           {
-            if (ImGui.ImageButton(selectedItemIcon.ImGuiHandle, new Vector2(40, 40)))
-            {
-              ImGui.LogToClipboard();
-              ImGui.LogText(this.selectedItem?.Name.ExtractText());
-              ImGui.LogFinish();
-            }
-          }
-          else
-          {
-            ImGui.SetCursorPos(new Vector2(40, 40));
+            ImGui.LogToClipboard();
+            ImGui.LogText(this.selectedItem?.Name.ExtractText());
+            ImGui.LogFinish();
           }
         }
+        else
+        {
+          ImGui.SetCursorPos(new Vector2(40, 40));
+        }
 
-        this.titleFontHandle.Push();
+        _ = this.titleFontHandle.Push();
         ImGui.SameLine();
         ImGui.SetCursorPosY(ImGui.GetCursorPosY() - (ImGui.GetFontSize() / 2.0f) + (20 * scale));
         ImGui.Text(this.selectedItem?.Name.ExtractText());
@@ -559,9 +558,9 @@ namespace MarketBoardPlugin.GUI
         ImGui.SetNextItemWidth(250 * scale);
         if (ImGui.BeginCombo("##worldCombo", this.selectedWorld > -1 ? this.worldList[this.selectedWorld].Item2 : string.Empty))
         {
-          foreach (var world in this.worldList)
+          foreach ((string, string) world in this.worldList)
           {
-            var isSelected = this.selectedWorld == this.worldList.IndexOf(world);
+            bool isSelected = this.selectedWorld == this.worldList.IndexOf(world);
             if (ImGui.Selectable(world.Item2, isSelected))
             {
               this.selectedWorld = this.worldList.IndexOf(world);
@@ -602,13 +601,13 @@ namespace MarketBoardPlugin.GUI
         {
           if (ImGui.BeginTabItem("Market Data##marketDataTab"))
           {
-            this.titleFontHandle.Push();
+            _ = this.titleFontHandle.Push();
             int usedTile = this.plugin.Config.RecentHistoryDisabled ? 1 : 2;
-            var tableHeight = (ImGui.GetContentRegionAvail().Y / usedTile) - (ImGui.GetTextLineHeightWithSpacing() * 2);
+            float tableHeight = (ImGui.GetContentRegionAvail().Y / usedTile) - (ImGui.GetTextLineHeightWithSpacing() * 2);
             ImGui.Text("Current listings (Includes 5%% GST)");
             this.titleFontHandle.Pop();
 
-            ImGui.BeginChild("currentListings", new Vector2(0.0f, tableHeight));
+            _ = ImGui.BeginChild("currentListings", new Vector2(0.0f, tableHeight));
             ImGui.Columns(5, "currentListingsColumns");
 
             if (!this.hasListingsHQColumnWidthBeenSet)
@@ -630,13 +629,13 @@ namespace MarketBoardPlugin.GUI
             ImGui.NextColumn();
             ImGui.Separator();
 
-            var marketDataListings = this.marketData?.Listings.Where(i => !this.hQOnly || i.Hq)
+            List<MarketDataListing>? marketDataListings = this.marketData?.Listings.Where(i => !this.hQOnly || i.Hq)
               .Where(l => l.Quantity >= this.minQuantityFilter).OrderBy(l => l.PricePerUnit).ToList();
             if (marketDataListings != null)
             {
-              foreach (var listing in marketDataListings)
+              foreach (MarketDataListing? listing in marketDataListings)
               {
-                var index = marketDataListings.IndexOf(listing);
+                int index = marketDataListings.IndexOf(listing);
 
                 if (ImGui.Selectable(
                       $"{(listing.Hq ? SeIconChar.HighQuality.AsString() : string.Empty)}##listing{index}",
@@ -687,11 +686,11 @@ namespace MarketBoardPlugin.GUI
             {
               ImGui.Separator();
 
-              this.titleFontHandle.Push();
+              _ = this.titleFontHandle.Push();
               ImGui.Text("Recent history");
               this.titleFontHandle.Pop();
 
-              ImGui.BeginChild("recentHistory", new Vector2(0.0f, tableHeight));
+              _ = ImGui.BeginChild("recentHistory", new Vector2(0.0f, tableHeight));
               ImGui.Columns(6, "recentHistoryColumns");
 
               if (!this.hasHistoryHQColumnWidthBeenSet)
@@ -715,12 +714,12 @@ namespace MarketBoardPlugin.GUI
               ImGui.NextColumn();
               ImGui.Separator();
 
-              var marketDataRecentHistory = this.marketData?.RecentHistory.OrderByDescending(h => h.Timestamp).ToList();
+              List<MarketDataRecentHistory>? marketDataRecentHistory = this.marketData?.RecentHistory.OrderByDescending(h => h.Timestamp).ToList();
               if (marketDataRecentHistory != null)
               {
-                foreach (var history in marketDataRecentHistory)
+                foreach (MarketDataRecentHistory? history in marketDataRecentHistory)
                 {
-                  var index = marketDataRecentHistory.IndexOf(history);
+                  int index = marketDataRecentHistory.IndexOf(history);
 
                   if (ImGui.Selectable(
                         $"{(history.Hq ? SeIconChar.HighQuality.AsString() : string.Empty)}##history{index}",
@@ -771,23 +770,23 @@ namespace MarketBoardPlugin.GUI
           ImGui.Separator();
           if (ImGui.BeginTabItem("Charts##chartsTab"))
           {
-            this.titleFontHandle.Push();
-            var tableHeight = (ImGui.GetContentRegionAvail().Y / 2) - (ImGui.GetTextLineHeightWithSpacing() * 2);
+            _ = this.titleFontHandle.Push();
+            float tableHeight = (ImGui.GetContentRegionAvail().Y / 2) - (ImGui.GetTextLineHeightWithSpacing() * 2);
             this.titleFontHandle.Pop();
 
-            if (this.marketData?.RecentHistory != null && this.marketData?.RecentHistory.Count > 0)
+            if (this.marketData?.RecentHistory != null && this.marketData.RecentHistory.Count > 0)
             {
-              this.titleFontHandle.Push();
+              _ = this.titleFontHandle.Push();
               ImGui.Text("Price variations (per unit)");
               this.titleFontHandle.Pop();
 
               if (ImPlot.BeginPlot("##pricePlot", new Vector2(-1, tableHeight)))
               {
-                var now = DateTimeOffset.Now;
-                var x = new List<long>();
-                var y = new List<long>();
+                DateTimeOffset now = DateTimeOffset.Now;
+                List<long> x = [];
+                List<long> y = [];
 
-                foreach (var historyEntry in this.marketData?.RecentHistory)
+                foreach (MarketDataRecentHistory historyEntry in this.marketData.RecentHistory)
                 {
                   x.Add(historyEntry.Timestamp);
                   y.Add(historyEntry.PricePerUnit);
@@ -802,17 +801,17 @@ namespace MarketBoardPlugin.GUI
 
               ImGui.Separator();
 
-              this.titleFontHandle.Push();
+              _ = this.titleFontHandle.Push();
               ImGui.Text("Traded volumes");
               this.titleFontHandle.Pop();
 
               if (ImPlot.BeginPlot("##qtyPlot", new Vector2(-1, tableHeight)))
               {
-                var now = DateTimeOffset.Now;
-                var x = new List<long>();
-                var y = new List<long>();
+                DateTimeOffset now = DateTimeOffset.Now;
+                List<long> x = [];
+                List<long> y = [];
 
-                foreach (var historyEntry in this.marketData?.RecentHistory)
+                foreach (MarketDataRecentHistory historyEntry in this.marketData?.RecentHistory)
                 {
                   x.Add(historyEntry.Timestamp);
                   y.Add(historyEntry.Quantity);
@@ -836,7 +835,7 @@ namespace MarketBoardPlugin.GUI
 
       if (this.isUniversalisUp)
       {
-        var buttonColor = 0x002ba040u;
+        uint buttonColor = 0x002ba040u;
 
         ImGui.PushStyleColor(ImGuiCol.Button, 0xFF000000 | buttonColor);
         ImGui.PushStyleColor(ImGuiCol.ButtonActive, 0xDD000000 | buttonColor);
@@ -844,7 +843,7 @@ namespace MarketBoardPlugin.GUI
 
         if (ImGui.Button("Data provided by Universalis"))
         {
-          var universalisUrl = "https://universalis.app";
+          string universalisUrl = "https://universalis.app";
           if (this.selectedItem != null)
           {
             universalisUrl += $"/market/{this.selectedItem.Value.RowId}";
@@ -857,7 +856,7 @@ namespace MarketBoardPlugin.GUI
       }
       else
       {
-        var buttonColor = 0x005345e6u;
+        uint buttonColor = 0x005345e6u;
 
         ImGui.PushStyleColor(ImGuiCol.Button, 0xFF000000 | buttonColor);
         ImGui.PushStyleColor(ImGuiCol.ButtonActive, 0xDD000000 | buttonColor);
@@ -875,8 +874,8 @@ namespace MarketBoardPlugin.GUI
 
       if (!this.plugin.Config.KofiHidden)
       {
-        var buttonText = "Support on Ko-fi";
-        var buttonColor = 0x005E5BFFu;
+        string buttonText = "Support on Ko-fi";
+        uint buttonColor = 0x005E5BFFu;
         ImGui.PushStyleColor(ImGuiCol.Button, 0xFF000000 | buttonColor);
         ImGui.PushStyleColor(ImGuiCol.ButtonActive, 0xDD000000 | buttonColor);
         ImGui.PushStyleColor(ImGuiCol.ButtonHovered, 0xAA000000 | buttonColor);
@@ -902,12 +901,12 @@ namespace MarketBoardPlugin.GUI
     {
       this.selectedItem = this.items.Single(i => i.RowId == itemId);
 
-      var iconId = this.selectedItem.Value.Icon;
+      ushort iconId = this.selectedItem.Value.Icon;
 
       this.RefreshMarketData();
       if (!noHistory)
       {
-        this.plugin.Config.History.RemoveAll(i => i == itemId);
+        _ = this.plugin.Config.History.RemoveAll(i => i == itemId);
         this.plugin.Config.History.Insert(0, itemId);
         if (this.plugin.Config.History.Count > 100)
         {
@@ -937,6 +936,8 @@ namespace MarketBoardPlugin.GUI
         this.titleFontHandle?.Dispose();
         this.statusCheckCancellationTokenSource.Cancel();
         this.statusCheckCancellationTokenSource.Dispose();
+        this.currentRefreshCancellationTokenSource?.Cancel();
+        this.currentRefreshCancellationTokenSource?.Dispose();
       }
 
       this.isDisposed = true;
@@ -950,14 +951,14 @@ namespace MarketBoardPlugin.GUI
     private static string ConvertItemNameToSortableFormat(string itemName)
     {
       Regex regex = new Regex(@"^[IVX]+$");
-      foreach (var word in itemName.Split(' '))
+      foreach (string word in itemName.Split(' '))
       {
         if (word.Length <= 4 && regex.IsMatch(word))
         {
           int value = 0;
           for (int index = word.Length - 1, lastValue = 0; index >= 0; index--)
           {
-            int currentValue = romanNumberMap[word[index]];
+            int currentValue = RomanNumberMap[word[index]];
             value += currentValue < lastValue ? -currentValue : currentValue;
             lastValue = currentValue;
           }
@@ -1026,13 +1027,13 @@ namespace MarketBoardPlugin.GUI
     {
       try
       {
-        var itemSearchCategories = this.plugin.DataManager.GetExcelSheet<ItemSearchCategory>();
+        Lumina.Excel.ExcelSheet<ItemSearchCategory> itemSearchCategories = this.plugin.DataManager.GetExcelSheet<ItemSearchCategory>();
 
-        var sortedCategories = itemSearchCategories.Where(c => c.Category > 0).OrderBy(c => c.Category).ThenBy(c => c.Order);
+        IOrderedEnumerable<ItemSearchCategory> sortedCategories = itemSearchCategories.Where(c => c.Category > 0).OrderBy(c => c.Category).ThenBy(c => c.Order);
 
-        var sortedCategoriesDict = new Dictionary<ItemSearchCategory, List<Item>>();
+        Dictionary<ItemSearchCategory, List<Item>> sortedCategoriesDict = [];
 
-        foreach (var c in sortedCategories)
+        foreach (ItemSearchCategory c in sortedCategories)
         {
           if (sortedCategoriesDict.ContainsKey(c))
           {
@@ -1055,14 +1056,14 @@ namespace MarketBoardPlugin.GUI
     {
       if (this.plugin.ClientState.LocalContentId != 0 && this.playerId != this.plugin.ClientState.LocalContentId)
       {
-        var localPlayer = this.plugin.ClientState.LocalPlayer;
+        Dalamud.Game.ClientState.Objects.SubKinds.IPlayerCharacter? localPlayer = this.plugin.ClientState.LocalPlayer;
         if (localPlayer == null)
         {
           return;
         }
 
-        var currentDc = localPlayer.CurrentWorld.Value.DataCenter;
-        var dcWorlds = this.plugin.DataManager.GetExcelSheet<World>()
+        Lumina.Excel.RowRef<WorldDCGroupType> currentDc = localPlayer.CurrentWorld.Value.DataCenter;
+        IEnumerable<(string, string displayName)> dcWorlds = this.plugin.DataManager.GetExcelSheet<World>()
           .Where(w => w.DataCenter.RowId == currentDc.RowId && w.IsPublic)
           .OrderBy(w => w.Name.ExtractText())
           .Select(w =>
@@ -1077,7 +1078,7 @@ namespace MarketBoardPlugin.GUI
             return (w.Name.ExtractText(), displayName);
           });
 
-        var regionName = localPlayer.CurrentWorld.Value.DataCenter.Value.Region switch
+        string regionName = localPlayer.CurrentWorld.Value.DataCenter.Value.Region switch
         {
           1 => "Japan",
           2 => "North-America",
@@ -1116,7 +1117,7 @@ namespace MarketBoardPlugin.GUI
       }
     }
 
-    private void HandleHoveredItemChange(object sender, ulong itemId)
+    private void HandleHoveredItemChange(object? sender, ulong itemId)
     {
       if (!this.plugin.Config.WatchForHovered || this.itemBeingHovered == itemId)
       {
@@ -1131,7 +1132,7 @@ namespace MarketBoardPlugin.GUI
         return;
       }
 
-      var item = this.plugin.DataManager.Excel.GetSheet<Item>().GetRowOrDefault((uint)itemId % 500000);
+      Item? item = this.plugin.DataManager.Excel.GetSheet<Item>().GetRowOrDefault((uint)itemId % 500000);
 
       if (item != null && this.enumerableCategoriesAndItems != null && this.sortedCategoriesAndItems.Any(i => i.Value != null && i.Value.Any(k => k.RowId == item.Value.RowId)))
       {
@@ -1164,7 +1165,7 @@ namespace MarketBoardPlugin.GUI
       this.currentRefreshTask = Task.Run(
         async () =>
         {
-          var cachedItem = this.marketDataCache.GetValueOrDefault(this.selectedItem.Value.RowId);
+          MarketDataResponse? cachedItem = this.marketDataCache.GetValueOrDefault(this.selectedItem.Value.RowId);
           if (
             cachedItem != default(MarketDataResponse)
             && DateTimeOffset.Now.ToUnixTimeMilliseconds() - cachedItem.FetchTimestamp < this.plugin.Config.ItemRefreshTimeout)
@@ -1173,7 +1174,7 @@ namespace MarketBoardPlugin.GUI
             return;
           }
 
-          this.marketDataCache.Remove(this.selectedItem.Value.RowId);
+          _ = this.marketDataCache.Remove(this.selectedItem.Value.RowId);
 
           try
           {
@@ -1190,7 +1191,7 @@ namespace MarketBoardPlugin.GUI
           {
             this.plugin.Log.Warning(ae, $"Failed to fetch market data for item {this.selectedItem.Value.RowId} from Universalis.");
 
-            foreach (var ex in ae.InnerExceptions)
+            foreach (Exception ex in ae.InnerExceptions)
             {
               this.plugin.Log.Warning(ex, "Inner exception");
             }
@@ -1208,7 +1209,7 @@ namespace MarketBoardPlugin.GUI
 
     private void StartUniversalisStatusCheckTask(CancellationToken cancellationToken)
     {
-      Task.Run(
+      _ = Task.Run(
         async () =>
         {
           while (!cancellationToken.IsCancellationRequested)

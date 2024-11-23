@@ -271,7 +271,13 @@ namespace MarketBoardPlugin
         return;
       }
 
-      var item = this.DataManager.Excel.GetSheet<Item>()?.GetRow(itemId);
+      var item = this.DataManager.Excel.GetSheet<Item>().GetRowOrDefault(itemId);
+
+      if (!item.HasValue)
+      {
+        this.Log.Warning("Failed to get item data for item ID {0}", itemId);
+        return;
+      }
 
       args.AddMenuItem(new MenuItem
       {
@@ -279,7 +285,7 @@ namespace MarketBoardPlugin
         OnClicked = this.GetMenuItemClickedHandler(itemId),
         Prefix = SeIconChar.BoxedLetterM,
         PrefixColor = 48,
-        IsEnabled = !(item?.IsUntradable ?? true),
+        IsEnabled = !item.Value.IsUntradable,
       });
     }
 

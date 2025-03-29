@@ -10,6 +10,7 @@ namespace MarketBoardPlugin.GUI
   using System.Globalization;
   using System.Linq;
   using System.Numerics;
+  using System.Text;
   using System.Text.RegularExpressions;
   using System.Threading;
   using System.Threading.Tasks;
@@ -26,6 +27,7 @@ namespace MarketBoardPlugin.GUI
   using ImGuiNET;
   using ImPlotNET;
   using Lumina.Excel.Sheets;
+  using Lumina.Extensions;
   using MarketBoardPlugin.Extensions;
   using MarketBoardPlugin.Helpers;
   using MarketBoardPlugin.Models.ShoppingList;
@@ -675,8 +677,24 @@ namespace MarketBoardPlugin.GUI
                 }
 
                 ImGui.NextColumn();
-                ImGui.Text(
-                  $"{listing.RetainerName} {SeIconChar.CrossWorld.ToChar()} {(this.selectedWorld <= 1 ? listing.WorldName : this.worldList[this.selectedWorld].Item1)}");
+
+                var retainerSB = new StringBuilder($"{listing.RetainerName} {SeIconChar.CrossWorld.ToChar()}");
+
+                if (this.selectedWorld <= 1)
+                {
+                  retainerSB.Append(CultureInfo.CurrentCulture, $" {listing.WorldName}");
+
+                  if (this.selectedWorld == 0)
+                  {
+                    retainerSB.Append(CultureInfo.CurrentCulture, $" @ {this.GetDcNameFromWorldName(listing.WorldName)}");
+                  }
+                }
+                else
+                {
+                  retainerSB.Append(CultureInfo.CurrentCulture, $" {this.worldList[this.selectedWorld].Item1}");
+                }
+
+                ImGui.Text(retainerSB.ToString());
                 ImGui.NextColumn();
                 ImGui.Separator();
               }
@@ -1218,6 +1236,18 @@ namespace MarketBoardPlugin.GUI
           }
         },
         cancellationToken);
+    }
+
+    private string GetDcNameFromWorldName(string worldName)
+    {
+      var world = this.plugin.DataManager.GetExcelSheet<World>().FirstOrNull(w => w.Name.ExtractText() == worldName);
+
+      if (world != null)
+      {
+        return world.Value.DataCenter.Value.Name.ExtractText();
+      }
+
+      return string.Empty;
     }
   }
 }

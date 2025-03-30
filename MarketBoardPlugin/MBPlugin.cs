@@ -252,7 +252,7 @@ namespace MarketBoardPlugin
 
       if (args.MenuType == ContextMenuType.Inventory)
       {
-        itemId = (args.Target as MenuTargetInventory)?.TargetItem?.ItemId ?? 0u;
+        itemId = (args.Target as MenuTargetInventory)?.TargetItem?.BaseItemId ?? 0u;
       }
       else
       {

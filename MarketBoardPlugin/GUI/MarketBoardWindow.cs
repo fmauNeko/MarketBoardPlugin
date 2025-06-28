@@ -683,7 +683,7 @@ namespace MarketBoardPlugin.GUI
 
                   if (this.selectedWorld == 0)
                   {
-                    retainerSB.Append(CultureInfo.CurrentCulture, $" @ {this.GetDcNameFromWorldName(listing.WorldName)}");
+                    retainerSB.Append(CultureInfo.CurrentCulture, $" @ {this.GetDcNameFromWorldId(listing.WorldID)}");
                   }
                 }
                 else
@@ -1084,6 +1084,7 @@ namespace MarketBoardPlugin.GUI
           2 => "North-America",
           3 => "Europe",
           4 => "Oceania",
+          5 => "中国",
           _ => string.Empty,
         };
 
@@ -1221,9 +1222,9 @@ namespace MarketBoardPlugin.GUI
         cancellationToken);
     }
 
-    private string GetDcNameFromWorldName(string worldName)
+    private string GetDcNameFromWorldId(int worldId)
     {
-      var world = this.plugin.DataManager.GetExcelSheet<World>().FirstOrNull(w => w.Name.ExtractText() == worldName);
+      var world = this.plugin.DataManager.GetExcelSheet<World>().FirstOrNull(w => w.RowId == worldId);
 
       if (world != null)
       {

@@ -7,8 +7,8 @@ namespace MarketBoardPlugin
   using System;
   using System.Numerics;
   using Dalamud.Interface.Windowing;
-  using ImGuiNET;
-  using OtterGui;
+  using Dalamud.Bindings.ImGui;
+  using MarketBoardPlugin.Helpers;
 
   /// <summary>
   /// The market board config window.
@@ -80,7 +80,7 @@ namespace MarketBoardPlugin
 
     private void Checkbox(string label, string description, bool oldValue, Action<bool> setter)
     {
-      if (ImGuiUtil.Checkbox(label, description, oldValue, setter))
+      if (Utilities.Checkbox(label, description, oldValue, setter))
       {
         this.Plugin.PluginInterface.SavePluginConfig(this.Plugin.Config);
       }

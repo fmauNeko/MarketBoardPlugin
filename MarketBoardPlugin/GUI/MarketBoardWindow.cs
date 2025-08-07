@@ -24,8 +24,8 @@ namespace MarketBoardPlugin.GUI
   using Dalamud.Interface.Windowing;
   using Dalamud.Plugin.Services;
   using Dalamud.Utility;
-  using ImGuiNET;
-  using ImPlotNET;
+  using Dalamud.Bindings.ImGui;
+  using Dalamud.Bindings.ImPlot;
   using Lumina.Excel.Sheets;
   using Lumina.Extensions;
   using MarketBoardPlugin.Extensions;
@@ -245,7 +245,7 @@ namespace MarketBoardPlugin.GUI
       ImGui.BeginChild("itemListColumn", new Vector2(267, 0) * scale, true);
 
       ImGui.SetNextItemWidth((-64 * ImGui.GetIO().FontGlobalScale) - (ImGui.GetStyle().ItemSpacing.X * 2));
-      ImGuiOverrides.InputTextWithHint("##searchString", "Search for item", ref this.searchString, 256);
+      ImGui.InputTextWithHint("##searchString", "Search for item", ref this.searchString, 256);
 
       ImGui.PushFont(UiBuilder.IconFont);
       ImGui.PushStyleVar(ImGuiStyleVar.ButtonTextAlign, new Vector2(0.5f, 0.5f));
@@ -528,26 +528,23 @@ namespace MarketBoardPlugin.GUI
 
       if (this.selectedItem?.RowId > 0)
       {
-        var couldGetIcon = this.plugin.TextureProvider.GetFromGameIcon(new GameIconLookup
+        using var selectedItemIcon = this.plugin.TextureProvider.GetFromGameIcon(new GameIconLookup
         {
           IconId = this.selectedItem.Value.Icon,
-        }).TryGetWrap(out var selectedItemIcon, out _);
+        }).GetWrapOrDefault();
 
-        using (selectedItemIcon)
+        if (selectedItemIcon != null)
         {
-          if (couldGetIcon)
+          if (ImGui.ImageButton(selectedItemIcon.Handle, new Vector2(40, 40)))
           {
-            if (ImGui.ImageButton(selectedItemIcon.ImGuiHandle, new Vector2(40, 40)))
-            {
-              ImGui.LogToClipboard();
-              ImGui.LogText(this.selectedItem?.Name.ExtractText());
-              ImGui.LogFinish();
-            }
+            ImGui.LogToClipboard();
+            ImGui.LogText(this.selectedItem?.Name.ExtractText());
+            ImGui.LogFinish();
           }
-          else
-          {
-            ImGui.SetCursorPos(new Vector2(40, 40));
-          }
+        }
+        else
+        {
+          ImGui.SetCursorPos(new Vector2(40, 40));
         }
 
         this.titleFontHandle.Push();
@@ -802,8 +799,8 @@ namespace MarketBoardPlugin.GUI
               if (ImPlot.BeginPlot("##pricePlot", new Vector2(-1, tableHeight)))
               {
                 var now = DateTimeOffset.Now;
-                var x = new List<long>();
-                var y = new List<long>();
+                var x = new List<float>();
+                var y = new List<float>();
 
                 foreach (var historyEntry in this.marketData?.RecentHistory)
                 {
@@ -827,8 +824,8 @@ namespace MarketBoardPlugin.GUI
               if (ImPlot.BeginPlot("##qtyPlot", new Vector2(-1, tableHeight)))
               {
                 var now = DateTimeOffset.Now;
-                var x = new List<long>();
-                var y = new List<long>();
+                var x = new List<float>();
+                var y = new List<float>();
 
                 foreach (var historyEntry in this.marketData?.RecentHistory)
                 {

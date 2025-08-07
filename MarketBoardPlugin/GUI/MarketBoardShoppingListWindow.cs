@@ -8,11 +8,11 @@ namespace MarketBoardPlugin
   using System.Collections.Generic;
   using System.Globalization;
   using System.Numerics;
+  using Dalamud.Bindings.ImGui;
   using Dalamud.Interface;
   using Dalamud.Interface.Windowing;
-  using ImGuiNET;
+  using MarketBoardPlugin.Helpers;
   using MarketBoardPlugin.Models.ShoppingList;
-  using OtterGui;
 
   /// <summary>
   /// The market board config window.
@@ -94,14 +94,6 @@ namespace MarketBoardPlugin
       foreach (var item in todel)
       {
         this.Plugin.ShoppingList.Remove(item);
-      }
-    }
-
-    private void Checkbox(string label, string description, bool oldValue, Action<bool> setter)
-    {
-      if (ImGuiUtil.Checkbox(label, description, oldValue, setter))
-      {
-        this.Plugin.PluginInterface.SavePluginConfig(this.Plugin.Config);
       }
     }
   }

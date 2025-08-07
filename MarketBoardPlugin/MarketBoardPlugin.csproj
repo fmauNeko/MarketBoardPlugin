@@ -1,4 +1,4 @@
-﻿<Project Sdk="Dalamud.NET.Sdk/12.0.2">
+﻿<Project Sdk="Dalamud.NET.Sdk/13.0.0">
   <PropertyGroup>
     <AssemblyName>MarketBoardPlugin</AssemblyName>
     <Authors>Florian "fmauNeko" Maunier</Authors>
@@ -43,10 +43,6 @@
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
-  </ItemGroup>
-
-  <ItemGroup>
-    <ProjectReference Include="..\OtterGui\OtterGui.csproj" />
   </ItemGroup>
 
 </Project>

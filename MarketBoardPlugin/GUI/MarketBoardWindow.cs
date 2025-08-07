@@ -985,20 +985,6 @@ namespace MarketBoardPlugin.GUI
     }
 
     /// <summary>
-    ///  Function used for debug purposes : Log every attributes of an Item.
-    /// </summary>
-    /// <param name="itm"> Item class to show in logs.</param>
-    private void LogItemInfo(Item itm)
-    {
-      foreach (PropertyDescriptor descriptor in TypeDescriptor.GetProperties(itm))
-      {
-        string name = descriptor.Name;
-        object value = descriptor.GetValue(itm);
-        this.plugin.Log.Information("{0}={1}", name, value);
-      }
-    }
-
-    /// <summary>
     /// Update Categories and Items Dictionary based on current searchString.
     /// </summary>
     private void UpdateCategoriesAndItems()

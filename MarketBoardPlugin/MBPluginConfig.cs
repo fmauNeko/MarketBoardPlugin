@@ -83,5 +83,10 @@ namespace MarketBoardPlugin
     /// Gets or sets the number of historical entries to retrieve.
     /// </summary>
     public int HistoryCount { get; set; } = 50;
+
+    /// <summary>
+    /// Gets or sets a value indicating whether the Oceania DC should be included in the Cross-DC filter.
+    /// </summary>
+    public bool IncludeOceaniaDC { get; set; } = true;
   }
 }

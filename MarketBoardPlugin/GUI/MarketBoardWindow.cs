@@ -364,10 +364,43 @@ namespace MarketBoardPlugin.GUI
             continue;
           }
 
-          if (ImGui.Selectable($"{item.Value.Name.ExtractText()}", this.selectedItem?.RowId == id))
+          var itemName = item.Value.Name.ExtractText();
+
+          if (ImGui.Selectable($"{itemName}", this.selectedItem?.RowId == id))
           {
             this.ChangeSelectedItem(id, true);
           }
+
+          if (ImGui.BeginPopupContextItem($"historyItemContextMenu{id}"))
+          {
+            if (this.selectedItem?.RowId != item.Value.RowId)
+            {
+              this.ChangeSelectedItem(item.Value.RowId);
+            }
+
+            if (ImGui.Selectable("Add to the shopping list") && this.marketData != null && this.selectedWorld >= 0)
+            {
+              MarketDataListing itm = this.marketData.Listings.OrderBy(l => l.PricePerUnit).ToList()[0];
+              double price = this.plugin.Config.NoGilSalesTax
+                ? itm.PricePerUnit
+                : itm.PricePerUnit + (itm.Tax / itm.Quantity);
+              this.plugin.ShoppingList.Add(new SavedItem(item.Value, price, itm.WorldName));
+            }
+
+            if (ImGui.Selectable("Add to the favorites"))
+            {
+              this.plugin.Config.Favorites.Add(item.Value.RowId);
+            }
+
+            if (ImGui.Selectable("Remove from history"))
+            {
+              this.plugin.Config.History.Remove(item.Value.RowId);
+            }
+
+            ImGui.EndPopup();
+          }
+
+          ImGui.OpenPopupOnItemClick($"historyItemContextMenu{id}", ImGuiPopupFlags.MouseButtonRight);
         }
       }
       else if (this.favoritesOpen)

@@ -102,8 +102,11 @@ namespace MarketBoardPlugin
       this.ContextMenu.OnMenuOpened += this.OnContextMenuOpened;
 
       // Set up number format
-      this.NumberFormatInfo.CurrencySymbol = SeIconChar.Gil.ToIconString();
-      this.NumberFormatInfo.CurrencyDecimalDigits = 0;
+      if (this.NumberFormatInfo != null)
+      {
+        this.NumberFormatInfo.CurrencySymbol = SeIconChar.Gil.ToIconString();
+        this.NumberFormatInfo.CurrencyDecimalDigits = 0;
+      }
 
 #if DEBUG
       this.marketBoardWindow.IsOpen = true;
@@ -128,7 +131,7 @@ namespace MarketBoardPlugin
     /// <summary>
     /// Gets the number format info.
     /// </summary>
-    public NumberFormatInfo NumberFormatInfo { get; init; } = CultureInfo.CurrentCulture.NumberFormat.Clone() as NumberFormatInfo;
+    public NumberFormatInfo NumberFormatInfo { get; init; } = (CultureInfo.CurrentCulture.NumberFormat.Clone() as NumberFormatInfo)!;
 
     /// <summary>
     /// Gets the Dalamud plugin interface.
@@ -313,7 +316,7 @@ namespace MarketBoardPlugin
           this.marketBoardWindow.IsOpen = true;
           this.marketBoardWindow.ChangeSelectedItem(itemId);
         }
-        catch (Exception ex)
+        catch (Exception ex) when (ex is not OutOfMemoryException and not StackOverflowException)
         {
           this.Log.Error(ex, "Failed on context menu for itemId" + itemId);
         }

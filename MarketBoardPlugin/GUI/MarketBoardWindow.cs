@@ -14,18 +14,17 @@ namespace MarketBoardPlugin.GUI
   using System.Text.RegularExpressions;
   using System.Threading;
   using System.Threading.Tasks;
+  using Dalamud.Bindings.ImGui;
+  using Dalamud.Bindings.ImPlot;
   using Dalamud.Game.Text;
   using Dalamud.Interface;
   using Dalamud.Interface.Colors;
   using Dalamud.Interface.ManagedFontAtlas;
   using Dalamud.Interface.Style;
   using Dalamud.Interface.Textures;
-  using Dalamud.Interface.Textures.TextureWraps;
   using Dalamud.Interface.Windowing;
   using Dalamud.Plugin.Services;
   using Dalamud.Utility;
-  using Dalamud.Bindings.ImGui;
-  using Dalamud.Bindings.ImPlot;
   using Lumina.Excel.Sheets;
   using Lumina.Extensions;
   using MarketBoardPlugin.Extensions;
@@ -60,6 +59,8 @@ namespace MarketBoardPlugin.GUI
     private readonly Dictionary<uint, MarketDataResponse> marketDataCache;
 
     private readonly string[] categoryLabels = new[] { "All", "Weapons", "Equipments", "Others", "Furniture" };
+
+    private readonly CancellationTokenSource statusCheckCancellationTokenSource = new CancellationTokenSource();
 
     private Dictionary<ItemSearchCategory, List<Item>> sortedCategoriesAndItems;
 
@@ -108,15 +109,13 @@ namespace MarketBoardPlugin.GUI
 
     private bool hasHistoryHQColumnWidthBeenSet;
 
-    private List<KeyValuePair<ItemSearchCategory, List<Item>>> enumerableCategoriesAndItems;
+    private List<KeyValuePair<ItemSearchCategory, List<Item>>> enumerableCategoriesAndItems = [];
 
     private Task? currentRefreshTask;
 
     private CancellationTokenSource? currentRefreshCancellationTokenSource;
 
-    private bool isUniversalisUp = false;
-
-    private readonly CancellationTokenSource statusCheckCancellationTokenSource = new CancellationTokenSource();
+    private bool isUniversalisUp;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="MarketBoardWindow"/> class.
@@ -137,7 +136,7 @@ namespace MarketBoardPlugin.GUI
 
       this.marketDataCache = [];
       this.items = plugin.DataManager.GetExcelSheet<Item>();
-      this.classJobs = plugin.DataManager.GetExcelSheet<ClassJob>()?
+      this.classJobs = plugin.DataManager.GetExcelSheet<ClassJob>()!
         .Where(cj => cj.RowId != 0)
         .OrderBy(cj =>
         {
@@ -154,12 +153,12 @@ namespace MarketBoardPlugin.GUI
       this.sortedCategoriesAndItems = this.SortCategoriesAndItems();
 
       this.plugin.Framework.Update += this.HandleFrameworkUpdateEvent;
-      this.plugin.GameGui.HoveredItemChanged += this.HandleHoveredItemChange;
+      this.plugin.GameGui.HoveredItemChanged += this.HandleHoveredItemChange!;
 
       this.defaultFontHandle = this.plugin.PluginInterface.UiBuilder.FontAtlas.NewDelegateFontHandle(e =>
         e.OnPreBuild(toolkit =>
           toolkit.AddFontFromStream(
-            this.GetType().Assembly.GetManifestResourceStream("MarketBoardPlugin.Resources.NotoSans-Medium-NNBSP.otf"),
+            this.GetType().Assembly.GetManifestResourceStream("MarketBoardPlugin.Resources.NotoSans-Medium-NNBSP.otf")!,
             new SafeFontConfig()
             {
               SizePx = UiBuilder.DefaultFontSizePx,
@@ -305,7 +304,7 @@ namespace MarketBoardPlugin.GUI
         ImGui.SameLine();
         if (ImGui.BeginCombo(
           "###ClassJobCombo",
-          this.selectedClassJob == null ? "All Classes" : this.selectedClassJob?.Abbreviation.ExtractText()))
+          this.selectedClassJob?.Abbreviation.ExtractText() ?? "All Classes"))
         {
           void SelectClassJob(ClassJob? classJob)
           {
@@ -458,7 +457,7 @@ namespace MarketBoardPlugin.GUI
 
               if (ImGui.BeginPopupContextItem("itemContextMenu" + category.Key.Name.ExtractText() + i))
               {
-                if (this.selectedItem != null && this.selectedItem?.RowId != item.RowId)
+                if (this.selectedItem?.RowId != item.RowId)
                 {
                   this.ChangeSelectedItem(item.RowId);
                 }
@@ -809,10 +808,13 @@ namespace MarketBoardPlugin.GUI
                 var x = new List<float>();
                 var y = new List<float>();
 
-                foreach (var historyEntry in this.marketData?.RecentHistory)
+                if (this.marketData?.RecentHistory != null)
                 {
-                  x.Add(historyEntry.Timestamp);
-                  y.Add(historyEntry.PricePerUnit);
+                  foreach (var historyEntry in this.marketData.RecentHistory)
+                  {
+                    x.Add(historyEntry.Timestamp);
+                    y.Add(historyEntry.PricePerUnit);
+                  }
                 }
 
                 ImPlot.SetupAxesLimits(now.AddDays(-7).ToUnixTimeSeconds(), now.ToUnixTimeSeconds(), 0, y.Max(), ImPlotCond.Always);
@@ -834,10 +836,13 @@ namespace MarketBoardPlugin.GUI
                 var x = new List<float>();
                 var y = new List<float>();
 
-                foreach (var historyEntry in this.marketData?.RecentHistory)
+                if (this.marketData?.RecentHistory != null)
                 {
-                  x.Add(historyEntry.Timestamp);
-                  y.Add(historyEntry.Quantity);
+                  foreach (var historyEntry in this.marketData.RecentHistory)
+                  {
+                    x.Add(historyEntry.Timestamp);
+                    y.Add(historyEntry.Quantity);
+                  }
                 }
 
                 ImPlot.SetupAxesLimits(now.AddDays(-7).ToUnixTimeSeconds(), now.ToUnixTimeSeconds(), 0, y.Max(), ImPlotCond.Always);
@@ -954,9 +959,11 @@ namespace MarketBoardPlugin.GUI
       if (disposing)
       {
         this.plugin.Framework.Update -= this.HandleFrameworkUpdateEvent;
-        this.plugin.GameGui.HoveredItemChanged -= this.HandleHoveredItemChange;
+        this.plugin.GameGui.HoveredItemChanged -= this.HandleHoveredItemChange!;
         this.defaultFontHandle?.Dispose();
         this.titleFontHandle?.Dispose();
+        this.currentRefreshCancellationTokenSource?.Cancel();
+        this.currentRefreshCancellationTokenSource?.Dispose();
         this.statusCheckCancellationTokenSource.Cancel();
         this.statusCheckCancellationTokenSource.Dispose();
       }
@@ -1052,18 +1059,20 @@ namespace MarketBoardPlugin.GUI
 
         return sortedCategoriesDict;
       }
-      catch (Exception ex)
+      catch (Exception ex) when (ex is not OutOfMemoryException and not StackOverflowException)
       {
         this.plugin.Log.Error(ex, $"Error loading category list.");
-        return null;
+        return null!;
       }
     }
 
     private void HandleFrameworkUpdateEvent(IFramework framework)
     {
+#pragma warning disable CS0618 // Type or member is obsolete
       if (this.plugin.ClientState.LocalContentId != 0 && this.playerId != this.plugin.ClientState.LocalContentId)
       {
         var localPlayer = this.plugin.ClientState.LocalPlayer;
+#pragma warning restore CS0618 // Type or member is obsolete
         if (localPlayer == null)
         {
           return;
@@ -1114,17 +1123,21 @@ namespace MarketBoardPlugin.GUI
 
         if (this.worldList.Count > 1)
         {
+#pragma warning disable CS0618 // Type or member is obsolete
           this.playerId = this.plugin.ClientState.LocalContentId;
+#pragma warning restore CS0618 // Type or member is obsolete
         }
       }
 
+#pragma warning disable CS0618 // Type or member is obsolete
       if (this.plugin.ClientState.LocalContentId == 0)
+#pragma warning restore CS0618 // Type or member is obsolete
       {
         this.playerId = 0;
       }
     }
 
-    private void HandleHoveredItemChange(object sender, ulong itemId)
+    private void HandleHoveredItemChange(object? sender, ulong itemId)
     {
       if (!this.plugin.Config.WatchForHovered || this.itemBeingHovered == itemId)
       {

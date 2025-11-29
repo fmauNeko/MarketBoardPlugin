@@ -1,19 +1,19 @@
 ﻿<Project Sdk="Dalamud.NET.Sdk/13.0.0">
   <PropertyGroup>
     <AssemblyName>MarketBoardPlugin</AssemblyName>
-    <Authors>Florian "fmauNeko" Maunier</Authors>
+    <Authors>João Fraga (MTVirux)</Authors>
     <DocumentationFile>bin/$(Configuration)/$(TargetFramework)/$(AssemblyName).xml</DocumentationFile>
     <DebugType>PdbOnly</DebugType>
     <GenerateFullPaths>true</GenerateFullPaths>
     <AssemblyVersion>1.11.0</AssemblyVersion>
     <FileVersion>1.11.0</FileVersion>
     <Version>1.11.0</Version>
-    <Company>Florian Maunier</Company>
+    <Company>João Fraga</Company>
     <Description>Market board plugin for Dalamud.</Description>
-    <Copyright>Copyright (c) Florian Maunier. All rights reserved.</Copyright>
+    <Copyright>Copyright (c) João Fraga. All rights reserved.</Copyright>
     <PackageLicenseExpression>MIT License</PackageLicenseExpression>
-    <PackageProjectUrl>https://github.com/fmauNeko/MarketBoardPlugin</PackageProjectUrl>
-    <RepositoryUrl>https://github.com/fmauNeko/MarketBoardPlugin.git</RepositoryUrl>
+    <PackageProjectUrl>https://github.com/MTVirux/MarketBoardPlugin</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/MTVirux/MarketBoardPlugin.git</RepositoryUrl>
     <RepositoryType>Git</RepositoryType>
     <AnalysisLevel>latest</AnalysisLevel>
     <AnalysisMode>AllEnabledByDefault</AnalysisMode>

@@ -1,9 +1,9 @@
 [
   {
     "Author": "MTVirux",
-    "Name": "Market board",
-    "Punchline": "Browse the market board from anywhere.",
-    "Description": "Browse the market board. /pmb to open.",
+    "Name": "MarketBoardPlugin(PMB)",
+    "Punchline": "Custom build of the MarketBoardPlugin by MTVirux",
+    "Description": "Custom build of the MarketBoardPlugin by MTVirux. /pmb to open.",
     "Tags": [
       "market",
       "board",

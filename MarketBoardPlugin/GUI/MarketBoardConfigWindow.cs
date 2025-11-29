@@ -21,7 +21,7 @@ namespace MarketBoardPlugin
     /// </summary>
     /// <param name="plugin">The <see cref="MBPlugin"/>.</param>
     public MarketBoardConfigWindow(MBPlugin plugin)
-      : base("Market Board Config")
+      : base("Market Terror Config")
     {
       this.Flags = ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.NoResize;
       this.Size = new Vector2(0, 0);

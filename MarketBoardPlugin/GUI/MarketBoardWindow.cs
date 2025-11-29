@@ -151,6 +151,7 @@ namespace MarketBoardPlugin.GUI
           };
         }).ToList();
       this.sortedCategoriesAndItems = this.SortCategoriesAndItems();
+      this.UpdateCategoriesAndItems();
 
       this.plugin.Framework.Update += this.HandleFrameworkUpdateEvent;
       this.plugin.GameGui.HoveredItemChanged += this.HandleHoveredItemChange!;

@@ -83,5 +83,10 @@ namespace MarketBoardPlugin
     /// Gets or sets the number of historical entries to retrieve.
     /// </summary>
     public int HistoryCount { get; set; } = 50;
+
+    /// <summary>
+    /// Gets or sets a value indicating whether clicking on a listing automatically teleports to that world (requires Lifestream plugin).
+    /// </summary>
+    public bool AutoTeleportToWorld { get; set; } = true;
   }
 }

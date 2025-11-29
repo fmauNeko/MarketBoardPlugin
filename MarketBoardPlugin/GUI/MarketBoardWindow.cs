@@ -643,6 +643,13 @@ namespace MarketBoardPlugin.GUI
                       ImGuiSelectableFlags.SpanAllColumns))
                 {
                   this.selectedListing = index;
+
+                  // Execute /li command when listing is clicked (if enabled)
+                  if (this.plugin.Config.AutoTeleportToWorld)
+                  {
+                    var worldName = listing.WorldName;
+                    this.plugin.CommandManager.ProcessCommand($"/li {worldName} mb");
+                  }
                 }
 
                 ImGui.NextColumn();

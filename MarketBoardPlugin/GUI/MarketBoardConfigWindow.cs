@@ -63,7 +63,7 @@ namespace MarketBoardPlugin
         ImGui.EndDisabled();
       }
 
-      this.Checkbox("Hide Ko-Fi button", "Toggles whether the Ko-Fi button should be hidden", this.Plugin.Config.KofiHidden, (v) => this.Plugin.Config.KofiHidden = v);
+      this.Checkbox("Hide SeaOfTerror Repo button", "Toggles whether the SeaOfTerror Repo button should be hidden", this.Plugin.Config.KofiHidden, (v) => this.Plugin.Config.KofiHidden = v);
 
       var itemRefreshTimeout = this.Plugin.Config.ItemRefreshTimeout;
       ImGui.Text("Item buffer Timeout (ms) :");

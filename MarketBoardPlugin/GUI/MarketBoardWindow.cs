@@ -897,7 +897,7 @@ namespace MarketBoardPlugin.GUI
 
       if (!this.plugin.Config.KofiHidden)
       {
-        var buttonText = "Support on Ko-fi";
+        var buttonText = "SeaOfTerror Repo";
         var buttonColor = 0x005E5BFFu;
         ImGui.PushStyleColor(ImGuiCol.Button, 0xFF000000 | buttonColor);
         ImGui.PushStyleColor(ImGuiCol.ButtonActive, 0xDD000000 | buttonColor);
@@ -905,7 +905,7 @@ namespace MarketBoardPlugin.GUI
 
         if (ImGui.Button(buttonText, new Vector2(120, 0)))
         {
-          Utilities.OpenBrowser("https://ko-fi.com/fmauneko");
+          Utilities.OpenBrowser("https://github.com/MTVirux/SeaOfTerror");
         }
 
         ImGui.PopStyleColor(3);

@@ -55,7 +55,7 @@ namespace MarketBoardPlugin
     public bool NoGilSalesTax { get; set; }
 
     /// <summary>
-    /// Gets or sets a value indicating whether the Ko-Fi button has been hidden.
+    /// Gets or sets a value indicating whether the SeaOfTerror Repo button has been hidden.
     /// </summary>
     public bool KofiHidden { get; set; }
 

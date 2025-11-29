@@ -163,7 +163,7 @@ namespace MarketBoardPlugin.Helpers
       GC.SuppressFinalize(this);
     }
 
-    /// <inheritdoc/>
+    /// <inheritdoc cref="IDisposable"/>
     protected virtual void Dispose(bool disposing)
     {
       if (!this.disposedValue)

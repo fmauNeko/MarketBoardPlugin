@@ -1,0 +1,29 @@
+[
+  {
+    "Author": "MTVirux",
+    "Name": "Market board",
+    "Punchline": "Browse the market board from anywhere.",
+    "Description": "Browse the market board. /pmb to open.",
+    "Tags": [
+      "market",
+      "board",
+      "marketboard",
+      "market board"
+    ],
+    "InternalName": "MarketBoardPlugin",
+    "AssemblyVersion": "1.11.0",
+    "TestingAssemblyVersion": "1.11.0",
+    "RepoUrl": "https://github.com/MTVirux/MarketBoardPlugin",
+    "ApplicableVersion": "any",
+    "DalamudApiLevel": 13,
+    "TestingDalamudApiLevel": 13,
+    "IsHide": "False",
+    "IsTestingExclusive": "False",
+    "DownloadCount": 0,
+    "LastUpdate": 0,
+    "DownloadLinkInstall": "https://github.com/MTVirux/MarketBoardPlugin/releases/latest/download/MarketBoardPlugin.zip",
+    "DownloadLinkUpdate": "https://github.com/MTVirux/MarketBoardPlugin/releases/latest/download/MarketBoardPlugin.zip",
+    "DownloadLinkTesting": "https://github.com/MTVirux/MarketBoardPlugin/releases/latest/download/MarketBoardPlugin.zip",
+    "IconUrl": "https://raw.githubusercontent.com/MTVirux/MarketBoardPlugin/main/images/icon.png"
+  }
+]

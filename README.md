@@ -1,4 +1,4 @@
-# MarketBoardPlugin
+# MarketTerror
 Market board information plugin for XIVLauncher / Dalamud
 
 # THIS IS NOT THE ORIGINAL PLUGIN. THIS VERSION WAS MODDED BY MTVIRUX

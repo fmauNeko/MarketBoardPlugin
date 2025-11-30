@@ -1,9 +1,20 @@
 # Get the latest production release tag
 git fetch --tags
-$latestReleaseTag = git tag -l | Where-Object { $_ -notmatch '^testing_' } | Sort-Object -Descending | Select-Object -First 1
+$latestReleaseTag = git tag -l | Where-Object { $_ -notmatch '^testing_' } | ForEach-Object {
+    [PSCustomObject]@{
+        Tag = $_
+        Version = [Version]$_
+    }
+} | Sort-Object Version -Descending | Select-Object -First 1 -ExpandProperty Tag
 
 # Get the latest testing tag
-$latestTestingTag = git tag -l "testing_*" | Sort-Object -Descending | Select-Object -First 1
+$latestTestingTag = git tag -l "testing_*" | ForEach-Object {
+    $version = $_ -replace '^testing_', ''
+    [PSCustomObject]@{
+        Tag = $_
+        Version = [Version]$version
+    }
+} | Sort-Object Version -Descending | Select-Object -First 1 -ExpandProperty Tag
 
 Write-Host "`n=== Current Versions ===" -ForegroundColor Cyan
 

@@ -13,7 +13,13 @@ if ($localCommit -ne $remoteCommit) {
 
 Write-Host "Local branch is up to date with remote."
 
-$latestTag = git tag -l "testing_*" | Sort-Object -Descending | Select-Object -First 1
+$latestTag = git tag -l "testing_*" | ForEach-Object {
+    $version = $_ -replace '^testing_', ''
+    [PSCustomObject]@{
+        Tag = $_
+        Version = [Version]$version
+    }
+} | Sort-Object Version -Descending | Select-Object -First 1 -ExpandProperty Tag
 
 if (-not $latestTag) {
     Write-Host "No existing testing tags found. Creating initial tag testing_1.0.0.0"

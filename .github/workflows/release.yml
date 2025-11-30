@@ -29,18 +29,18 @@ jobs:
       - name: write version into jsons
         run: |
           $ver = '${{ github.ref_name }}'
-          $path = './MarketBoardPlugin/bin/Release/MarketTerror.json'
+          $path = './MarketBoardPlugin/bin/x64/Release/MarketTerror.json'
           $json = Get-Content -Raw $path | ConvertFrom-Json
           $json.AssemblyVersion = $ver
           $content = $json | ConvertTo-Json -Depth 10
           Set-Content -Path $path -Value $content
       - name: Archive
-        run: Compress-Archive -Path MarketBoardPlugin/bin/Release/* -DestinationPath MarketBoardPlugin.zip
+        run: Compress-Archive -Path MarketBoardPlugin/bin/x64/Release/* -DestinationPath MarketBoardPlugin.zip
       - name: Upload a Build Artifact
         uses: actions/upload-artifact@v4
         with:
           path: |
-            ./MarketBoardPlugin/bin/Release/*
+            ./MarketBoardPlugin/bin/x64/Release/*
       - name: Create Release
         id: create_release
         uses: actions/create-release@v1

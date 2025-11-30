@@ -29,7 +29,10 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Include="./MarketBoardPlugin.json" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="./MarketBoardPlugin.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <DalamudAssetType>Plugin</DalamudAssetType>
+    </Content>
   </ItemGroup>
 
   <ItemGroup>

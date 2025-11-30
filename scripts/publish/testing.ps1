@@ -1,5 +1,18 @@
 # Get the latest testing tag from the repository
 git fetch --tags
+
+# Check if local branch is up to date with remote
+$currentBranch = git rev-parse --abbrev-ref HEAD
+$localCommit = git rev-parse @
+$remoteCommit = git rev-parse "@{u}"
+
+if ($localCommit -ne $remoteCommit) {
+    Write-Error "Local branch '$currentBranch' is not up to date with remote. Please pull the latest changes before publishing."
+    exit 1
+}
+
+Write-Host "Local branch is up to date with remote."
+
 $latestTag = git tag -l "testing_*" | Sort-Object -Descending | Select-Object -First 1
 
 if (-not $latestTag) {

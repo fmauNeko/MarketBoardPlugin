@@ -53,9 +53,17 @@ $pluginJson = Get-Content $pluginJsonPath -Raw | ConvertFrom-Json
 $pluginJson.AssemblyVersion = $newTag
 $pluginJson | ConvertTo-Json -Depth 10 | Set-Content -Path $pluginJsonPath
 
+# Update LastUpdate in repo.json
+Write-Host "Updating repo.json..."
+$repoJsonPath = Join-Path $repoRoot "repo.json"
+$repoJson = Get-Content $repoJsonPath -Raw | ConvertFrom-Json
+$timestamp = [int][double]::Parse((Get-Date -UFormat %s))
+$repoJson[0].LastUpdate = $timestamp
+$repoJson | ConvertTo-Json -Depth 10 | Set-Content -Path $repoJsonPath
+
 # Commit the version changes
 Write-Host "Committing version changes..."
-git add $csprojPath $pluginJsonPath
+git add $csprojPath $pluginJsonPath $repoJsonPath
 git commit -m "[CI] Update release version to $newTag"
 
 # Push the commit first

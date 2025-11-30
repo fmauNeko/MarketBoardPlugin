@@ -57,9 +57,15 @@ echo "Updating MarketTerror.json..."
 pluginJsonPath="$repoRoot/MarketBoardPlugin/MarketTerror.json"
 jq --arg version "$version" '.AssemblyVersion = $version' "$pluginJsonPath" > tmp.$$.json && mv tmp.$$.json "$pluginJsonPath"
 
+# Update LastUpdate in repo.json
+echo "Updating repo.json..."
+repoJsonPath="$repoRoot/repo.json"
+timestamp=$(date +%s)
+jq --argjson timestamp "$timestamp" '.[0].LastUpdate = $timestamp' "$repoJsonPath" > tmp.$$.json && mv tmp.$$.json "$repoJsonPath"
+
 # Commit the version changes
 echo "Committing version changes..."
-git add "$csprojPath" "$pluginJsonPath"
+git add "$csprojPath" "$pluginJsonPath" "$repoJsonPath"
 git commit -m "[CI] Update testing version to $version"
 
 # Push the commit first

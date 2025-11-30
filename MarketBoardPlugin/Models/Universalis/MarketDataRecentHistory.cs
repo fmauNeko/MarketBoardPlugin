@@ -1,5 +1,5 @@
-// <copyright file="MarketDataRecentHistory.cs" company="Florian Maunier">
-// Copyright (c) Florian Maunier. All rights reserved.
+// <copyright file="MarketDataRecentHistory.cs" company="MTVirux">
+// Copyright (c) MTVirux. All rights reserved.
 // </copyright>
 
 namespace MarketBoardPlugin.Models.Universalis

@@ -5,8 +5,8 @@
     <DocumentationFile>bin/$(Configuration)/$(TargetFramework)/$(AssemblyName).xml</DocumentationFile>
     <DebugType>PdbOnly</DebugType>
     <GenerateFullPaths>true</GenerateFullPaths>
-    <AssemblyVersion>1.0.0.13</AssemblyVersion>
-    <FileVersion>1.0.0.13</FileVersion>
+    <AssemblyVersion>1.0.0.14</AssemblyVersion>
+    <FileVersion>1.0.0.14</FileVersion>
     <Version>1.0.0.13</Version>
     <Company>João Fraga</Company>
     <Description>Market board plugin for Dalamud.</Description>

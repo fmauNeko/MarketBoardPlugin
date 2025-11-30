@@ -32,6 +32,7 @@ jobs:
           $path = './MarketBoardPlugin/bin/x64/Release/MarketTerror.json'
           $json = Get-Content -Raw $path | ConvertFrom-Json
           $json.AssemblyVersion = $ver
+          $json.LastUpdate = [int][double]::Parse((Get-Date -UFormat %s))
           $content = $json | ConvertTo-Json -Depth 10
           Set-Content -Path $path -Value $content
       - name: Archive
@@ -76,6 +77,7 @@ jobs:
           $path = './repo.json'
           $json = Get-Content -Raw $path | ConvertFrom-Json
           $json[0].AssemblyVersion = $ver
+          $json[0].LastUpdate = [int][double]::Parse((Get-Date -UFormat %s))
           $json[0].DownloadLinkInstall = $json[0].DownloadLinkInstall -replace '[^/]+/[^/]+\.zip$',"$ver/MarketTerror.zip"
           $json[0].DownloadLinkUpdate = $json[0].DownloadLinkUpdate -replace '[^/]+/[^/]+\.zip$',"$ver/MarketTerror.zip"
           $content = $json | ConvertTo-Json -AsArray -Depth 10

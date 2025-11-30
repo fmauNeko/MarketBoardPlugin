@@ -1,34 +1,19 @@
-# Get the latest tag from the repository
+# Get the latest testing tag from the repository
 git fetch --tags
-$latestTag = git describe --tags --abbrev=0 2>$null
+$latestTestingTag = git tag -l "testing_*" | Sort-Object -Descending | Select-Object -First 1
 
-if (-not $latestTag) {
-    Write-Host "No existing tags found. Creating initial tag 1.0.0.0"
-    $newTag = "1.0.0.0"
-} else {
-    Write-Host "Latest tag: $latestTag"
-    
-    # Split the tag by periods
-    $parts = $latestTag -split '\.'
-    
-    # Increment the last portion
-    $lastIndex = $parts.Length - 1
-    $parts[$lastIndex] = [int]$parts[$lastIndex] + 1
-    
-    # Join back together
-    $newTag = $parts -join '.'
-}
-
-Write-Host "New tag: $newTag"
-
-# Check if equivalent testing tag exists
-$testingTag = "testing_$newTag"
-$testingTagExists = git tag -l $testingTag
-if (-not $testingTagExists) {
-    Write-Error "Testing tag '$testingTag' does not exist. Please create and test a testing release before publishing a production release."
+if (-not $latestTestingTag) {
+    Write-Error "No testing tags found. Please create and test a testing release before publishing a production release."
     exit 1
 }
-Write-Host "Found testing tag: $testingTag"
+
+Write-Host "Latest testing tag: $latestTestingTag"
+
+# Extract version from testing tag (remove 'testing_' prefix)
+$newTag = $latestTestingTag -replace '^testing_', ''
+
+Write-Host "New release tag: $newTag"
+Write-Host "Using version from testing tag: $latestTestingTag"
 
 # Get the repository root (parent of scripts folder)
 $scriptDir = Split-Path -Parent $PSScriptRoot

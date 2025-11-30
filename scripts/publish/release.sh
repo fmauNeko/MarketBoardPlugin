@@ -1,35 +1,21 @@
 #!/bin/bash
 
-# Get the latest tag from the repository (excluding testing tags)
+# Get the latest testing tag from the repository
 git fetch --tags
-latestTag=$(git tag -l | grep -v '^testing_' | sort -V | tail -n 1)
+latestTestingTag=$(git tag -l "testing_*" | sort -V | tail -n 1)
 
-if [ -z "$latestTag" ]; then
-    echo "No existing tags found. Creating initial tag 1.0.0.0"
-    newTag="1.0.0.0"
-else
-    echo "Latest tag: $latestTag"
-    
-    # Split the tag by periods
-    IFS='.' read -ra parts <<< "$latestTag"
-    
-    # Increment the last portion
-    lastIndex=$((${#parts[@]} - 1))
-    parts[$lastIndex]=$((${parts[$lastIndex]} + 1))
-    
-    # Join back together
-    newTag=$(IFS='.'; echo "${parts[*]}")
-fi
-
-echo "New tag: $newTag"
-
-# Check if equivalent testing tag exists
-testingTag="testing_$newTag"
-if ! git tag -l "$testingTag" | grep -q .; then
-    echo "Error: Testing tag '$testingTag' does not exist. Please create and test a testing release before publishing a production release."
+if [ -z "$latestTestingTag" ]; then
+    echo "Error: No testing tags found. Please create and test a testing release before publishing a production release."
     exit 1
 fi
-echo "Found testing tag: $testingTag"
+
+echo "Latest testing tag: $latestTestingTag"
+
+# Extract version from testing tag (remove 'testing_' prefix)
+newTag="${latestTestingTag#testing_}"
+
+echo "New release tag: $newTag"
+echo "Using version from testing tag: $latestTestingTag"
 
 # Get the repository root (parent of scripts folder)
 scriptDir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"

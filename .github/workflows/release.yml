@@ -76,12 +76,10 @@ jobs:
           $path = './repo.json'
           $json = Get-Content -Raw $path | ConvertFrom-Json
           $json[0].AssemblyVersion = $ver
-          $json[0].TestingAssemblyVersion = $ver
-          $json[0].DownloadLinkInstall = $json.DownloadLinkInstall -replace '[^/]+/MarketBoardPlugin.zip',"$ver/MarketBoardPlugin.zip"
-          $json[0].DownloadLinkTesting = $json.DownloadLinkTesting -replace '[^/]+/MarketBoardPlugin.zip',"$ver/MarketBoardPlugin.zip"
-          $json[0].DownloadLinkUpdate = $json.DownloadLinkUpdate -replace '[^/]+/MarketBoardPlugin.zip',"$ver/MarketBoardPlugin.zip"
-          $content = $json | ConvertTo-Json -AsArray
-          set-content -Path $path -Value $content
+          $json[0].DownloadLinkInstall = $json[0].DownloadLinkInstall -replace '[^/]+/[^/]+\.zip$',"$ver/MarketTerror.zip"
+          $json[0].DownloadLinkUpdate = $json[0].DownloadLinkUpdate -replace '[^/]+/[^/]+\.zip$',"$ver/MarketTerror.zip"
+          $content = $json | ConvertTo-Json -AsArray -Depth 10
+          Set-Content -Path $path -Value $content
 
       - name: Commit version changes
         run: |

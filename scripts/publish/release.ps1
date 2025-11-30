@@ -27,16 +27,9 @@ $csproj = $csproj -replace '<FileVersion>[\d\.]+</FileVersion>', "<FileVersion>$
 $csproj = $csproj -replace '<AssemblyVersion>[\d\.]+</AssemblyVersion>', "<AssemblyVersion>$newTag</AssemblyVersion>"
 Set-Content -Path $csprojPath -Value $csproj -NoNewline
 
-# Update version in MarketBoardPlugin.json
-Write-Host "Updating MarketBoardPlugin.json..."
-$pluginJsonPath = Join-Path $repoRoot "MarketBoardPlugin\MarketBoardPlugin.json"
-$pluginJson = Get-Content $pluginJsonPath -Raw | ConvertFrom-Json
-$pluginJson.AssemblyVersion = $newTag
-$pluginJson | ConvertTo-Json -Depth 10 | Set-Content -Path $pluginJsonPath
-
 # Commit the version changes
 Write-Host "Committing version changes..."
-git add $csprojPath $pluginJsonPath
+git add $csprojPath
 git commit -m "Bump version to $newTag"
 
 # Push the commit first

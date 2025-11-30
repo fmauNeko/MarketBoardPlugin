@@ -27,14 +27,9 @@ csprojPath="$repoRoot/MarketBoardPlugin/MarketBoardPlugin.csproj"
 sed -i "s/<FileVersion>[0-9.]*<\/FileVersion>/<FileVersion>$newTag<\/FileVersion>/" "$csprojPath"
 sed -i "s/<AssemblyVersion>[0-9.]*<\/AssemblyVersion>/<AssemblyVersion>$newTag<\/AssemblyVersion>/" "$csprojPath"
 
-# Update version in MarketBoardPlugin.json
-echo "Updating MarketBoardPlugin.json..."
-pluginJsonPath="$repoRoot/MarketBoardPlugin/MarketBoardPlugin.json"
-jq --arg version "$newTag" '.AssemblyVersion = $version' "$pluginJsonPath" > tmp.$$.json && mv tmp.$$.json "$pluginJsonPath"
-
 # Commit the version changes
 echo "Committing version changes..."
-git add "$csprojPath" "$pluginJsonPath"
+git add "$csprojPath"
 git commit -m "Bump version to $newTag"
 
 # Push the commit first

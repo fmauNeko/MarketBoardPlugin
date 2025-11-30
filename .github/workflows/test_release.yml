@@ -62,6 +62,14 @@ jobs:
           asset_name: MarketBoardPlugin.zip
           asset_content_type: application/zip
 
+      - name: Update version in .csproj
+        run: |
+          $ver = '${{ github.ref_name }}' -replace 'testing_'
+          $csprojPath = './MarketBoardPlugin/MarketBoardPlugin.csproj'
+          $content = Get-Content -Raw $csprojPath
+          $content = $content -replace '<Version>.*?</Version>',"<Version>$ver</Version>"
+          Set-Content -Path $csprojPath -Value $content
+
       - name: Write out repo.json
         run: |
           $verT = '${{ github.ref_name }}'
@@ -73,7 +81,7 @@ jobs:
           $content = $json | ConvertTo-Json -AsArray
           set-content -Path $path -Value $content
 
-      - name: Commit repo.json
+      - name: Commit version changes
         run: |
           git config --global user.name "Actions User"
           git config --global user.email "actions@github.com"
@@ -81,5 +89,6 @@ jobs:
           git branch -f develop ${{ github.sha }}
           git checkout develop
           git add repo.json
-          git commit -m "[CI] Updating repo.json for ${{ github.ref_name }}" || true
+          git add MarketBoardPlugin/MarketBoardPlugin.csproj
+          git commit -m "[CI] Updating versions for ${{ github.ref_name }}" || true
           git push origin develop

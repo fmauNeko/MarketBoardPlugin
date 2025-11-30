@@ -30,7 +30,7 @@ sed -i "s/<AssemblyVersion>[0-9.]*<\/AssemblyVersion>/<AssemblyVersion>$newTag<\
 # Commit the version changes
 echo "Committing version changes..."
 git add "$csprojPath"
-git commit -m "Bump version to $newTag"
+git commit -m "[CI] Update release version to $newTag"
 
 # Push the commit first
 echo "Pushing version changes to develop..."

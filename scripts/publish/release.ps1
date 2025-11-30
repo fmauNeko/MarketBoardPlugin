@@ -30,7 +30,7 @@ Set-Content -Path $csprojPath -Value $csproj -NoNewline
 # Commit the version changes
 Write-Host "Committing version changes..."
 git add $csprojPath
-git commit -m "Bump version to $newTag"
+git commit -m "[CI] Update release version to $newTag"
 
 # Push the commit first
 Write-Host "Pushing version changes to develop..."

@@ -42,7 +42,7 @@ Set-Content -Path $csprojPath -Value $csproj -NoNewline
 # Commit the version changes
 Write-Host "Committing version changes..."
 git add $csprojPath
-git commit -m "Bump testing version to $version"
+git commit -m "[CI] Update testing version to $version"
 
 # Push the commit first
 Write-Host "Pushing version changes to develop..."

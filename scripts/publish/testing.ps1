@@ -45,8 +45,8 @@ git add $csprojPath
 git commit -m "Bump testing version to $version"
 
 # Push the commit first
-Write-Host "Pushing version changes to main..."
-git push origin main
+Write-Host "Pushing version changes to develop..."
+git push origin develop
 
 # Verify the commit is on remote with retry logic
 Write-Host "Verifying commit on remote..."
@@ -55,9 +55,9 @@ $attempt = 0
 $verified = $false
 
 while ($attempt -lt $maxAttempts) {
-    git fetch origin main
+    git fetch origin develop
     $localCommit = git rev-parse HEAD
-    $remoteCommit = git rev-parse origin/main
+    $remoteCommit = git rev-parse origin/develop
     
     if ($localCommit -eq $remoteCommit) {
         $verified = $true

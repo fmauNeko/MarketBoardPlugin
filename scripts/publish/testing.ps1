@@ -76,7 +76,13 @@ if ($repoJson -isnot [System.Collections.IEnumerable] -or $repoJson -is [string]
 }
 $timestamp = [int][double]::Parse((Get-Date -UFormat %s))
 $repoJson[0].LastUpdate = $timestamp
-$repoJson | ConvertTo-Json -Depth 10 | Set-Content -Path $repoJsonPath
+$repoJsonJson = $repoJson | ConvertTo-Json -Depth 10
+$trimmed = $repoJsonJson.Trim()
+$nl = [Environment]::NewLine
+if ($trimmed.StartsWith('{')) {
+    $repoJsonJson = '[' + $nl + $repoJsonJson + $nl + ']'
+}
+Set-Content -Path $repoJsonPath -Value $repoJsonJson
 
 # Commit the version changes
 Write-Host "Committing version changes..."

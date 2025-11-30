@@ -32,6 +32,10 @@ jq --arg version "$version" '.AssemblyVersion = $version' "$pluginJsonPath" > tm
 # Update version in repo.json
 echo "Updating repo.json..."
 repoJsonPath="$repoRoot/repo.json"
+# Ensure repo.json is an array
+if [ "$(jq -r 'type' "$repoJsonPath")" = "object" ]; then
+    jq -s '.' "$repoJsonPath" > tmp.$$.json && mv tmp.$$.json "$repoJsonPath"
+fi
 jq --arg version "$version" '.[0].AssemblyVersion = $version | .[0].TestingAssemblyVersion = $version' "$repoJsonPath" > tmp.$$.json && mv tmp.$$.json "$repoJsonPath"
 
 # Build the project in Debug mode

@@ -42,7 +42,13 @@ if ($repoJson -isnot [System.Collections.IEnumerable] -or $repoJson -is [string]
 }
 $repoJson[0].AssemblyVersion = $version
 $repoJson[0].TestingAssemblyVersion = $version
-$repoJson | ConvertTo-Json -Depth 10 | Set-Content -Path $repoJsonPath
+$repoJsonJson = $repoJson | ConvertTo-Json -Depth 10
+$trimmed = $repoJsonJson.Trim()
+$nl = [Environment]::NewLine
+if ($trimmed.StartsWith('{')) {
+    $repoJsonJson = '[' + $nl + $repoJsonJson + $nl + ']'
+}
+Set-Content -Path $repoJsonPath -Value $repoJsonJson
 
 # Build the project in Debug mode
 Write-Host "Building in Debug mode..."

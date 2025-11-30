@@ -26,6 +26,6 @@
     "DownloadLinkInstall": "https://github.com/MTVirux/MarketBoardPlugin/releases/download/1.0.0.11/MarketTerror.zip",
     "DownloadLinkUpdate": "https://github.com/MTVirux/MarketBoardPlugin/releases/download/1.0.0.11/MarketTerror.zip",
     "DownloadLinkTesting": "https://github.com/MTVirux/MarketBoardPlugin/releases/download/testing_1.0.0.11/MarketTerror.zip",
-    "IconUrl": "https://raw.githubusercontent.com/MTVirux/MarketBoardPlugin/main/images/icon.png"
+    "IconUrl": "https://raw.githubusercontent.com/MTVirux/MarketBoardPlugin/develop/images/icon.png"
   }
 ]

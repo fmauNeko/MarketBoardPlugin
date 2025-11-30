@@ -1,8 +1,8 @@
 #!/bin/bash
 
-# Get the latest tag from the remote repository
+# Get the latest tag from the remote repository (excluding testing tags)
 git fetch --tags
-latestTag=$(git describe --tags --abbrev=0 2>/dev/null)
+latestTag=$(git tag -l | grep -v '^testing_' | sort -V | tail -n 1)
 
 if [ -z "$latestTag" ]; then
     echo "No existing tags found. Using version 1.0.0.0"

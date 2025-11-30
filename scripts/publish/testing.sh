@@ -43,14 +43,9 @@ echo "Updating MarketBoardPlugin.json..."
 pluginJsonPath="$repoRoot/MarketBoardPlugin/MarketBoardPlugin.json"
 jq --arg version "$version" '.AssemblyVersion = $version' "$pluginJsonPath" > tmp.$$.json && mv tmp.$$.json "$pluginJsonPath"
 
-# Update version in repo.json
-echo "Updating repo.json..."
-repoJsonPath="$repoRoot/repo.json"
-jq --arg version "$version" '.[0].TestingAssemblyVersion = $version' "$repoJsonPath" > tmp.$$.json && mv tmp.$$.json "$repoJsonPath"
-
 # Commit the version changes
 echo "Committing version changes..."
-git add "$csprojPath" "$pluginJsonPath" "$repoJsonPath"
+git add "$csprojPath" "$pluginJsonPath"
 git commit -m "Bump testing version to $version"
 
 # Push the commit first

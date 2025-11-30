@@ -27,9 +27,16 @@ $csproj = $csproj -replace '<FileVersion>[\d\.]+</FileVersion>', "<FileVersion>$
 $csproj = $csproj -replace '<AssemblyVersion>[\d\.]+</AssemblyVersion>', "<AssemblyVersion>$newTag</AssemblyVersion>"
 Set-Content -Path $csprojPath -Value $csproj -NoNewline
 
+# Update version in MarketTerror.json
+Write-Host "Updating MarketTerror.json..."
+$pluginJsonPath = Join-Path $repoRoot "MarketBoardPlugin\MarketTerror.json"
+$pluginJson = Get-Content $pluginJsonPath -Raw | ConvertFrom-Json
+$pluginJson.AssemblyVersion = $newTag
+$pluginJson | ConvertTo-Json -Depth 10 | Set-Content -Path $pluginJsonPath
+
 # Commit the version changes
 Write-Host "Committing version changes..."
-git add $csprojPath
+git add $csprojPath $pluginJsonPath
 git commit -m "[CI] Update release version to $newTag"
 
 # Push the commit first

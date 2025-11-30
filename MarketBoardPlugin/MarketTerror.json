@@ -3,6 +3,10 @@
   "Name": "Market Terror",
   "Punchline": "Browse the market board from anywhere.",
   "Description": "Browse the market board. /pmb to open.",
+  "InternalName": "MarketTerror",
+  "AssemblyVersion": "1.0.0.2",
   "RepoUrl": "https://github.com/MTVirux/MarketBoardPlugin",
+  "ApplicableVersion": "any",
+  "DalamudApiLevel": 13,
   "Tags": ["market", "board", "marketboard", "market board", "terror"]
 }

@@ -24,9 +24,9 @@ csprojPath="$repoRoot/MarketBoardPlugin/MarketBoardPlugin.csproj"
 sed -i "s/<FileVersion>[0-9.]*<\/FileVersion>/<FileVersion>$version<\/FileVersion>/" "$csprojPath"
 sed -i "s/<AssemblyVersion>[0-9.]*<\/AssemblyVersion>/<AssemblyVersion>$version<\/AssemblyVersion>/" "$csprojPath"
 
-# Update version in MarketBoardPlugin.json
-echo "Updating MarketBoardPlugin.json..."
-pluginJsonPath="$repoRoot/MarketBoardPlugin/MarketBoardPlugin.json"
+# Update version in MarketTerror.json
+echo "Updating MarketTerror.json..."
+pluginJsonPath="$repoRoot/MarketBoardPlugin/MarketTerror.json"
 jq --arg version "$version" '.AssemblyVersion = $version' "$pluginJsonPath" > tmp.$$.json && mv tmp.$$.json "$pluginJsonPath"
 
 # Update version in repo.json

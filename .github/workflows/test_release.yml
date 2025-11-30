@@ -29,7 +29,7 @@ jobs:
       - name: write version into json
         run: |
           $ver = '${{ github.ref_name }}' -replace 'testing_'
-          $path = './MarketBoardPlugin/bin/Debug/MarketBoardPlugin.json'
+          $path = './MarketBoardPlugin/bin/Debug/MarketTerror.json'
           $json = Get-Content -Raw $path | ConvertFrom-Json
           $json.AssemblyVersion = $ver
           $content = $json | ConvertTo-Json

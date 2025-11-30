@@ -24,9 +24,9 @@ $csproj = $csproj -replace '<FileVersion>[\d\.]+</FileVersion>', "<FileVersion>$
 $csproj = $csproj -replace '<AssemblyVersion>[\d\.]+</AssemblyVersion>', "<AssemblyVersion>$version</AssemblyVersion>"
 Set-Content -Path $csprojPath -Value $csproj -NoNewline
 
-# Update version in MarketBoardPlugin.json
-Write-Host "Updating MarketBoardPlugin.json..."
-$pluginJsonPath = Join-Path $repoRoot "MarketBoardPlugin\MarketBoardPlugin.json"
+# Update version in MarketTerror.json
+Write-Host "Updating MarketTerror.json..."
+$pluginJsonPath = Join-Path $repoRoot "MarketBoardPlugin\MarketTerror.json"
 $pluginJson = Get-Content $pluginJsonPath -Raw | ConvertFrom-Json
 $pluginJson.AssemblyVersion = $version
 $pluginJson | ConvertTo-Json -Depth 10 | Set-Content -Path $pluginJsonPath

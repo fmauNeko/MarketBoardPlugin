@@ -32,8 +32,8 @@ jobs:
           $path = './MarketBoardPlugin/bin/Release/MarketTerror.json'
           $json = Get-Content -Raw $path | ConvertFrom-Json
           $json.AssemblyVersion = $ver
-          $content = $json | ConvertTo-Json
-          set-content -Path $path -Value $content
+          $content = $json | ConvertTo-Json -Depth 10
+          Set-Content -Path $path -Value $content
       - name: Archive
         run: Compress-Archive -Path MarketBoardPlugin/bin/Release/* -DestinationPath MarketBoardPlugin.zip
       - name: Upload a Build Artifact

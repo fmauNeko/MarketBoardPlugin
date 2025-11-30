@@ -17,7 +17,7 @@ namespace MarketBoardPlugin.Models.Universalis
     /// Gets or sets the name of the datacenter.
     /// </summary>
     [JsonPropertyName("dcName")]
-    public required string DcName { get; set; }
+    public string? DcName { get; set; }
 
     /// <summary>
     /// Gets or sets the ID of the item.

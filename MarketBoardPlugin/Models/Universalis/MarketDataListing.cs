@@ -120,6 +120,6 @@ namespace MarketBoardPlugin.Models.Universalis
     /// Gets or sets the name of the world.
     /// </summary>
     [JsonPropertyName("worldName")]
-    public required string WorldName { get; set; }
+    public string? WorldName { get; set; }
   }
 }

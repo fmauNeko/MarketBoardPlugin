@@ -34,7 +34,12 @@ $pluginJson | ConvertTo-Json -Depth 10 | Set-Content -Path $pluginJsonPath
 # Update version in repo.json
 Write-Host "Updating repo.json..."
 $repoJsonPath = Join-Path $repoRoot "repo.json"
-$repoJson = Get-Content $repoJsonPath -Raw | ConvertFrom-Json
+$repoJsonRaw = Get-Content $repoJsonPath -Raw
+$repoJson = $repoJsonRaw | ConvertFrom-Json
+# Ensure repoJson is always an array
+if ($repoJson -isnot [System.Collections.IEnumerable] -or $repoJson -is [string]) {
+    $repoJson = @($repoJson)
+}
 $repoJson[0].AssemblyVersion = $version
 $repoJson[0].TestingAssemblyVersion = $version
 $repoJson | ConvertTo-Json -Depth 10 | Set-Content -Path $repoJsonPath

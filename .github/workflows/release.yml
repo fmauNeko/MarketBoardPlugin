@@ -35,7 +35,7 @@ jobs:
           $content = $json | ConvertTo-Json -Depth 10
           Set-Content -Path $path -Value $content
       - name: Archive
-        run: Compress-Archive -Path MarketBoardPlugin/bin/x64/Release/* -DestinationPath MarketBoardPlugin.zip
+        run: Compress-Archive -Path MarketBoardPlugin/bin/x64/Release/* -DestinationPath MarketTerror.zip
       - name: Upload a Build Artifact
         uses: actions/upload-artifact@v4
         with:
@@ -58,8 +58,8 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }} # This pulls from the CREATE RELEASE step above, referencing it's ID to get its outputs object, which include a `upload_url`. See this blog post for more info: https://jasonet.co/posts/new-features-of-github-actions/#passing-data-to-future-steps
-          asset_path: ./MarketBoardPlugin.zip
-          asset_name: MarketBoardPlugin.zip
+          asset_path: ./MarketTerror.zip
+          asset_name: MarketTerror.zip
           asset_content_type: application/zip
 
       - name: Update version in .csproj

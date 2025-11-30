@@ -4,7 +4,7 @@
   "Punchline": "Browse the market board from anywhere.",
   "Description": "Browse the market board. /pmb to open.",
   "InternalName": "MarketTerror",
-  "AssemblyVersion": "1.0.0.12",
+  "AssemblyVersion": "1.0.0.13",
   "RepoUrl": "https://github.com/MTVirux/MarketBoardPlugin",
   "ApplicableVersion": "any",
   "DalamudApiLevel": 13,

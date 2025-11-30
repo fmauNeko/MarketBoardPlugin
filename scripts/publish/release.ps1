@@ -1,4 +1,5 @@
 # Get the latest tag from the repository
+git fetch --tags
 $latestTag = git describe --tags --abbrev=0 2>$null
 
 if (-not $latestTag) {

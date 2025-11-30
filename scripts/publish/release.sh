@@ -1,6 +1,7 @@
 #!/bin/bash
 
 # Get the latest tag from the repository (excluding testing tags)
+git fetch --tags
 latestTag=$(git tag -l | grep -v '^testing_' | sort -V | tail -n 1)
 
 if [ -z "$latestTag" ]; then

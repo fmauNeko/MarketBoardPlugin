@@ -1,4 +1,5 @@
 # Get the latest testing tag from the repository
+git fetch --tags
 $latestTag = git tag -l "testing_*" | Sort-Object -Descending | Select-Object -First 1
 
 if (-not $latestTag) {

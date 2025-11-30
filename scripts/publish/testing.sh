@@ -61,7 +61,7 @@ jq --arg version "$version" '.AssemblyVersion = $version' "$pluginJsonPath" > tm
 echo "Updating repo.json..."
 repoJsonPath="$repoRoot/repo.json"
 timestamp=$(date +%s)
-jq --argjson timestamp "$timestamp" '.[0].LastUpdate = $timestamp' "$repoJsonPath" > tmp.$$.json && mv tmp.$$.json "$repoJsonPath"
+jq --argjson timestamp "$timestamp" '.[0].LastUpdate = $timestamp | .' "$repoJsonPath" > tmp.$$.json && mv tmp.$$.json "$repoJsonPath"
 
 # Commit the version changes
 echo "Committing version changes..."

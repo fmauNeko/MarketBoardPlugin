@@ -32,7 +32,6 @@ jobs:
           $path = './MarketBoardPlugin/bin/x64/Debug/MarketTerror.json'
           $json = Get-Content -Raw $path | ConvertFrom-Json
           $json.AssemblyVersion = $ver
-          $json.LastUpdate = [int][double]::Parse((Get-Date -UFormat %s))
           $content = $json | ConvertTo-Json -Depth 10
           Set-Content -Path $path -Value $content
       - name: Archive

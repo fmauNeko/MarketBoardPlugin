@@ -14,7 +14,7 @@
     ],
     "InternalName": "MarketTerror",
     "AssemblyVersion": "1.0.0.11",
-    "TestingAssemblyVersion": "1.0.0.11",
+    "TestingAssemblyVersion": "1.0.0.13",
     "RepoUrl": "https://github.com/MTVirux/MarketBoardPlugin",
     "ApplicableVersion": "any",
     "DalamudApiLevel": 13,
@@ -22,10 +22,10 @@
     "IsHide": "False",
     "IsTestingExclusive": "False",
     "DownloadCount": 0,
-    "LastUpdate": 1764513273,
+    "LastUpdate": 1764514813,
     "DownloadLinkInstall": "https://github.com/MTVirux/MarketBoardPlugin/releases/download/1.0.0.11/MarketTerror.zip",
     "DownloadLinkUpdate": "https://github.com/MTVirux/MarketBoardPlugin/releases/download/1.0.0.11/MarketTerror.zip",
-    "DownloadLinkTesting": "https://github.com/MTVirux/MarketBoardPlugin/releases/download/testing_1.0.0.11/MarketTerror.zip",
+    "DownloadLinkTesting": "https://github.com/MTVirux/MarketBoardPlugin/releases/download/testing_1.0.0.13/MarketTerror.zip",
     "IconUrl": "https://raw.githubusercontent.com/MTVirux/MarketBoardPlugin/develop/images/icon.png"
   }
 ]

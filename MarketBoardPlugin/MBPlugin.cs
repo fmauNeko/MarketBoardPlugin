@@ -52,6 +52,7 @@ namespace MarketBoardPlugin
     /// <param name="framework">The framework.</param>
     /// <param name="clientState">The client state.</param>
     /// <param name="gameGui">The game GUI.</param>
+    /// <param name="chatGui">The chat GUI.</param>
     /// <param name="textureProvider">The texture provider.</param>
     /// <param name="log">The plugin log.</param>
     /// <param name="contextMenu">The context menu.</param>
@@ -360,6 +361,7 @@ namespace MarketBoardPlugin
     /// Notify the chat that something was copied to the clipboard.
     /// </summary>
     /// <param name="text">The copied text.</param>
+    #pragma warning disable SA1202 // Allow public method placement for readability
     public void NotifyClipboardCopied(string text)
     {
       try
@@ -373,10 +375,11 @@ namespace MarketBoardPlugin
           this.ChatGui.Print($"Copied to clipboard: {text}");
         }
       }
-      catch (Exception ex)
+      catch (Exception ex) when (ex is not OutOfMemoryException and not StackOverflowException)
       {
         this.Log.Warning($"Failed to print clipboard notification to chat: {ex.Message}");
       }
     }
+    #pragma warning restore SA1202
   }
 }

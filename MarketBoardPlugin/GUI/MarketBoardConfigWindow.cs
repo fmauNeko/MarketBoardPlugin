@@ -61,6 +61,7 @@ namespace MarketBoardPlugin
       // Teleport / integration
       ImGui.Text("Teleport / Integration");
       ImGui.Separator();
+
       // Auto-teleport to world setting (only enabled if Lifestream is installed)
       var lifestreamInstalled = this.Plugin.PluginInterface.InstalledPlugins.Any(p => p.InternalName == "Lifestream");
       if (!lifestreamInstalled)
@@ -81,6 +82,7 @@ namespace MarketBoardPlugin
       ImGui.Text("Clipboard");
       ImGui.Separator();
       this.Checkbox("Clipboard notifications", "Show a chat message when something is copied to the clipboard", this.Plugin.Config.ClipboardNotificationsEnabled, (v) => this.Plugin.Config.ClipboardNotificationsEnabled = v);
+      this.Checkbox("Copy item name on listing click", "Copy the selected item's name to the clipboard when clicking a current listing", this.Plugin.Config.CopyItemNameOnListingClick, (v) => this.Plugin.Config.CopyItemNameOnListingClick = v);
 
       ImGui.NewLine();
 

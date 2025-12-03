@@ -380,13 +380,13 @@ namespace MarketBoardPlugin.GUI
             }
 
             if (ImGui.Selectable("Add to the shopping list") && this.marketData != null && this.selectedWorld >= 0)
-            {
-              MarketDataListing itm = this.marketData.Listings.OrderBy(l => l.PricePerUnit).ToList()[0];
-              double price = this.plugin.Config.NoGilSalesTax
-                ? itm.PricePerUnit
-                : itm.PricePerUnit + (itm.Tax / itm.Quantity);
-              this.plugin.ShoppingList.Add(new SavedItem(item.Value, price, itm.WorldName));
-            }
+              {
+                MarketDataListing itm = this.marketData.Listings.OrderBy(l => l.PricePerUnit).ToList()[0];
+                double price = this.plugin.Config.NoGilSalesTax
+                  ? itm.PricePerUnit
+                  : itm.PricePerUnit + (itm.Tax / itm.Quantity);
+                this.plugin.ShoppingList.Add(new SavedItem(item.Value, price, itm.WorldName ?? string.Empty));
+              }
 
             if (ImGui.Selectable("Add to the favorites"))
             {
@@ -502,7 +502,7 @@ namespace MarketBoardPlugin.GUI
                   double price = this.plugin.Config.NoGilSalesTax
                     ? itm.PricePerUnit
                     : itm.PricePerUnit + (itm.Tax / itm.Quantity);
-                  this.plugin.ShoppingList.Add(new SavedItem(item, price, itm.WorldName));
+                  this.plugin.ShoppingList.Add(new SavedItem(item, price, itm.WorldName ?? string.Empty));
                 }
 
                 if (ImGui.Selectable("Add to the favorites"))
@@ -538,10 +538,10 @@ namespace MarketBoardPlugin.GUI
           this.itemBeingHovered = 0;
         }
       }
-      else
-      {
-        this.progressPosition = 0.0f;
-      }
+            else
+            {
+              this.progressPosition = 0.0f;
+            }
 
       ImGui.Text("Settings : ");
       ImGui.SameLine();
@@ -580,7 +580,10 @@ namespace MarketBoardPlugin.GUI
                 this.plugin.NotifyClipboardCopied(this.selectedItem?.Name.ExtractText() ?? string.Empty);
               }
             }
-            catch { }
+            catch (Exception ex) when (ex is not OutOfMemoryException and not StackOverflowException)
+            {
+              this.plugin.Log.Warning($"Failed to notify clipboard copied: {ex.Message}");
+            }
           }
         }
         else
@@ -688,8 +691,21 @@ namespace MarketBoardPlugin.GUI
                   // Execute /li command when listing is clicked (if enabled)
                   if (this.plugin.Config.AutoTeleportToWorld)
                   {
-                    var worldName = listing.WorldName;
+                    var worldName = listing.WorldName ?? string.Empty;
                     this.plugin.CommandManager.ProcessCommand($"/li {worldName} mb");
+                  }
+
+                  // Copy the selected item name to clipboard when a listing is clicked (configurable)
+                  if (this.plugin.Config.CopyItemNameOnListingClick && this.selectedItem.HasValue)
+                  {
+                    ImGui.LogToClipboard();
+                    ImGui.LogText(this.selectedItem.Value.Name.ExtractText());
+                    ImGui.LogFinish();
+
+                    if (this.plugin.Config.ClipboardNotificationsEnabled)
+                    {
+                      this.plugin.NotifyClipboardCopied(this.selectedItem.Value.Name.ExtractText());
+                    }
                   }
                 }
 
@@ -727,11 +743,11 @@ namespace MarketBoardPlugin.GUI
 
                 if (this.selectedWorld <= 1)
                 {
-                  retainerSB.Append(CultureInfo.CurrentCulture, $" {listing.WorldName}");
+                  retainerSB.Append(CultureInfo.CurrentCulture, $" {listing.WorldName ?? string.Empty}");
 
                   if (this.selectedWorld == 0)
                   {
-                    retainerSB.Append(CultureInfo.CurrentCulture, $" @ {this.GetDcNameFromWorldName(listing.WorldName)}");
+                    retainerSB.Append(CultureInfo.CurrentCulture, $" @ {this.GetDcNameFromWorldName(listing.WorldName ?? string.Empty)}");
                   }
                 }
                 else

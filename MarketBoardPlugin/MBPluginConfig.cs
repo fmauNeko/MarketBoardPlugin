@@ -90,6 +90,11 @@ namespace MarketBoardPlugin
     public bool ClipboardNotificationsEnabled { get; set; } = true;
 
     /// <summary>
+    /// Gets or sets a value indicating whether clicking a listing copies the item name to the clipboard.
+    /// </summary>
+    public bool CopyItemNameOnListingClick { get; set; } = true;
+
+    /// <summary>
     /// Gets or sets a value indicating whether clicking on a listing automatically teleports to that world (requires Lifestream plugin).
     /// </summary>
     public bool AutoTeleportToWorld { get; set; } = true;

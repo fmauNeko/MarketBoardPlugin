@@ -34,10 +34,13 @@ namespace MarketBoardPlugin
     /// <inheritdoc/>
     public override void Draw()
     {
+      // General
+      ImGui.Text("General");
+      ImGui.Separator();
       this.Checkbox("Context menu integration", "Toggles whether context menu integration is enabled", this.Plugin.Config.ContextMenuIntegration, (v) => this.Plugin.Config.ContextMenuIntegration = v);
-
       this.Checkbox("Gil Icon Shown", "Toggles whether the Gil icon is shown", this.Plugin.Config.PriceIconShown, (v) => this.Plugin.Config.PriceIconShown = v);
 
+      // Pricing / behavior
       this.Checkbox("No Gil Sales Tax", "Toggles whether the Gil Sales Tax is included", this.Plugin.Config.NoGilSalesTax, (v) =>
       {
         this.Plugin.Config.NoGilSalesTax = v;
@@ -45,10 +48,19 @@ namespace MarketBoardPlugin
         this.Plugin.ResetMarketData();
       });
 
-      this.Checkbox("Disable Recent History", "Toggles whether the recent history is disabled", this.Plugin.Config.RecentHistoryDisabled, (v) => this.Plugin.Config.RecentHistoryDisabled = v);
+      ImGui.NewLine();
 
+      // History
+      ImGui.Text("History");
+      ImGui.Separator();
+      this.Checkbox("Disable Recent History", "Toggles whether the recent history is disabled", this.Plugin.Config.RecentHistoryDisabled, (v) => this.Plugin.Config.RecentHistoryDisabled = v);
       this.Checkbox("Watch for hovered item", "Automatically select the item hovered in any of the in-game inventory window after 1 second.", this.Plugin.Config.WatchForHovered, (v) => this.Plugin.Config.WatchForHovered = v);
 
+      ImGui.NewLine();
+
+      // Teleport / integration
+      ImGui.Text("Teleport / Integration");
+      ImGui.Separator();
       // Auto-teleport to world setting (only enabled if Lifestream is installed)
       var lifestreamInstalled = this.Plugin.PluginInterface.InstalledPlugins.Any(p => p.InternalName == "Lifestream");
       if (!lifestreamInstalled)
@@ -63,9 +75,18 @@ namespace MarketBoardPlugin
         ImGui.EndDisabled();
       }
 
+      ImGui.NewLine();
 
+      // Clipboard
+      ImGui.Text("Clipboard");
+      ImGui.Separator();
       this.Checkbox("Clipboard notifications", "Show a chat message when something is copied to the clipboard", this.Plugin.Config.ClipboardNotificationsEnabled, (v) => this.Plugin.Config.ClipboardNotificationsEnabled = v);
-      
+
+      ImGui.NewLine();
+
+      // Appearance
+      ImGui.Text("Others");
+      ImGui.Separator();
       this.Checkbox("Hide SeaOfTerror Repo button", "Toggles whether the SeaOfTerror Repo button should be hidden", this.Plugin.Config.KofiHidden, (v) => this.Plugin.Config.KofiHidden = v);
 
       var itemRefreshTimeout = this.Plugin.Config.ItemRefreshTimeout;

@@ -85,6 +85,11 @@ namespace MarketBoardPlugin
     public int HistoryCount { get; set; } = 50;
 
     /// <summary>
+    /// Gets or sets a value indicating whether clipboard notifications are enabled.
+    /// </summary>
+    public bool ClipboardNotificationsEnabled { get; set; } = true;
+
+    /// <summary>
     /// Gets or sets a value indicating whether clicking on a listing automatically teleports to that world (requires Lifestream plugin).
     /// </summary>
     public bool AutoTeleportToWorld { get; set; } = true;

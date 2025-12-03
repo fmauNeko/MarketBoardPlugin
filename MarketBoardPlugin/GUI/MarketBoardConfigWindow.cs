@@ -63,6 +63,9 @@ namespace MarketBoardPlugin
         ImGui.EndDisabled();
       }
 
+
+      this.Checkbox("Clipboard notifications", "Show a chat message when something is copied to the clipboard", this.Plugin.Config.ClipboardNotificationsEnabled, (v) => this.Plugin.Config.ClipboardNotificationsEnabled = v);
+      
       this.Checkbox("Hide SeaOfTerror Repo button", "Toggles whether the SeaOfTerror Repo button should be hidden", this.Plugin.Config.KofiHidden, (v) => this.Plugin.Config.KofiHidden = v);
 
       var itemRefreshTimeout = this.Plugin.Config.ItemRefreshTimeout;

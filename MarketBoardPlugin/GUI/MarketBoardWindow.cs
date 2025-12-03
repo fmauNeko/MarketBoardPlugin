@@ -575,7 +575,10 @@ namespace MarketBoardPlugin.GUI
             ImGui.LogFinish();
             try
             {
-              this.plugin.NotifyClipboardCopied(this.selectedItem?.Name.ExtractText() ?? string.Empty);
+              if (this.plugin.Config.ClipboardNotificationsEnabled)
+              {
+                this.plugin.NotifyClipboardCopied(this.selectedItem?.Name.ExtractText() ?? string.Empty);
+              }
             }
             catch { }
           }

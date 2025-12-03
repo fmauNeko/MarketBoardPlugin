@@ -62,6 +62,7 @@ namespace MarketBoardPlugin
       IFramework framework,
       IClientState clientState,
       IGameGui gameGui,
+      IChatGui chatGui,
       ITextureProvider textureProvider,
       IPluginLog log,
       IContextMenu contextMenu)
@@ -72,6 +73,7 @@ namespace MarketBoardPlugin
       this.Framework = framework;
       this.ClientState = clientState;
       this.GameGui = gameGui;
+      this.ChatGui = chatGui;
       this.TextureProvider = textureProvider;
       this.Log = log;
       this.ContextMenu = contextMenu;
@@ -162,6 +164,11 @@ namespace MarketBoardPlugin
     /// Gets the game GUI.
     /// </summary>
     public IGameGui GameGui { get; init; }
+
+    /// <summary>
+    /// Gets the chat GUI.
+    /// </summary>
+    public IChatGui ChatGui { get; init; }
 
     /// <summary>
     /// Gets the texture provider.
@@ -347,6 +354,29 @@ namespace MarketBoardPlugin
     private void DrawUi()
     {
       this.windowSystem.Draw();
+    }
+
+    /// <summary>
+    /// Notify the chat that something was copied to the clipboard.
+    /// </summary>
+    /// <param name="text">The copied text.</param>
+    public void NotifyClipboardCopied(string text)
+    {
+      try
+      {
+        if (string.IsNullOrEmpty(text))
+        {
+          this.ChatGui.Print("Copied text to clipboard.");
+        }
+        else
+        {
+          this.ChatGui.Print($"Copied to clipboard: {text}");
+        }
+      }
+      catch (Exception ex)
+      {
+        this.Log.Warning($"Failed to print clipboard notification to chat: {ex.Message}");
+      }
     }
   }
 }

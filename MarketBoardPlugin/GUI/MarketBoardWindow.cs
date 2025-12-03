@@ -573,6 +573,11 @@ namespace MarketBoardPlugin.GUI
             ImGui.LogToClipboard();
             ImGui.LogText(this.selectedItem?.Name.ExtractText());
             ImGui.LogFinish();
+            try
+            {
+              this.plugin.NotifyClipboardCopied(this.selectedItem?.Name.ExtractText() ?? string.Empty);
+            }
+            catch { }
           }
         }
         else

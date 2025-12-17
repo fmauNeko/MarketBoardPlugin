@@ -1086,7 +1086,7 @@ namespace MarketBoardPlugin.GUI
             return (w.Name.ExtractText(), displayName);
           });
 
-        var regionName = this.plugin.PlayerState.CurrentWorld.Value.DataCenter.Value.Region switch
+        var regionName = this.plugin.PlayerState.HomeWorld.Value.DataCenter.Value.Region switch
         {
           1 => "Japan",
           2 => "North-America",
@@ -1190,6 +1190,47 @@ namespace MarketBoardPlugin.GUI
                 this.plugin.Config.HistoryCount,
                 this.currentRefreshCancellationTokenSource.Token)
               .ConfigureAwait(false);
+
+            if (this.selectedWorld == 0 && this.plugin.Config.IncludeOceaniaDC && this.worldList[this.selectedWorld].Item1 != "Oceania")
+            {
+              var oceaniaMarketData = await this.plugin.UniversalisClient
+                .GetMarketData(
+                  this.selectedItem.Value.RowId,
+                  "Oceania",
+                  this.plugin.Config.ListingCount,
+                  this.plugin.Config.HistoryCount,
+                  this.currentRefreshCancellationTokenSource.Token)
+                .ConfigureAwait(false);
+
+              if (oceaniaMarketData != null)
+              {
+                if (this.marketData == null)
+                {
+                  this.marketData = oceaniaMarketData;
+                }
+                else
+                {
+                  foreach (var listing in oceaniaMarketData.Listings)
+                  {
+                    this.marketData.Listings.Add(listing);
+                  }
+
+                  foreach (var history in oceaniaMarketData.RecentHistory)
+                  {
+                    this.marketData.RecentHistory.Add(history);
+                  }
+
+                  this.marketData.Listings = this.marketData.Listings
+                    .OrderBy(l => l.PricePerUnit)
+                    .Take(this.plugin.Config.ListingCount)
+                    .ToList();
+                  this.marketData.RecentHistory = this.marketData.RecentHistory
+                    .OrderByDescending(h => h.Timestamp)
+                    .Take(this.plugin.Config.HistoryCount)
+                    .ToList();
+                }
+              }
+            }
           }
           catch (AggregateException ae)
           {

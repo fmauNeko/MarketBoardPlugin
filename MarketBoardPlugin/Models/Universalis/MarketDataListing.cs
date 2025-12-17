@@ -121,5 +121,11 @@ namespace MarketBoardPlugin.Models.Universalis
     /// </summary>
     [JsonPropertyName("worldName")]
     public required string WorldName { get; set; }
+
+    /// <summary>
+    /// Gets or sets the ID of the world.
+    /// </summary>
+    [JsonPropertyName("worldID")]
+    public int WorldID { get; set; }
   }
 }

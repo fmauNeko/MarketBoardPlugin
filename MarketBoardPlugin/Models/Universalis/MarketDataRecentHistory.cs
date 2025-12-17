@@ -15,7 +15,7 @@ namespace MarketBoardPlugin.Models.Universalis
     /// Gets or sets the name of the buyer.
     /// </summary>
     [JsonPropertyName("buyerName")]
-    public string BuyerName { get; set; }
+    public required string BuyerName { get; set; }
 
     /// <summary>
     /// Gets or sets a value indicating whether the items are HQ.
@@ -51,6 +51,6 @@ namespace MarketBoardPlugin.Models.Universalis
     /// Gets or sets the name of the world.
     /// </summary>
     [JsonPropertyName("worldName")]
-    public string WorldName { get; set; }
+    public required string WorldName { get; set; }
   }
 }

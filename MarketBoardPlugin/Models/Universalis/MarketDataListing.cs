@@ -17,13 +17,13 @@ namespace MarketBoardPlugin.Models.Universalis
     /// Gets or sets the ID of the creator.
     /// </summary>
     [JsonPropertyName("creatorID")]
-    public string CreatorId { get; set; }
+    public required string CreatorId { get; set; }
 
     /// <summary>
     /// Gets or sets the name of the creator.
     /// </summary>
     [JsonPropertyName("creatorName")]
-    public string CreatorName { get; set; }
+    public required string CreatorName { get; set; }
 
     /// <summary>
     /// Gets or sets a value indicating whether the items are HQ.
@@ -47,7 +47,7 @@ namespace MarketBoardPlugin.Models.Universalis
     /// Gets or sets the ID of the listing.
     /// </summary>
     [JsonPropertyName("listingID")]
-    public string ListingId { get; set; }
+    public required string ListingId { get; set; }
 
     /// <summary>
     /// Gets or sets the list of the materias.
@@ -84,19 +84,19 @@ namespace MarketBoardPlugin.Models.Universalis
     /// Gets or sets the ID of the retainer.
     /// </summary>
     [JsonPropertyName("retainerID")]
-    public string RetainerId { get; set; }
+    public required string RetainerId { get; set; }
 
     /// <summary>
     /// Gets or sets the retainer's name.
     /// </summary>
     [JsonPropertyName("retainerName")]
-    public string RetainerName { get; set; }
+    public required string RetainerName { get; set; }
 
     /// <summary>
     /// Gets or sets the ID of the seller.
     /// </summary>
     [JsonPropertyName("sellerID")]
-    public string SellerId { get; set; }
+    public required string SellerId { get; set; }
 
     /// <summary>
     /// Gets or sets the ID of the stain.
@@ -120,6 +120,6 @@ namespace MarketBoardPlugin.Models.Universalis
     /// Gets or sets the name of the world.
     /// </summary>
     [JsonPropertyName("worldName")]
-    public string WorldName { get; set; }
+    public required string WorldName { get; set; }
   }
 }

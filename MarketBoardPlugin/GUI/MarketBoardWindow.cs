@@ -6,7 +6,6 @@ namespace MarketBoardPlugin.GUI
 {
   using System;
   using System.Collections.Generic;
-  using System.ComponentModel;
   using System.Globalization;
   using System.Linq;
   using System.Numerics;
@@ -14,18 +13,14 @@ namespace MarketBoardPlugin.GUI
   using System.Text.RegularExpressions;
   using System.Threading;
   using System.Threading.Tasks;
-  using Dalamud.Game.Text;
-  using Dalamud.Interface;
-  using Dalamud.Interface.Colors;
-  using Dalamud.Interface.ManagedFontAtlas;
-  using Dalamud.Interface.Style;
-  using Dalamud.Interface.Textures;
-  using Dalamud.Interface.Textures.TextureWraps;
-  using Dalamud.Interface.Windowing;
-  using Dalamud.Plugin.Services;
-  using Dalamud.Utility;
   using Dalamud.Bindings.ImGui;
   using Dalamud.Bindings.ImPlot;
+  using Dalamud.Game.Text;
+  using Dalamud.Interface;
+  using Dalamud.Interface.ManagedFontAtlas;
+  using Dalamud.Interface.Textures;
+  using Dalamud.Interface.Windowing;
+  using Dalamud.Plugin.Services;
   using Lumina.Excel.Sheets;
   using Lumina.Extensions;
   using MarketBoardPlugin.Extensions;
@@ -51,7 +46,7 @@ namespace MarketBoardPlugin.GUI
 
     private readonly List<(string, string)> worldList = new List<(string, string)>();
 
-    private readonly List<ClassJob> classJobs;
+    private readonly List<ClassJob> classJobs = new();
 
     private readonly IFontHandle defaultFontHandle;
 
@@ -60,6 +55,8 @@ namespace MarketBoardPlugin.GUI
     private readonly Dictionary<uint, MarketDataResponse> marketDataCache;
 
     private readonly string[] categoryLabels = new[] { "All", "Weapons", "Equipments", "Others", "Furniture" };
+
+    private readonly CancellationTokenSource statusCheckCancellationTokenSource = new();
 
     private Dictionary<ItemSearchCategory, List<Item>> sortedCategoriesAndItems;
 
@@ -108,15 +105,13 @@ namespace MarketBoardPlugin.GUI
 
     private bool hasHistoryHQColumnWidthBeenSet;
 
-    private List<KeyValuePair<ItemSearchCategory, List<Item>>> enumerableCategoriesAndItems;
+    private List<KeyValuePair<ItemSearchCategory, List<Item>>> enumerableCategoriesAndItems = new();
 
     private Task? currentRefreshTask;
 
     private CancellationTokenSource? currentRefreshCancellationTokenSource;
 
-    private bool isUniversalisUp = false;
-
-    private readonly CancellationTokenSource statusCheckCancellationTokenSource = new CancellationTokenSource();
+    private bool isUniversalisUp;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="MarketBoardWindow"/> class.
@@ -150,16 +145,28 @@ namespace MarketBoardPlugin.GUI
             4 => 1,
             _ => 4,
           };
-        }).ToList();
+        }).ToList() ?? new List<ClassJob>();
       this.sortedCategoriesAndItems = this.SortCategoriesAndItems();
+      this.enumerableCategoriesAndItems = this.sortedCategoriesAndItems
+        .Select(kv => new KeyValuePair<ItemSearchCategory, List<Item>>(kv.Key, kv.Value))
+        .ToList();
 
       this.plugin.Framework.Update += this.HandleFrameworkUpdateEvent;
       this.plugin.GameGui.HoveredItemChanged += this.HandleHoveredItemChange;
 
       this.defaultFontHandle = this.plugin.PluginInterface.UiBuilder.FontAtlas.NewDelegateFontHandle(e =>
         e.OnPreBuild(toolkit =>
+        {
+          var fontStream = this.GetType().Assembly.GetManifestResourceStream("MarketBoardPlugin.Resources.NotoSans-Medium-NNBSP.otf");
+
+          if (fontStream == null)
+          {
+            this.plugin.Log.Warning("Failed to load embedded font MarketBoardPlugin.Resources.NotoSans-Medium-NNBSP.otf");
+            return;
+          }
+
           toolkit.AddFontFromStream(
-            this.GetType().Assembly.GetManifestResourceStream("MarketBoardPlugin.Resources.NotoSans-Medium-NNBSP.otf"),
+            fontStream,
             new SafeFontConfig()
             {
               SizePx = UiBuilder.DefaultFontSizePx,
@@ -167,7 +174,8 @@ namespace MarketBoardPlugin.GUI
               MergeFont = toolkit.AddDalamudDefaultFont(-1),
             },
             false,
-            "NNBSP")));
+            "NNBSP");
+        }));
 
       this.titleFontHandle = this.plugin.PluginInterface.UiBuilder.FontAtlas.NewDelegateFontHandle(e =>
         e.OnPreBuild(toolkit =>
@@ -305,7 +313,7 @@ namespace MarketBoardPlugin.GUI
         ImGui.SameLine();
         if (ImGui.BeginCombo(
           "###ClassJobCombo",
-          this.selectedClassJob == null ? "All Classes" : this.selectedClassJob?.Abbreviation.ExtractText()))
+          this.selectedClassJob == null ? "All Classes" : this.selectedClassJob.Value.Abbreviation.ExtractText()))
         {
           void SelectClassJob(ClassJob? classJob)
           {
@@ -458,7 +466,7 @@ namespace MarketBoardPlugin.GUI
 
               if (ImGui.BeginPopupContextItem("itemContextMenu" + category.Key.Name.ExtractText() + i))
               {
-                if (this.selectedItem != null && this.selectedItem?.RowId != item.RowId)
+                if (this.selectedItem != null && this.selectedItem.Value.RowId != item.RowId)
                 {
                   this.ChangeSelectedItem(item.RowId);
                 }
@@ -802,7 +810,7 @@ namespace MarketBoardPlugin.GUI
                 var x = new List<float>();
                 var y = new List<float>();
 
-                foreach (var historyEntry in this.marketData?.RecentHistory)
+                foreach (var historyEntry in this.marketData.RecentHistory)
                 {
                   x.Add(historyEntry.Timestamp);
                   y.Add(historyEntry.PricePerUnit);
@@ -827,7 +835,7 @@ namespace MarketBoardPlugin.GUI
                 var x = new List<float>();
                 var y = new List<float>();
 
-                foreach (var historyEntry in this.marketData?.RecentHistory)
+                foreach (var historyEntry in this.marketData.RecentHistory)
                 {
                   x.Add(historyEntry.Timestamp);
                   y.Add(historyEntry.Quantity);
@@ -950,6 +958,8 @@ namespace MarketBoardPlugin.GUI
         this.plugin.GameGui.HoveredItemChanged -= this.HandleHoveredItemChange;
         this.defaultFontHandle?.Dispose();
         this.titleFontHandle?.Dispose();
+        this.currentRefreshCancellationTokenSource?.Cancel();
+        this.currentRefreshCancellationTokenSource?.Dispose();
         this.statusCheckCancellationTokenSource.Cancel();
         this.statusCheckCancellationTokenSource.Dispose();
       }
@@ -1025,44 +1035,42 @@ namespace MarketBoardPlugin.GUI
 
     private Dictionary<ItemSearchCategory, List<Item>> SortCategoriesAndItems()
     {
-      try
+      var itemSearchCategories = this.plugin.DataManager.GetExcelSheet<ItemSearchCategory>();
+
+      if (itemSearchCategories == null)
       {
-        var itemSearchCategories = this.plugin.DataManager.GetExcelSheet<ItemSearchCategory>();
+        this.plugin.Log.Warning("Failed to load item search categories.");
+        return new Dictionary<ItemSearchCategory, List<Item>>();
+      }
 
-        var sortedCategories = itemSearchCategories.Where(c => c.Category > 0).OrderBy(c => c.Category).ThenBy(c => c.Order);
+      var sortedCategories = itemSearchCategories.Where(c => c.Category > 0).OrderBy(c => c.Category).ThenBy(c => c.Order);
 
-        var sortedCategoriesDict = new Dictionary<ItemSearchCategory, List<Item>>();
+      var sortedCategoriesDict = new Dictionary<ItemSearchCategory, List<Item>>();
 
-        foreach (var c in sortedCategories)
+      foreach (var c in sortedCategories)
+      {
+        if (sortedCategoriesDict.ContainsKey(c))
         {
-          if (sortedCategoriesDict.ContainsKey(c))
-          {
-            continue;
-          }
-
-          sortedCategoriesDict.Add(c, this.items.Where(i => i.ItemSearchCategory.RowId == c.RowId).OrderBy(i => ConvertItemNameToSortableFormat(i.Name.ExtractText())).ToList());
+          continue;
         }
 
-        return sortedCategoriesDict;
+        sortedCategoriesDict.Add(c, this.items.Where(i => i.ItemSearchCategory.RowId == c.RowId).OrderBy(i => ConvertItemNameToSortableFormat(i.Name.ExtractText())).ToList());
       }
-      catch (Exception ex)
-      {
-        this.plugin.Log.Error(ex, $"Error loading category list.");
-        return null;
-      }
+
+      return sortedCategoriesDict;
     }
 
     private void HandleFrameworkUpdateEvent(IFramework framework)
     {
-      if (this.plugin.ClientState.LocalContentId != 0 && this.playerId != this.plugin.ClientState.LocalContentId)
+      if (!this.plugin.PlayerState.IsLoaded)
       {
-        var localPlayer = this.plugin.ClientState.LocalPlayer;
-        if (localPlayer == null)
-        {
-          return;
-        }
+        this.playerId = 0;
+        return;
+      }
 
-        var currentDc = localPlayer.CurrentWorld.Value.DataCenter;
+      if (this.playerId != this.plugin.PlayerState.ContentId)
+      {
+        var currentDc = this.plugin.PlayerState.CurrentWorld.Value.DataCenter;
         var dcWorlds = this.plugin.DataManager.GetExcelSheet<World>()
           .Where(w => w.DataCenter.RowId == currentDc.RowId && w.IsPublic)
           .OrderBy(w => w.Name.ExtractText())
@@ -1070,7 +1078,7 @@ namespace MarketBoardPlugin.GUI
           {
             string displayName = w.Name.ExtractText();
 
-            if (localPlayer.CurrentWorld.Value.RowId == w.RowId)
+            if (this.plugin.PlayerState.CurrentWorld.Value.RowId == w.RowId)
             {
               displayName += $" {SeIconChar.Hyadelyn.ToChar()}";
             }
@@ -1078,7 +1086,7 @@ namespace MarketBoardPlugin.GUI
             return (w.Name.ExtractText(), displayName);
           });
 
-        var regionName = localPlayer.CurrentWorld.Value.DataCenter.Value.Region switch
+        var regionName = this.plugin.PlayerState.CurrentWorld.Value.DataCenter.Value.Region switch
         {
           1 => "Japan",
           2 => "North-America",
@@ -1102,22 +1110,17 @@ namespace MarketBoardPlugin.GUI
         }
         else
         {
-          this.selectedWorld = this.worldList.FindIndex(w => w.Item1 == localPlayer.CurrentWorld.Value.Name);
+          this.selectedWorld = this.worldList.FindIndex(w => w.Item1 == this.plugin.PlayerState.CurrentWorld.Value.Name);
         }
 
         if (this.worldList.Count > 1)
         {
-          this.playerId = this.plugin.ClientState.LocalContentId;
+          this.playerId = this.plugin.PlayerState.ContentId;
         }
-      }
-
-      if (this.plugin.ClientState.LocalContentId == 0)
-      {
-        this.playerId = 0;
       }
     }
 
-    private void HandleHoveredItemChange(object sender, ulong itemId)
+    private void HandleHoveredItemChange(object? sender, ulong itemId)
     {
       if (!this.plugin.Config.WatchForHovered || this.itemBeingHovered == itemId)
       {

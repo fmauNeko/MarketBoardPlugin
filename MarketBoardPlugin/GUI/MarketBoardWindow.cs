@@ -477,7 +477,7 @@ namespace MarketBoardPlugin.GUI
                   double price = this.plugin.Config.NoGilSalesTax
                     ? itm.PricePerUnit
                     : itm.PricePerUnit + (itm.Tax / itm.Quantity);
-                  this.plugin.ShoppingList.Add(new SavedItem(item, price, itm.WorldName));
+                  this.plugin.ShoppingList.Add(new SavedItem(item, price, itm.WorldName ?? this.worldList[this.selectedWorld].Item1));
                 }
 
                 if (ImGui.Selectable("Add to the favorites"))
@@ -691,7 +691,7 @@ namespace MarketBoardPlugin.GUI
 
                   if (this.selectedWorld == 0)
                   {
-                    retainerSB.Append(CultureInfo.CurrentCulture, $" @ {this.GetDcNameFromWorldId(listing.WorldID)}");
+                    retainerSB.Append(CultureInfo.CurrentCulture, $" @ {this.GetDcNameFromWorldId(listing.WorldID!.Value)}");
                   }
                 }
                 else

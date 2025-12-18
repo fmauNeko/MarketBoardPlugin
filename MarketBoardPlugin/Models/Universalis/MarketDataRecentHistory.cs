@@ -42,6 +42,12 @@ namespace MarketBoardPlugin.Models.Universalis
     public long Timestamp { get; set; }
 
     /// <summary>
+    /// Gets or sets a value indicating whether the items were bought from a mannequin.
+    /// </summary>
+    [JsonPropertyName("onMannequin")]
+    public bool OnMannequin { get; set; }
+
+    /// <summary>
     /// Gets or sets the total.
     /// </summary>
     [JsonPropertyName("total")]
@@ -51,6 +57,12 @@ namespace MarketBoardPlugin.Models.Universalis
     /// Gets or sets the name of the world.
     /// </summary>
     [JsonPropertyName("worldName")]
-    public required string WorldName { get; set; }
+    public string? WorldName { get; set; }
+
+    /// <summary>
+    /// Gets or sets the ID of the world.
+    /// </summary>
+    [JsonPropertyName("worldID")]
+    public int? WorldId { get; set; }
   }
 }

@@ -1,4 +1,4 @@
-<Project Sdk="Dalamud.NET.Sdk/14.0.0">
+﻿<Project Sdk="Dalamud.NET.Sdk/14.0.1">
   <PropertyGroup>
     <AssemblyName>MarketTerror</AssemblyName>
     <Authors>João Fraga (MTVirux)</Authors>
@@ -17,8 +17,6 @@
     <RepositoryType>Git</RepositoryType>
     <AnalysisLevel>latest</AnalysisLevel>
     <AnalysisMode>AllEnabledByDefault</AnalysisMode>
-    <!-- Suppress assembly version conflict warnings from Dalamud dependencies -->
-    <NoWarn>$(NoWarn);MSB3277</NoWarn>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -42,7 +40,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Polly.Core" Version="8.5.0" />
+    <PackageReference Include="Polly.Core" Version="8.6.5" />
     <PackageReference Include="StyleCop.Analyzers" Version="1.2.0-beta.556">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>

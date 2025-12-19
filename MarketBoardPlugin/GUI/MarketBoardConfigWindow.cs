@@ -91,6 +91,13 @@ namespace MarketBoardPlugin
       ImGui.Separator();
       this.Checkbox("Hide SeaOfTerror Repo button", "Toggles whether the SeaOfTerror Repo button should be hidden", this.Plugin.Config.KofiHidden, (v) => this.Plugin.Config.KofiHidden = v);
 
+      this.Checkbox("Include Oceania DC", "Toggles whether the Oceania DC should be included in the Cross-DC filter", this.Plugin.Config.IncludeOceaniaDC, (v) =>
+      {
+        this.Plugin.Config.IncludeOceaniaDC = v;
+        this.Plugin.PluginInterface.SavePluginConfig(this.Plugin.Config);
+        this.Plugin.ResetMarketData();
+      });
+
       var itemRefreshTimeout = this.Plugin.Config.ItemRefreshTimeout;
       ImGui.Text("Item buffer Timeout (ms) :");
       ImGui.InputInt("###refreshTimeout", ref itemRefreshTimeout);

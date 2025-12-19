@@ -14,10 +14,28 @@ namespace MarketBoardPlugin.Models.Universalis
   public class MarketDataResponse
   {
     /// <summary>
-    /// Gets or sets the name of the datacenter.
+    /// Gets or sets the name of the datacenter when querying a datacenter scope.
     /// </summary>
     [JsonPropertyName("dcName")]
     public string? DcName { get; set; }
+
+    /// <summary>
+    /// Gets or sets the name of the region when querying a region scope.
+    /// </summary>
+    [JsonPropertyName("regionName")]
+    public string? RegionName { get; set; }
+
+    /// <summary>
+    /// Gets or sets the name of the world when querying a single world.
+    /// </summary>
+    [JsonPropertyName("worldName")]
+    public string? WorldName { get; set; }
+
+    /// <summary>
+    /// Gets or sets the ID of the world when querying a single world.
+    /// </summary>
+    [JsonPropertyName("worldID")]
+    public int? WorldId { get; set; }
 
     /// <summary>
     /// Gets or sets the ID of the item.
@@ -46,6 +64,24 @@ namespace MarketBoardPlugin.Models.Universalis
     public IList<MarketDataRecentHistory> RecentHistory { get; set; } = new List<MarketDataRecentHistory>();
 
     /// <summary>
+    /// Gets or sets the current weighted average price.
+    /// </summary>
+    [JsonPropertyName("currentAveragePrice")]
+    public double CurrentAveragePrice { get; set; }
+
+    /// <summary>
+    /// Gets or sets the current weighted average price of the NQ items.
+    /// </summary>
+    [JsonPropertyName("currentAveragePriceNQ")]
+    public double CurrentAveragePriceNq { get; set; }
+
+    /// <summary>
+    /// Gets or sets the current weighted average price of the HQ items.
+    /// </summary>
+    [JsonPropertyName("currentAveragePriceHQ")]
+    public double CurrentAveragePriceHq { get; set; }
+
+    /// <summary>
     /// Gets or sets the average price.
     /// </summary>
     [JsonPropertyName("averagePrice")]
@@ -66,20 +102,86 @@ namespace MarketBoardPlugin.Models.Universalis
     /// <summary>
     /// Gets or sets the sale velocity.
     /// </summary>
-    [JsonPropertyName("saleVelocity")]
+    [JsonPropertyName("regularSaleVelocity")]
     public double SaleVelocity { get; set; }
 
     /// <summary>
     /// Gets or sets the sale velocity of the NQ items.
     /// </summary>
-    [JsonPropertyName("saleVelocityNQ")]
+    [JsonPropertyName("nqSaleVelocity")]
     public double SaleVelocityNq { get; set; }
 
     /// <summary>
     /// Gets or sets the sale velocity of the HQ items.
     /// </summary>
-    [JsonPropertyName("saleVelocityHQ")]
+    [JsonPropertyName("hqSaleVelocity")]
     public double SaleVelocityHq { get; set; }
+
+    /// <summary>
+    /// Gets or sets the minimum price.
+    /// </summary>
+    [JsonPropertyName("minPrice")]
+    public long MinPrice { get; set; }
+
+    /// <summary>
+    /// Gets or sets the minimum price of the NQ items.
+    /// </summary>
+    [JsonPropertyName("minPriceNQ")]
+    public long MinPriceNq { get; set; }
+
+    /// <summary>
+    /// Gets or sets the minimum price of the HQ items.
+    /// </summary>
+    [JsonPropertyName("minPriceHQ")]
+    public long MinPriceHq { get; set; }
+
+    /// <summary>
+    /// Gets or sets the maximum price.
+    /// </summary>
+    [JsonPropertyName("maxPrice")]
+    public long MaxPrice { get; set; }
+
+    /// <summary>
+    /// Gets or sets the maximum price of the NQ items.
+    /// </summary>
+    [JsonPropertyName("maxPriceNQ")]
+    public long MaxPriceNq { get; set; }
+
+    /// <summary>
+    /// Gets or sets the maximum price of the HQ items.
+    /// </summary>
+    [JsonPropertyName("maxPriceHQ")]
+    public long MaxPriceHq { get; set; }
+
+    /// <summary>
+    /// Gets or sets the count of listings returned.
+    /// </summary>
+    [JsonPropertyName("listingsCount")]
+    public int ListingsCount { get; set; }
+
+    /// <summary>
+    /// Gets or sets the count of recent history entries returned.
+    /// </summary>
+    [JsonPropertyName("recentHistoryCount")]
+    public int RecentHistoryCount { get; set; }
+
+    /// <summary>
+    /// Gets or sets the number of units currently for sale.
+    /// </summary>
+    [JsonPropertyName("unitsForSale")]
+    public long UnitsForSale { get; set; }
+
+    /// <summary>
+    /// Gets or sets the number of units recently sold.
+    /// </summary>
+    [JsonPropertyName("unitsSold")]
+    public long UnitsSold { get; set; }
+
+    /// <summary>
+    /// Gets or sets a value indicating whether the dataset contains data.
+    /// </summary>
+    [JsonPropertyName("hasData")]
+    public bool HasData { get; set; }
 
     /// <summary>
     /// Gets or sets the fetch timestamp.
@@ -103,5 +205,11 @@ namespace MarketBoardPlugin.Models.Universalis
     /// </summary>
     [JsonPropertyName("stackSizeHistogramHQ")]
     public Dictionary<string, long> StackSizeHistogramHq { get; } = new Dictionary<string, long>();
+
+    /// <summary>
+    /// Gets a map of world IDs to their last upload time when querying region or datacenter scopes.
+    /// </summary>
+    [JsonPropertyName("worldUploadTimes")]
+    public Dictionary<string, long> WorldUploadTimes { get; } = new Dictionary<string, long>();
   }
 }

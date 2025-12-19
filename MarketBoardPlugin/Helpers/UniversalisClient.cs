@@ -156,14 +156,19 @@ namespace MarketBoardPlugin.Helpers
       return true;
     }
 
-    /// <inheritdoc/>
+    /// <summary>
+    /// Disposes the Universalis client resources.
+    /// </summary>
     public void Dispose()
     {
       this.Dispose(disposing: true);
       GC.SuppressFinalize(this);
     }
 
-    /// <inheritdoc cref="IDisposable"/>
+    /// <summary>
+    /// Disposes managed and unmanaged resources.
+    /// </summary>
+    /// <param name="disposing">True to dispose managed resources.</param>
     protected virtual void Dispose(bool disposing)
     {
       if (!this.disposedValue)

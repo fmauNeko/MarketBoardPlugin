@@ -98,5 +98,10 @@ namespace MarketBoardPlugin
     /// Gets or sets a value indicating whether clicking on a listing automatically teleports to that world (requires Lifestream plugin).
     /// </summary>
     public bool AutoTeleportToWorld { get; set; } = true;
+
+    /// <summary>
+    /// Gets or sets a value indicating whether the Oceania DC should be included in the Cross-DC filter.
+    /// </summary>
+    public bool IncludeOceaniaDC { get; set; } = true;
   }
 }

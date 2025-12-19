@@ -15,8 +15,6 @@ namespace MarketBoardPlugin.GUI
   using System.Threading.Tasks;
   using Dalamud.Bindings.ImGui;
   using Dalamud.Bindings.ImPlot;
-  using Dalamud.Bindings.ImGui;
-  using Dalamud.Bindings.ImPlot;
   using Dalamud.Game.Text;
   using Dalamud.Interface;
   using Dalamud.Interface.ManagedFontAtlas;
@@ -758,7 +756,7 @@ namespace MarketBoardPlugin.GUI
 
                   if (this.selectedWorld == 0)
                   {
-                    retainerSB.Append(CultureInfo.CurrentCulture, $" @ {this.GetDcNameFromWorldId(listing.WorldId!.Value)}");
+                    retainerSB.Append(CultureInfo.CurrentCulture, $" @ {this.GetDcNameFromWorldId(listing.WorldID!.Value)}");
                   }
                 }
                 else
@@ -1193,7 +1191,7 @@ namespace MarketBoardPlugin.GUI
         }
       }
 
-      if (this.plugin.ClientState.LocalContentId == 0)
+      if (this.plugin.PlayerState.ContentId == 0)
       {
         this.playerId = 0;
       }

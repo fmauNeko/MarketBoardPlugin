@@ -7,7 +7,7 @@
   "AssemblyVersion": "1.0.0.19",
   "RepoUrl": "https://github.com/MTVirux/MarketBoardPlugin",
   "ApplicableVersion": "any",
-  "DalamudApiLevel": 13,
+  "DalamudApiLevel": 14,
   "Tags": [
     "market",
     "board",

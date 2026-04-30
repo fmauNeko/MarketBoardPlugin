@@ -6,7 +6,6 @@ namespace MarketBoardPlugin.GUI
 {
   using System;
   using System.Collections.Generic;
-  using System.ComponentModel;
   using System.Globalization;
   using System.Linq;
   using System.Numerics;
@@ -18,12 +17,10 @@ namespace MarketBoardPlugin.GUI
   using Dalamud.Interface;
   using Dalamud.Interface.Colors;
   using Dalamud.Interface.ManagedFontAtlas;
-  using Dalamud.Interface.Style;
   using Dalamud.Interface.Textures;
   using Dalamud.Interface.Textures.TextureWraps;
   using Dalamud.Interface.Windowing;
   using Dalamud.Plugin.Services;
-  using Dalamud.Utility;
   using Dalamud.Bindings.ImGui;
   using Dalamud.Bindings.ImPlot;
   using Lumina.Excel.Sheets;

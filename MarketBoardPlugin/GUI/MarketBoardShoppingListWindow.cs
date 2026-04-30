@@ -11,7 +11,6 @@ namespace MarketBoardPlugin
   using Dalamud.Bindings.ImGui;
   using Dalamud.Interface;
   using Dalamud.Interface.Windowing;
-  using MarketBoardPlugin.Helpers;
   using MarketBoardPlugin.Models.ShoppingList;
 
   /// <summary>

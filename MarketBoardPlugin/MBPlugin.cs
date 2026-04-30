@@ -48,7 +48,7 @@ namespace MarketBoardPlugin
     /// <param name="dataManager">The data manager.</param>
     /// <param name="commandManager">The command manager.</param>
     /// <param name="framework">The framework.</param>
-    /// <param name="clientState">The client state.</param>
+    /// <param name="playerState">The player state.</param>
     /// <param name="gameGui">The game GUI.</param>
     /// <param name="textureProvider">The texture provider.</param>
     /// <param name="log">The plugin log.</param>
@@ -58,7 +58,7 @@ namespace MarketBoardPlugin
       IDataManager dataManager,
       ICommandManager commandManager,
       IFramework framework,
-      IClientState clientState,
+      IPlayerState playerState,
       IGameGui gameGui,
       ITextureProvider textureProvider,
       IPluginLog log,
@@ -68,7 +68,7 @@ namespace MarketBoardPlugin
       this.DataManager = dataManager;
       this.CommandManager = commandManager;
       this.Framework = framework;
-      this.ClientState = clientState;
+      this.PlayerState = playerState;
       this.GameGui = gameGui;
       this.TextureProvider = textureProvider;
       this.Log = log;
@@ -149,9 +149,9 @@ namespace MarketBoardPlugin
     public IFramework Framework { get; init; }
 
     /// <summary>
-    /// Gets the client state.
+    /// Gets the player state.
     /// </summary>
-    public IClientState ClientState { get; init; }
+    public IPlayerState PlayerState { get; init; }
 
     /// <summary>
     /// Gets the game GUI.

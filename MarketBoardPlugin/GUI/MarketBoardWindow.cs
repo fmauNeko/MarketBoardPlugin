@@ -1054,14 +1054,9 @@ namespace MarketBoardPlugin.GUI
 
     private void HandleFrameworkUpdateEvent(IFramework framework)
     {
-      if (this.plugin.ClientState.LocalContentId != 0 && this.playerId != this.plugin.ClientState.LocalContentId)
+      if (this.plugin.PlayerState.ContentId != 0 && this.playerId != this.plugin.PlayerState.ContentId)
       {
-        var localPlayer = this.plugin.ClientState.LocalPlayer;
-        if (localPlayer == null)
-        {
-          return;
-        }
-
+        var localPlayer = this.plugin.PlayerState;
         var currentDc = localPlayer.CurrentWorld.Value.DataCenter;
         var dcWorlds = this.plugin.DataManager.GetExcelSheet<World>()
           .Where(w => w.DataCenter.RowId == currentDc.RowId && w.IsPublic)
@@ -1107,11 +1102,11 @@ namespace MarketBoardPlugin.GUI
 
         if (this.worldList.Count > 1)
         {
-          this.playerId = this.plugin.ClientState.LocalContentId;
+          this.playerId = this.plugin.PlayerState.ContentId;
         }
       }
 
-      if (this.plugin.ClientState.LocalContentId == 0)
+      if (this.plugin.PlayerState.ContentId == 0)
       {
         this.playerId = 0;
       }

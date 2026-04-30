@@ -6,10 +6,8 @@ namespace MarketBoardPlugin
 {
   using System;
   using System.Collections.Generic;
-  using System.ComponentModel;
   using System.Diagnostics.CodeAnalysis;
   using System.Globalization;
-  using Dalamud.Game.ClientState.Objects.Enums;
   using Dalamud.Game.Command;
   using Dalamud.Game.Gui.ContextMenu;
   using Dalamud.Game.Text;

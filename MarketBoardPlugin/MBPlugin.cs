@@ -6,10 +6,8 @@ namespace MarketBoardPlugin
 {
   using System;
   using System.Collections.Generic;
-  using System.ComponentModel;
   using System.Diagnostics.CodeAnalysis;
   using System.Globalization;
-  using Dalamud.Game.ClientState.Objects.Enums;
   using Dalamud.Game.Command;
   using Dalamud.Game.Gui.ContextMenu;
   using Dalamud.Game.Text;
@@ -50,34 +48,31 @@ namespace MarketBoardPlugin
     /// <param name="dataManager">The data manager.</param>
     /// <param name="commandManager">The command manager.</param>
     /// <param name="framework">The framework.</param>
-    /// <param name="clientState">The client state.</param>
+    /// <param name="playerState">The player state.</param>
     /// <param name="gameGui">The game GUI.</param>
     /// <param name="textureProvider">The texture provider.</param>
     /// <param name="log">The plugin log.</param>
     /// <param name="contextMenu">The context menu.</param>
-    /// <param name="playerState">The player state.</param>
     public MBPlugin(
       IDalamudPluginInterface pluginInterface,
       IDataManager dataManager,
       ICommandManager commandManager,
       IFramework framework,
-      IClientState clientState,
+      IPlayerState playerState,
       IGameGui gameGui,
       ITextureProvider textureProvider,
       IPluginLog log,
-      IContextMenu contextMenu,
-      IPlayerState playerState)
+      IContextMenu contextMenu)
     {
       this.PluginInterface = pluginInterface;
       this.DataManager = dataManager;
       this.CommandManager = commandManager;
       this.Framework = framework;
-      this.ClientState = clientState;
+      this.PlayerState = playerState;
       this.GameGui = gameGui;
       this.TextureProvider = textureProvider;
       this.Log = log;
       this.ContextMenu = contextMenu;
-      this.PlayerState = playerState;
 
       this.UniversalisClient = new UniversalisClient(this);
 
@@ -154,9 +149,9 @@ namespace MarketBoardPlugin
     public IFramework Framework { get; init; }
 
     /// <summary>
-    /// Gets the client state.
+    /// Gets the player state.
     /// </summary>
-    public IClientState ClientState { get; init; }
+    public IPlayerState PlayerState { get; init; }
 
     /// <summary>
     /// Gets the game GUI.
@@ -177,11 +172,6 @@ namespace MarketBoardPlugin
     /// Gets the context menu.
     /// </summary>
     public IContextMenu ContextMenu { get; init; }
-
-    /// <summary>
-    /// Gets the player state.
-    /// </summary>
-    public IPlayerState PlayerState { get; init; }
 
     /// <summary>
     /// Gets the Universalis client used for accessing market board data.

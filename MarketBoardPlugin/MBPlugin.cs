@@ -53,6 +53,7 @@ namespace MarketBoardPlugin
     /// <param name="textureProvider">The texture provider.</param>
     /// <param name="log">The plugin log.</param>
     /// <param name="contextMenu">The context menu.</param>
+    /// <param name="playerState">The player state.</param>
     public MBPlugin(
       IDalamudPluginInterface pluginInterface,
       IDataManager dataManager,
@@ -62,7 +63,8 @@ namespace MarketBoardPlugin
       IGameGui gameGui,
       ITextureProvider textureProvider,
       IPluginLog log,
-      IContextMenu contextMenu)
+      IContextMenu contextMenu,
+      IPlayerState playerState)
     {
       this.PluginInterface = pluginInterface;
       this.DataManager = dataManager;
@@ -73,6 +75,7 @@ namespace MarketBoardPlugin
       this.TextureProvider = textureProvider;
       this.Log = log;
       this.ContextMenu = contextMenu;
+      this.PlayerState = playerState;
 
       this.UniversalisClient = new UniversalisClient(this);
 
@@ -126,7 +129,7 @@ namespace MarketBoardPlugin
     /// <summary>
     /// Gets the number format info.
     /// </summary>
-    public NumberFormatInfo NumberFormatInfo { get; init; } = CultureInfo.CurrentCulture.NumberFormat.Clone() as NumberFormatInfo;
+    public NumberFormatInfo NumberFormatInfo { get; init; } = (NumberFormatInfo)CultureInfo.CurrentCulture.NumberFormat.Clone();
 
     /// <summary>
     /// Gets the Dalamud plugin interface.
@@ -172,6 +175,11 @@ namespace MarketBoardPlugin
     /// Gets the context menu.
     /// </summary>
     public IContextMenu ContextMenu { get; init; }
+
+    /// <summary>
+    /// Gets the player state.
+    /// </summary>
+    public IPlayerState PlayerState { get; init; }
 
     /// <summary>
     /// Gets the Universalis client used for accessing market board data.
@@ -302,6 +310,7 @@ namespace MarketBoardPlugin
       return itemId % 500000;
     }
 
+    [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Context menu callback should log and continue without breaking the plugin UI.")]
     private Action<IMenuItemClickedArgs> GetMenuItemClickedHandler(uint itemId)
     {
       return (IMenuItemClickedArgs args) =>

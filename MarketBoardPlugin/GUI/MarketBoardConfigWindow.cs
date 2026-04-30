@@ -6,8 +6,8 @@ namespace MarketBoardPlugin
 {
   using System;
   using System.Numerics;
-  using Dalamud.Interface.Windowing;
   using Dalamud.Bindings.ImGui;
+  using Dalamud.Interface.Windowing;
   using MarketBoardPlugin.Helpers;
 
   /// <summary>
@@ -49,6 +49,13 @@ namespace MarketBoardPlugin
       this.Checkbox("Watch for hovered item", "Automatically select the item hovered in any of the in-game inventory window after 1 second.", this.Plugin.Config.WatchForHovered, (v) => this.Plugin.Config.WatchForHovered = v);
 
       this.Checkbox("Hide Ko-Fi button", "Toggles whether the Ko-Fi button should be hidden", this.Plugin.Config.KofiHidden, (v) => this.Plugin.Config.KofiHidden = v);
+
+      this.Checkbox("Include Oceania DC", "Toggles whether the Oceania DC should be included in the Cross-DC filter", this.Plugin.Config.IncludeOceaniaDC, (v) =>
+      {
+        this.Plugin.Config.IncludeOceaniaDC = v;
+        this.Plugin.PluginInterface.SavePluginConfig(this.Plugin.Config);
+        this.Plugin.ResetMarketData();
+      });
 
       var itemRefreshTimeout = this.Plugin.Config.ItemRefreshTimeout;
       ImGui.Text("Item buffer Timeout (ms) :");

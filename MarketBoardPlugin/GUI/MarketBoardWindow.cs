@@ -1062,15 +1062,10 @@ namespace MarketBoardPlugin.GUI
 
     private void HandleFrameworkUpdateEvent(IFramework framework)
     {
-      if (!this.plugin.PlayerState.IsLoaded)
+      if (this.plugin.PlayerState.ContentId != 0 && this.playerId != this.plugin.PlayerState.ContentId)
       {
-        this.playerId = 0;
-        return;
-      }
-
-      if (this.playerId != this.plugin.PlayerState.ContentId)
-      {
-        var currentDc = this.plugin.PlayerState.CurrentWorld.Value.DataCenter;
+        var localPlayer = this.plugin.PlayerState;
+        var currentDc = localPlayer.CurrentWorld.Value.DataCenter;
         var dcWorlds = this.plugin.DataManager.GetExcelSheet<World>()
           .Where(w => w.DataCenter.RowId == currentDc.RowId && w.IsPublic)
           .OrderBy(w => w.Name.ExtractText())
@@ -1086,7 +1081,7 @@ namespace MarketBoardPlugin.GUI
             return (w.Name.ExtractText(), displayName);
           });
 
-        var regionName = this.plugin.PlayerState.HomeWorld.Value.DataCenter.Value.Region switch
+        var regionName = localPlayer.CurrentWorld.Value.DataCenter.Value.Region.RowId switch
         {
           1 => "Japan",
           2 => "North-America",
@@ -1118,6 +1113,11 @@ namespace MarketBoardPlugin.GUI
         {
           this.playerId = this.plugin.PlayerState.ContentId;
         }
+      }
+
+      if (this.plugin.PlayerState.ContentId == 0)
+      {
+        this.playerId = 0;
       }
     }
 

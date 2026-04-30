@@ -1073,7 +1073,7 @@ namespace MarketBoardPlugin.GUI
             return (w.Name.ExtractText(), displayName);
           });
 
-        var regionName = localPlayer.CurrentWorld.Value.DataCenter.Value.Region switch
+        var regionName = localPlayer.CurrentWorld.Value.DataCenter.Value.Region.RowId switch
         {
           1 => "Japan",
           2 => "North-America",

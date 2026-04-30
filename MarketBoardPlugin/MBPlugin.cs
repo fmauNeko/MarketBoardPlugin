@@ -53,7 +53,6 @@ namespace MarketBoardPlugin
     /// <param name="textureProvider">The texture provider.</param>
     /// <param name="log">The plugin log.</param>
     /// <param name="contextMenu">The context menu.</param>
-    /// <param name="playerState">The player state.</param>
     public MBPlugin(
       IDalamudPluginInterface pluginInterface,
       IDataManager dataManager,
@@ -63,8 +62,7 @@ namespace MarketBoardPlugin
       IGameGui gameGui,
       ITextureProvider textureProvider,
       IPluginLog log,
-      IContextMenu contextMenu,
-      IPlayerState playerState)
+      IContextMenu contextMenu)
     {
       this.PluginInterface = pluginInterface;
       this.DataManager = dataManager;
@@ -75,7 +73,6 @@ namespace MarketBoardPlugin
       this.TextureProvider = textureProvider;
       this.Log = log;
       this.ContextMenu = contextMenu;
-      this.PlayerState = playerState;
 
       this.UniversalisClient = new UniversalisClient(this);
 
@@ -175,11 +172,6 @@ namespace MarketBoardPlugin
     /// Gets the context menu.
     /// </summary>
     public IContextMenu ContextMenu { get; init; }
-
-    /// <summary>
-    /// Gets the player state.
-    /// </summary>
-    public IPlayerState PlayerState { get; init; }
 
     /// <summary>
     /// Gets the Universalis client used for accessing market board data.

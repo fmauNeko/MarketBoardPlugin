@@ -21,8 +21,6 @@ namespace MarketBoardPlugin.GUI
   using Dalamud.Interface.Textures;
   using Dalamud.Interface.Windowing;
   using Dalamud.Plugin.Services;
-  using Dalamud.Bindings.ImGui;
-  using Dalamud.Bindings.ImPlot;
   using Lumina.Excel.Sheets;
   using Lumina.Extensions;
   using MarketBoardPlugin.Extensions;

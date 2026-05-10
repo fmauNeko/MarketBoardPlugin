@@ -277,6 +277,11 @@ namespace MarketBoardPlugin
         return;
       }
 
+      if (item.Value.IsUntradable)
+      {
+        return;
+      }
+
       args.AddMenuItem(new MenuItem
       {
         Name = "Search in Market Board",
